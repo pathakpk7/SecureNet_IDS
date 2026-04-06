@@ -1,0 +1,4 @@
+timestamp,ip_address,prediction,attack_type,risk_level,confidence,protocol,source_ip,destination_ip,packet_length,threat_intel_score
+2026-04-06T20:18:00.000Z,192.168.1.100,Attack,DDoS,HIGH,0.95,TCP,192.168.1.100,192.168.1.1,1024,0.8
+2026-04-06T20:18:01.000Z,192.168.1.101,Normal,benign,LOW,0.98,UDP,192.168.1.101,192.168.1.2,512,0.1
+2026-04-06T20:18:02.000Z,10.0.0.50,Attack,Port_Scan,CRITICAL,0.89,TCP,10.0.0.50,10.0.0.1,64,0.95
