@@ -1,246 +1,350 @@
 import React, { useState } from 'react';
-import { FiBell, FiShield, FiDatabase, FiActivity, FiSettings, FiMoon, FiSun, FiGlobe } from 'react-icons/fi';
-
-// Toggle Switch Component
-const ToggleSwitch = ({ enabled, onChange, label }) => (
-  <div className="flex items-center justify-between">
-    <span className="text-gray-300">{label}</span>
-    <button
-      onClick={() => onChange(!enabled)}
-      className={`
-        relative inline-flex h-6 w-11 items-center rounded-full transition-colors
-        ${enabled ? 'bg-neon-blue' : 'bg-gray-600'}
-      `}
-    >
-      <span
-        className={`
-          inline-block h-4 w-4 transform rounded-full bg-white transition-transform
-          ${enabled ? 'translate-x-6' : 'translate-x-1'}
-        `}
-      />
-    </button>
-  </div>
-);
-
-// Slider Component
-const Slider = ({ value, onChange, min, max, label, unit }) => (
-  <div className="space-y-2">
-    <div className="flex items-center justify-between">
-      <span className="text-gray-300">{label}</span>
-      <span className="text-neon-blue font-semibold">
-        {value}{unit}
-      </span>
-    </div>
-    <div className="relative">
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) => onChange(parseInt(e.target.value))}
-        className="
-          w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer
-          slider-thumb
-        "
-        style={{
-          background: `linear-gradient(to right, #00F5FF 0%, #00F5FF ${((value - min) / (max - min)) * 100}%, #374151 ${((value - min) / (max - min)) * 100}%, #374151 100%)`
-        }}
-      />
-    </div>
-  </div>
-);
+import { motion } from 'framer-motion';
+import { Settings as SettingsIcon, Bell, Shield, Database, Key, Eye, EyeOff, Save } from 'lucide-react';
 
 const Settings = () => {
-  const [notifications, setNotifications] = useState(true);
-  const [autoDetection, setAutoDetection] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
-  const [dataRetention, setDataRetention] = useState(30);
-  const [scanFrequency, setScanFrequency] = useState(5);
-  const [alertThreshold, setAlertThreshold] = useState(3);
+  const [activeTab, setActiveTab] = useState('general');
+  const [settings, setSettings] = useState({
+    notifications: {
+      email: true,
+      push: false,
+      sms: false,
+      desktop: true,
+    },
+    security: {
+      twoFactor: false,
+      sessionTimeout: 30,
+      ipWhitelist: ['192.168.1.0/24', '10.0.0.0/8'],
+    },
+    api: {
+      virusTotal: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      abuseIPDB: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      urlScan: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    },
+    appearance: {
+      theme: 'dark',
+      language: 'en',
+      compactMode: false,
+    }
+  });
+  const [showApiKeys, setShowApiKeys] = useState(false);
+
+  const tabs = [
+    { id: 'general', name: 'General', icon: SettingsIcon },
+    { id: 'notifications', name: 'Notifications', icon: Bell },
+    { id: 'security', name: 'Security', icon: Shield },
+    { id: 'api', name: 'API Keys', icon: Key },
+  ];
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+  };
+
+  const handleSettingChange = (category, setting, value) => {
+    setSettings(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [setting]: value
+      }
+    }));
+  };
+
+  const handleSaveSettings = () => {
+    // Save settings to backend
+    console.log('Saving settings:', settings);
+    // Show success message
+  };
+
+  const maskApiKey = (key) => {
+    if (showApiKeys) return key;
+    return key.substring(0, 8) + '•'.repeat(key.length - 8);
+  };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">System Settings</h1>
-          <p className="text-gray-400">Configure your SecureNet IDS preferences</p>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Settings
+          </h1>
+          <p className="text-gray-400">
+            Configure your SecureNet IDS preferences and security settings
+          </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <FiSettings className="text-neon-blue" size={20} />
-          <span className="text-sm text-neon-blue">Configuration</span>
-        </div>
+        
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleSaveSettings}
+          className="btn-primary"
+        >
+          <Save size={18} />
+          <span>Save Settings</span>
+        </motion.button>
       </div>
 
-      {/* Settings Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Tabs */}
+      <div className="flex space-x-1 mb-6 border-b border-white/10">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex items-center space-x-2 px-4 py-3 border-b-2 transition-all duration-300 ${
+                activeTab === tab.id
+                  ? 'border-neon-blue text-neon-blue'
+                  : 'border-transparent text-gray-400 hover:text-white'
+              }`}
+            >
+              <Icon size={18} />
+              <span className="font-medium">{tab.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab Content */}
+      <motion.div
+        key={activeTab}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="glass-card p-6"
+      >
+        {/* General Settings */}
+        {activeTab === 'general' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4">
+                General Settings
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-300">
+                    Language
+                  </label>
+                  <select
+                    value={settings.appearance.language}
+                    onChange={(e) => handleSettingChange('appearance', 'language', e.target.value)}
+                    className="input-field w-48"
+                  >
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-300">
+                    Theme
+                  </label>
+                  <select
+                    value={settings.appearance.theme}
+                    onChange={(e) => handleSettingChange('appearance', 'theme', e.target.value)}
+                    className="input-field w-48"
+                  >
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                    <option value="auto">Auto</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-300">
+                    Compact Mode
+                  </label>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.appearance.compactMode}
+                      onChange={(e) => handleSettingChange('appearance', 'compactMode', e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div className="w-12 h-6 bg-gray-600 rounded-full transition-colors duration-200 relative">
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
+                          settings.appearance.compactMode ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      ></div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Notification Settings */}
+        {activeTab === 'notifications' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4">
+                Notification Preferences
+              </h3>
+              
+              <div className="space-y-4">
+                {Object.entries(settings.notifications).map(([key, value]) => (
+                  <div key={key} className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-300 capitalize">
+                      {key === 'email' ? 'Email Notifications' :
+                       key === 'push' ? 'Push Notifications' :
+                       key === 'sms' ? 'SMS Notifications' :
+                       key === 'desktop' ? 'Desktop Notifications' : key}
+                    </label>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={value}
+                        onChange={(e) => handleSettingChange('notifications', key, e.target.checked)}
+                        className="sr-only"
+                      />
+                      <div className="w-12 h-6 bg-gray-600 rounded-full transition-colors duration-200 relative">
+                        <div
+                          className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
+                            value ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        ></div>
+                      </div>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Security Settings */}
-        <div className="glass-card p-6 space-y-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <FiShield className="text-neon-blue" size={24} />
-            <h2 className="text-xl font-semibold text-white">Security Settings</h2>
-          </div>
+        {activeTab === 'security' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4">
+                Security Settings
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-300">
+                    Two-Factor Authentication
+                  </label>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.security.twoFactor}
+                      onChange={(e) => handleSettingChange('security', 'twoFactor', e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div className="w-12 h-6 bg-gray-600 rounded-full transition-colors duration-200 relative">
+                      <div
+                        className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
+                          settings.security.twoFactor ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      ></div>
+                    </div>
+                  </label>
+                </div>
 
-          <div className="space-y-4">
-            <ToggleSwitch
-              enabled={autoDetection}
-              onChange={setAutoDetection}
-              label="Auto Detection Mode"
-            />
-            
-            <ToggleSwitch
-              enabled={notifications}
-              onChange={setNotifications}
-              label="Real-time Notifications"
-            />
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-300">
+                    Session Timeout (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="120"
+                    value={settings.security.sessionTimeout}
+                    onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value))}
+                    className="input-field w-24"
+                  />
+                </div>
 
-            <Slider
-              value={alertThreshold}
-              onChange={setAlertThreshold}
-              min={1}
-              max={10}
-              label="Alert Sensitivity"
-              unit=""
-            />
-
-            <Slider
-              value={scanFrequency}
-              onChange={setScanFrequency}
-              min={1}
-              max={60}
-              label="Scan Frequency"
-              unit=" min"
-            />
-          </div>
-        </div>
-
-        {/* System Settings */}
-        <div className="glass-card p-6 space-y-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <FiDatabase className="text-neon-green" size={24} />
-            <h2 className="text-xl font-semibold text-white">System Settings</h2>
-          </div>
-
-          <div className="space-y-4">
-            <ToggleSwitch
-              enabled={darkMode}
-              onChange={setDarkMode}
-              label="Dark Mode"
-            />
-
-            <Slider
-              value={dataRetention}
-              onChange={setDataRetention}
-              min={7}
-              max={90}
-              label="Data Retention Period"
-              unit=" days"
-            />
-
-            <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-300">System Status</span>
-                <span className="text-neon-green text-sm font-semibold">ONLINE</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Version</span>
-                <span className="text-white">v2.4.1</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-gray-400">Last Update</span>
-                <span className="text-white">2 hours ago</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Network Settings */}
-        <div className="glass-card p-6 space-y-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <FiGlobe className="text-neon-yellow" size={24} />
-            <h2 className="text-xl font-semibold text-white">Network Settings</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-300">Monitoring Interface</span>
-                <span className="text-neon-blue text-sm font-semibold">eth0</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">IP Address</span>
-                <span className="text-white font-mono">192.168.1.100</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-gray-400">Status</span>
-                <span className="text-neon-green">Active</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-300">Firewall Status</span>
-                <span className="text-neon-green text-sm font-semibold">ENABLED</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Rules Applied</span>
-                <span className="text-white">247</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-gray-400">Blocked Today</span>
-                <span className="text-neon-red">1,247</span>
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2">
+                    IP Whitelist
+                  </label>
+                  <div className="space-y-2">
+                    {settings.security.ipWhitelist.map((ip, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <input
+                          type="text"
+                          value={ip}
+                          onChange={(e) => {
+                            const newWhitelist = [...settings.security.ipWhitelist];
+                            newWhitelist[index] = e.target.value;
+                            handleSettingChange('security', 'ipWhitelist', newWhitelist);
+                          }}
+                          className="input-field flex-1"
+                          placeholder="192.168.1.0/24"
+                        />
+                        <button
+                          onClick={() => {
+                            const newWhitelist = settings.security.ipWhitelist.filter((_, i) => i !== index);
+                            handleSettingChange('security', 'ipWhitelist', newWhitelist);
+                          }}
+                          className="p-2 text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => {
+                        const newWhitelist = [...settings.security.ipWhitelist, ''];
+                        handleSettingChange('security', 'ipWhitelist', newWhitelist);
+                      }}
+                      className="btn-secondary"
+                    >
+                      Add IP
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Performance Settings */}
-        <div className="glass-card p-6 space-y-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <FiActivity className="text-orange-500" size={24} />
-            <h2 className="text-xl font-semibold text-white">Performance</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-300">CPU Usage</span>
-                <span className="text-neon-yellow text-sm font-semibold">45%</span>
-              </div>
-              <div className="w-full bg-gray-700 rounded-full h-2">
-                <div className="bg-neon-yellow h-2 rounded-full" style={{ width: '45%' }}></div>
-              </div>
-            </div>
-
-            <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-300">Memory Usage</span>
-                <span className="text-neon-blue text-sm font-semibold">62%</span>
-              </div>
-              <div className="w-full bg-gray-700 rounded-full h-2">
-                <div className="bg-neon-blue h-2 rounded-full" style={{ width: '62%' }}></div>
-              </div>
-            </div>
-
-            <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-300">Disk Usage</span>
-                <span className="text-neon-green text-sm font-semibold">28%</span>
-              </div>
-              <div className="w-full bg-gray-700 rounded-full h-2">
-                <div className="bg-neon-green h-2 rounded-full" style={{ width: '28%' }}></div>
+        {/* API Keys */}
+        {activeTab === 'api' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4">
+                API Keys
+              </h3>
+              
+              <div className="space-y-4">
+                {Object.entries(settings.api).map(([service, key]) => (
+                  <div key={service} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium text-gray-300 capitalize">
+                        {service === 'virusTotal' ? 'VirusTotal API Key' :
+                         service === 'abuseIPDB' ? 'AbuseIPDB API Key' :
+                         service === 'urlScan' ? 'URLScan API Key' : service}
+                      </label>
+                      <button
+                        onClick={() => setShowApiKeys(!showApiKeys)}
+                        className="p-2 text-neon-blue hover:text-neon-blue/80 transition-colors"
+                      >
+                        {showApiKeys ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <input
+                      type={showApiKeys ? 'text' : 'password'}
+                      value={key}
+                      onChange={(e) => handleSettingChange('api', service, e.target.value)}
+                      className="input-field flex-1 font-mono"
+                      placeholder={`Enter your ${service} API key`}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <button className="px-6 py-3 bg-neon-blue/20 border border-neon-blue text-neon-blue rounded-lg font-semibold transition-all duration-300 hover:bg-neon-blue/30 hover:scale-105 hover-glow">
-          Save Settings
-        </button>
-      </div>
+        )}
+      </motion.div>
     </div>
   );
 };

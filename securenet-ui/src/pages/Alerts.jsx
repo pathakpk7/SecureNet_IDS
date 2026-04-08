@@ -1,315 +1,250 @@
 import React, { useState, useEffect } from 'react';
-import { FiAlertTriangle, FiShield, FiActivity, FiX, FiClock, FiMapPin, FiServer, FiLoader, FiRefreshCw } from 'react-icons/fi';
-import { getRequest } from '../utils/api';
+import { motion } from 'framer-motion';
+import { AlertTriangle, Shield, Activity, Filter, Search, RefreshCw } from 'lucide-react';
+import AlertTable from '../components/AlertTable';
+import { getRequest } from '../api';
 
 const Alerts = () => {
   const [alerts, setAlerts] = useState([]);
-  const [dismissedAlerts, setDismissedAlerts] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchAlerts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getRequest('/alerts');
-      setAlerts(data.alerts || data || []); // Handle different response formats
-    } catch (err) {
-      setError(err.message || 'Failed to fetch alerts');
-      console.error('Error fetching alerts:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Mock data for development
+  const mockAlerts = [
+    {
+      id: 1,
+      type: 'DDoS',
+      source: '192.168.1.100',
+      message: 'Distributed Denial of Service attack detected from multiple sources',
+      severity: 'high',
+      timestamp: '2024-01-15 14:32:15',
+      target: 'Web Server',
+      duration: '5 minutes'
+    },
+    {
+      id: 2,
+      type: 'SQL Injection',
+      source: '10.0.0.1',
+      message: 'SQL injection attempt blocked in user authentication',
+      severity: 'medium',
+      timestamp: '2024-01-15 14:28:42',
+      target: 'Database Server',
+      duration: '2 minutes'
+    },
+    {
+      id: 3,
+      type: 'XSS',
+      source: '172.16.0.1',
+      message: 'Cross-site scripting attempt detected and blocked',
+      severity: 'medium',
+      timestamp: '2024-01-15 14:15:33',
+      target: 'Web Application',
+      duration: '1 minute'
+    },
+    {
+      id: 4,
+      type: 'Port Scan',
+      source: '203.0.113.42',
+      message: 'Port scanning activity detected on multiple ports',
+      severity: 'low',
+      timestamp: '2024-01-15 14:05:18',
+      target: 'Firewall',
+      duration: '3 minutes'
+    },
+    {
+      id: 5,
+      type: 'Brute Force',
+      source: '198.51.100.42',
+      message: 'Multiple failed login attempts detected',
+      severity: 'medium',
+      timestamp: '2024-01-15 13:45:22',
+      target: 'SSH Server',
+      duration: '10 minutes'
+    },
+  ];
 
   useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setAlerts(mockAlerts);
+      } catch (err) {
+        setError(err.message || 'Failed to fetch alerts');
+        console.error('Alerts fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchAlerts();
+
+    // Set up real-time updates
+    const interval = setInterval(() => {
+      // Simulate new alerts
+      const newAlert = {
+        id: Date.now(),
+        type: ['DDoS', 'SQL Injection', 'XSS', 'Port Scan', 'Brute Force'][Math.floor(Math.random() * 5)],
+        source: `192.168.1.${Math.floor(Math.random() * 255)}`,
+        message: 'New security threat detected',
+        severity: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)],
+        timestamp: 'Just now',
+        target: 'System',
+        duration: 'Ongoing'
+      };
+
+      if (Math.random() > 0.8) {
+        setAlerts(prev => [newAlert, ...prev.slice(0, 9)]);
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const getRiskColor = (risk) => {
-    switch (risk) {
-      case 'LOW':
-        return {
-          bg: 'bg-neon-green/10',
-          border: 'border-neon-green',
-          text: 'text-neon-green',
-          icon: 'bg-neon-green/20'
-        };
-      case 'MEDIUM':
-        return {
-          bg: 'bg-neon-yellow/10',
-          border: 'border-neon-yellow',
-          text: 'text-neon-yellow',
-          icon: 'bg-neon-yellow/20'
-        };
-      case 'HIGH':
-        return {
-          bg: 'bg-orange-500/10',
-          border: 'border-orange-500',
-          text: 'text-orange-500',
-          icon: 'bg-orange-500/20'
-        };
-      case 'CRITICAL':
-        return {
-          bg: 'bg-neon-red/10',
-          border: 'border-neon-red',
-          text: 'text-neon-red',
-          icon: 'bg-neon-red/20'
-        };
-      default:
-        return {
-          bg: 'bg-gray-500/10',
-          border: 'border-gray-500',
-          text: 'text-gray-500',
-          icon: 'bg-gray-500/20'
-        };
-    }
+  const handleRefresh = () => {
+    // Refetch alerts
+    setAlerts(mockAlerts);
   };
 
-  const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
+  const handleExport = () => {
+    // Export alerts to CSV
+    const csv = [
+      ['ID', 'Type', 'Source', 'Message', 'Severity', 'Timestamp'],
+      ...alerts.map(alert => [
+        alert.id,
+        alert.type,
+        alert.source,
+        alert.message,
+        alert.severity,
+        alert.timestamp
+      ])
+    ].map(row => row.join(',')).join('\n');
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `alerts_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
-
-  const getAlertIcon = (type) => {
-    switch (type) {
-      case 'DDoS Attack':
-      case 'Port Scan':
-        return <FiServer size={20} />;
-      case 'Brute Force':
-      case 'Suspicious Login':
-        return <FiShield size={20} />;
-      case 'Malware Detection':
-      case 'Phishing Attempt':
-        return <FiAlertTriangle size={20} />;
-      default:
-        return <FiActivity size={20} />;
-    }
-  };
-
-  const dismissAlert = (alertId) => {
-    setDismissedAlerts(prev => new Set(prev).add(alertId));
-  };
-
-  const activeAlerts = alerts.filter(alert => !dismissedAlerts.has(alert.id));
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Security Alerts</h1>
-          <p className="text-gray-400">Real-time security threat notifications</p>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Security Alerts
+          </h1>
+          <p className="text-gray-400">
+            Real-time threat detection and monitoring
+          </p>
         </div>
+        
         <div className="flex items-center space-x-4">
-          <div className="text-right">
-            <div className="text-2xl font-bold text-neon-red neon-text">
-              {activeAlerts.filter(a => a.risk === 'CRITICAL').length}
-            </div>
-            <div className="text-xs text-gray-400">Critical</div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-neon-red rounded-full animate-pulse"></div>
+            <span className="text-neon-red font-medium">
+              {alerts.filter(a => a.severity === 'high').length} Critical
+            </span>
           </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-orange-500 neon-text">
-              {activeAlerts.filter(a => a.risk === 'HIGH').length}
-            </div>
-            <div className="text-xs text-gray-400">High</div>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-neon-yellow neon-text">
-              {activeAlerts.filter(a => a.risk === 'MEDIUM').length}
-            </div>
-            <div className="text-xs text-gray-400">Medium</div>
-          </div>
-          {/* Refresh Button */}
+          
           <button
-            onClick={fetchAlerts}
-            disabled={loading}
-            className="p-3 bg-neon-blue/20 border border-neon-blue/30 rounded-lg 
-                       text-neon-blue hover:bg-neon-blue/30 transition-all duration-300
-                       disabled:opacity-50 disabled:cursor-not-allowed hover-glow"
-            title="Refresh alerts"
+            onClick={handleRefresh}
+            className="flex items-center space-x-2 p-3 glass-card rounded-lg hover:bg-white/10 transition-all"
           >
-            {loading ? (
-              <FiLoader className="animate-spin" size={18} />
-            ) : (
-              <FiRefreshCw size={18} />
-            )}
+            <RefreshCw size={18} className="text-neon-blue" />
+            <span className="text-sm text-gray-300">Refresh</span>
           </button>
         </div>
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="p-4 bg-neon-red/10 border border-neon-red/30 rounded-lg">
-          <div className="flex items-center space-x-3">
-            <FiAlertTriangle className="text-neon-red" size={20} />
-            <div>
-              <p className="text-neon-red font-semibold">Error Loading Alerts</p>
-              <p className="text-gray-300 text-sm">{error}</p>
+      {/* Alert Table */}
+      <AlertTable
+        alerts={alerts}
+        loading={loading}
+        onRefresh={handleRefresh}
+        onExport={handleExport}
+      />
+
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="glass-card p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">
+            Alert Statistics
+          </h3>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-gray-400">Total Alerts</span>
+              <span className="text-2xl font-bold text-neon-blue">
+                {alerts.length}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">High Severity</span>
+              <span className="text-2xl font-bold text-neon-red">
+                {alerts.filter(a => a.severity === 'high').length}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Medium Severity</span>
+              <span className="text-2xl font-bold text-neon-yellow">
+                {alerts.filter(a => a.severity === 'medium').length}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Low Severity</span>
+              <span className="text-2xl font-bold text-neon-green">
+                {alerts.filter(a => a.severity === 'low').length}
+              </span>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Loading State */}
-      {loading && !error && (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex items-center space-x-3">
-            <FiLoader className="animate-spin text-neon-blue" size={24} />
-            <span className="text-gray-400">Loading security alerts...</span>
-          </div>
-        </div>
-      )}
-
-      {/* Alert Cards */}
-      {!loading && !error && (
-        <div className="space-y-4">
-          {activeAlerts.map((alert, index) => {
-          const riskColors = getRiskColor(alert.risk);
-          const isCritical = alert.risk === 'CRITICAL';
-          
-          return (
-            <div
-              key={alert.id}
-              className={`
-                glass-card p-6 relative overflow-hidden transition-all duration-500
-                hover:scale-[1.02] hover:shadow-2xl hover-glow
-                ${isCritical ? 'animate-pulse border-2' : 'border'}
-                ${riskColors.border}
-                animate-slide-in
-              `}
-              style={{
-                animationDelay: `${index * 100}ms`,
-                animationFillMode: 'both'
-              }}
-            >
-              {/* Critical Alert Pulsing Border */}
-              {isCritical && (
-                <>
-                  <div className="absolute inset-0 border-2 border-neon-red rounded-lg animate-pulse"></div>
-                  <div className="absolute inset-0 border-2 border-neon-red rounded-lg animate-ping opacity-20"></div>
-                </>
-              )}
-
-              {/* Alert Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className={`
-                    p-3 rounded-lg flex items-center justify-center
-                    ${riskColors.icon}
-                    ${isCritical ? 'animate-bounce' : ''}
-                  `}>
-                    <div className={`${riskColors.text}`}>
-                      {getAlertIcon(alert.type)}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex items-center space-x-3 mb-1">
-                      <h3 className="text-lg font-bold text-white">{alert.type}</h3>
-                      <span className={`
-                        px-2 py-1 rounded-full text-xs font-bold border
-                        ${riskColors.bg} ${riskColors.border} ${riskColors.text}
-                        ${isCritical ? 'animate-pulse' : ''}
-                      `}>
-                        {alert.risk}
+        <div className="glass-card p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">
+            Recent Activity
+          </h3>
+          <div className="space-y-3">
+            {alerts.slice(0, 5).map((alert, index) => (
+              <div
+                key={alert.id}
+                className={`p-3 rounded-lg border transition-all duration-300 ${
+                  alert.severity === 'high' ? 'bg-danger/10 border-danger' :
+                  alert.severity === 'medium' ? 'bg-warning/10 border-warning' :
+                  'bg-safe/10 border-safe'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <AlertTriangle size={16} className={
+                        alert.severity === 'high' ? 'text-neon-red' :
+                        alert.severity === 'medium' ? 'text-neon-yellow' : 'text-neon-green'
+                      } />
+                      <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                        {alert.type}
                       </span>
+                      <span className="text-xs text-gray-500">• {alert.source}</span>
                     </div>
-                    <div className="flex items-center space-x-4 text-sm text-gray-400">
-                      <div className="flex items-center space-x-1">
-                        <FiClock size={14} />
-                        <span>{formatTimestamp(alert.timestamp)}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <FiMapPin size={14} />
-                        <span>{alert.source}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <FiServer size={14} />
-                        <span>{alert.target}</span>
-                      </div>
-                    </div>
+                    <p className="text-sm text-gray-300">
+                      {alert.message}
+                    </p>
                   </div>
+                  <span className="text-xs text-gray-500">
+                    {alert.timestamp}
+                  </span>
                 </div>
-
-                {/* Dismiss Button */}
-                <button
-                  onClick={() => dismissAlert(alert.id)}
-                  className={`
-                    p-2 rounded-lg transition-all duration-300 hover:scale-110
-                    ${riskColors.bg} ${riskColors.border} ${riskColors.text}
-                    hover:bg-white/20 hover-glow
-                  `}
-                >
-                  <FiX size={16} />
-                </button>
               </div>
-
-              {/* Alert Description */}
-              <p className="text-gray-300 mb-4">{alert.description}</p>
-
-              {/* Alert Details */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {Object.entries(alert.details).map(([key, value]) => (
-                  <div key={key} className="bg-white/5 rounded-lg p-3">
-                    <div className="text-xs text-gray-400 capitalize mb-1">
-                      {key.replace(/([A-Z])/g, ' $1').trim()}
-                    </div>
-                    <div className="text-sm text-white font-semibold">
-                      {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Warning Icon for Critical Alerts */}
-              {isCritical && (
-                <div className="absolute top-6 right-6">
-                  <FiAlertTriangle 
-                    size={24} 
-                    className="text-neon-red animate-pulse neon-text"
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Empty State */}
-      {!loading && !error && activeAlerts.length === 0 && !dismissedAlerts.size && (
-        <div className="glass-card p-12 text-center">
-          <FiShield size={64} className="text-neon-green mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">All Clear!</h3>
-          <p className="text-gray-400">No active security alerts at this time.</p>
-        </div>
-      )}
-
-      {/* Dismissed Alerts Summary */}
-      {!loading && !error && dismissedAlerts.size > 0 && (
-        <div className="glass-card p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-400">
-              {dismissedAlerts.size} alert{dismissedAlerts.size > 1 ? 's' : ''} dismissed
-            </span>
-            <button
-              onClick={() => setDismissedAlerts(new Set())}
-              className="text-sm text-neon-blue hover:text-neon-blue/80 transition-colors"
-            >
-              Clear All
-            </button>
+            ))}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

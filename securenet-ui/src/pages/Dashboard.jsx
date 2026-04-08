@@ -1,32 +1,174 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { FiActivity, FiShield, FiAlertTriangle, FiCpu, FiLoader, FiRefreshCw } from 'react-icons/fi';
-import { getRequest } from '../utils/api';
+import { motion } from 'framer-motion';
+import { 
+  Shield, 
+  Activity, 
+  AlertTriangle, 
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Cpu,
+  Zap,
+  BarChart3,
+  RefreshCw
+} from 'lucide-react';
+import { StatCard } from '../components/Card';
+import { LineChart } from '../components/Charts/LineChart';
+import { PieChart } from '../components/Charts/PieChart';
+import { getRequest } from '../api';
 
 const Dashboard = () => {
-  const [animatedStats, setAnimatedStats] = useState({
-    totalTraffic: 0,
-    threatsDetected: 0,
-    activeAlerts: 0,
-    systemStatus: 0
-  });
   const [isLoading, setIsLoading] = useState(true);
-  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [backendData, setBackendData] = useState({
     logs: [],
     alerts: [],
-    traffic: []
+    traffic: [],
+    users: [],
+    system: {}
   });
 
-  // Fetch data from all endpoints
+  // Mock data for development
+  const mockData = {
+    stats: [
+      { 
+        title: 'Total Attacks', 
+        value: '2,847', 
+        change: '+12%', 
+        icon: AlertTriangle, 
+        color: 'danger',
+        trend: 'up'
+      },
+      { 
+        title: 'Active IPs', 
+        value: '156', 
+        change: '+5%', 
+        icon: Users, 
+        color: 'warning',
+        trend: 'up'
+      },
+      { 
+        title: 'Network Load', 
+        value: '67%', 
+        change: '-3%', 
+        icon: Activity, 
+        color: 'info',
+        trend: 'down'
+      },
+      { 
+        title: 'System Status', 
+        value: '98%', 
+        change: '+2%', 
+        icon: Shield, 
+        color: 'success',
+        trend: 'up'
+      },
+    ],
+    trafficData: [
+      { timestamp: '2024-01-15T00:00:00Z', inbound: 45, outbound: 38 },
+      { timestamp: '2024-01-15T04:00:00Z', inbound: 52, outbound: 45 },
+      { timestamp: '2024-01-15T08:00:00Z', inbound: 38, outbound: 32 },
+      { timestamp: '2024-01-15T12:00:00Z', inbound: 65, outbound: 58 },
+      { timestamp: '2024-01-15T16:00:00Z', inbound: 48, outbound: 42 },
+      { timestamp: '2024-01-15T20:00:00Z', inbound: 42, outbound: 38 },
+    ],
+    attackData: [
+      { name: 'DDoS', value: 45 },
+      { name: 'SQL Injection', value: 30 },
+      { name: 'XSS', value: 25 },
+      { name: 'Brute Force', value: 20 },
+      { name: 'Port Scan', value: 15 },
+    ],
+    protocolData: [
+      { name: 'HTTP', value: 45, percentage: 45 },
+      { name: 'HTTPS', value: 30, percentage: 30 },
+      { name: 'FTP', value: 15, percentage: 15 },
+      { name: 'SSH', value: 10, percentage: 10 },
+    ],
+    recentAlerts: [
+      {
+        id: 1,
+        type: 'DDoS',
+        source: '192.168.1.100',
+        message: 'Distributed Denial of Service attack detected from multiple sources',
+        severity: 'high',
+        timestamp: '2 minutes ago'
+      },
+      {
+        id: 2,
+        type: 'SQL Injection',
+        source: '10.0.0.1',
+        message: 'SQL injection attempt blocked in user authentication',
+        severity: 'medium',
+        timestamp: '15 minutes ago'
+      },
+      {
+        id: 3,
+        type: 'XSS',
+        source: '172.16.0.1',
+        message: 'Cross-site scripting attempt detected and blocked',
+        severity: 'medium',
+        timestamp: '1 hour ago'
+      },
+      {
+        id: 4,
+        type: 'Port Scan',
+        source: '203.0.113.42',
+        message: 'Port scanning activity detected on multiple ports',
+        severity: 'low',
+        timestamp: '2 hours ago'
+      },
+    ]
+  };
+
+  // Calculate threat level
+  const threatLevel = useMemo(() => {
+    const highThreats = mockData.recentAlerts.filter(alert => alert.severity === 'high').length;
+    const mediumThreats = mockData.recentAlerts.filter(alert => alert.severity === 'medium').length;
+    
+    if (highThreats > 0) return 'high';
+    if (mediumThreats > 2) return 'medium';
+    return 'low';
+  }, [mockData.recentAlerts]);
+
+  // Get threat level configuration
+  const getThreatLevelConfig = () => {
+    switch (threatLevel) {
+      case 'high':
+        return {
+          bg: 'bg-danger/10',
+          border: 'border-danger',
+          text: 'text-neon-red',
+          label: 'HIGH THREAT',
+          icon: AlertTriangle
+        };
+      case 'medium':
+        return {
+          bg: 'bg-warning/10',
+          border: 'border-warning',
+          text: 'text-neon-yellow',
+          label: 'MEDIUM THREAT',
+          icon: Shield
+        };
+      default:
+        return {
+          bg: 'bg-safe/10',
+          border: 'border-safe',
+          text: 'text-neon-green',
+          label: 'LOW THREAT',
+          icon: Shield
+        };
+    }
+  };
+
+  const threatConfig = getThreatLevelConfig();
+
+  // Fetch data from backend
   const fetchDashboardData = async () => {
     try {
-      setDataLoading(true);
+      setIsLoading(true);
       setError(null);
       
-      // Fetch data from all three endpoints
       const [logsResponse, alertsResponse, trafficResponse] = await Promise.all([
         getRequest('/logs'),
         getRequest('/alerts'),
@@ -40,404 +182,274 @@ const Dashboard = () => {
       setBackendData({ logs, alerts, traffic });
     } catch (err) {
       setError(err.message || 'Failed to fetch dashboard data');
-      console.error('Error fetching dashboard data:', err);
+      console.error('Dashboard data fetch error:', err);
     } finally {
-      setDataLoading(false);
+      setIsLoading(false);
     }
   };
 
-  // Calculate stats from backend data using useMemo
-  const targetStats = useMemo(() => ({
-    totalTraffic: backendData.traffic.length,
-    threatsDetected: backendData.logs.length,
-    activeAlerts: backendData.alerts.filter(alert => !alert.dismissed).length,
-    systemStatus: Math.max(0, 100 - (backendData.alerts.filter(alert => alert.risk === 'CRITICAL').length * 5))
-  }), [backendData]);
-
-  // Initial data fetch
   useEffect(() => {
     fetchDashboardData();
+    
+    // Set up real-time updates
+    const interval = setInterval(() => {
+      // Simulate real-time data updates
+      setBackendData(prev => ({
+        ...prev,
+        traffic: prev.traffic.map(item => ({
+          ...item,
+          inbound: Math.max(20, item.inbound + (Math.random() - 0.5) * 10),
+          outbound: Math.max(15, item.outbound + (Math.random() - 0.5) * 8)
+        }))
+      }));
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  // Animated number increment
-  useEffect(() => {
-    if (dataLoading) return;
-    
-    const duration = 2000; // 2 seconds
-    const steps = 60;
-    const interval = duration / steps;
-
-    const timer = setInterval(() => {
-      setAnimatedStats(prev => {
-        const newStats = {};
-        Object.keys(targetStats).forEach(key => {
-          const diff = targetStats[key] - prev[key];
-          if (Math.abs(diff) > 1) {
-            newStats[key] = prev[key] + Math.ceil(diff / 10);
-          } else {
-            newStats[key] = targetStats[key];
-          }
-        });
-        return newStats;
-      });
-    }, interval);
-
-    // Stop loading after animation
-    setTimeout(() => setIsLoading(false), duration);
-
-    return () => clearInterval(timer);
-  }, [targetStats, dataLoading]);
-
-  const stats = [
-    { 
-      title: 'Total Traffic', 
-      value: animatedStats.totalTraffic.toLocaleString(), 
-      unit: 'packets/sec',
-      icon: FiActivity,
-      color: 'neon-blue',
-      change: '+12%' 
-    },
-    { 
-      title: 'Threats Detected', 
-      value: animatedStats.threatsDetected, 
-      unit: 'today',
-      icon: FiShield,
-      color: 'neon-red', 
-      change: '+3' 
-    },
-    { 
-      title: 'Active Alerts', 
-      value: animatedStats.activeAlerts, 
-      unit: 'critical',
-      icon: FiAlertTriangle,
-      color: 'neon-yellow', 
-      change: '-1' 
-    },
-    { 
-      title: 'System Status', 
-      value: animatedStats.systemStatus, 
-      unit: '%',
-      icon: FiCpu,
-      color: 'neon-green', 
-      change: '+2%' 
-    },
-  ];
-
-  // Transform backend data for charts
-  const trafficData = useMemo(() => {
-    if (!backendData.traffic.length) {
-      // Default fallback data
-      return [
-        { time: '00:00', traffic: 1200, threats: 2 },
-        { time: '04:00', traffic: 1800, threats: 1 },
-        { time: '08:00', traffic: 2400, threats: 4 },
-        { time: '12:00', traffic: 2800, threats: 3 },
-        { time: '16:00', traffic: 2200, threats: 5 },
-        { time: '20:00', traffic: 1900, threats: 2 },
-        { time: '23:59', traffic: 2847, threats: 3 },
-      ];
-    }
-
-    // Group traffic by hour from backend data
-    const hourlyTraffic = {};
-    backendData.traffic.forEach(entry => {
-      const hour = new Date(entry.timestamp).getHours();
-      const timeLabel = `${hour.toString().padStart(2, '0')}:00`;
-      
-      if (!hourlyTraffic[timeLabel]) {
-        hourlyTraffic[timeLabel] = { traffic: 0, threats: 0 };
-      }
-      
-      hourlyTraffic[timeLabel].traffic += 1;
-      if (entry.status === 'blocked' || entry.status === 'flagged') {
-        hourlyTraffic[timeLabel].threats += 1;
-      }
-    });
-
-    // Convert to array format for Recharts
-    return Object.entries(hourlyTraffic).map(([time, data]) => ({
-      time,
-      traffic: data.traffic,
-      threats: data.threats
-    })).sort((a, b) => a.time.localeCompare(b.time));
-  }, [backendData.traffic]);
-
-  const attackData = useMemo(() => {
-    if (!backendData.logs.length) {
-      // Default fallback data
-      return [
-        { type: 'Malware', count: 45, severity: 8 },
-        { type: 'Phishing', count: 32, severity: 6 },
-        { type: 'DDoS', count: 28, severity: 9 },
-        { type: 'SQL Inject', count: 15, severity: 7 },
-        { type: 'XSS', count: 22, severity: 5 },
-      ];
-    }
-
-    // Group logs by attack type
-    const attackCounts = {};
-    backendData.logs.forEach(log => {
-      const attackType = log.attackType || 'Unknown';
-      if (!attackCounts[attackType]) {
-        attackCounts[attackType] = { count: 0, severity: 0 };
-      }
-      attackCounts[attackType].count += 1;
-      
-      // Calculate average severity
-      const severityMap = { 'LOW': 2, 'MEDIUM': 5, 'HIGH': 7, 'CRITICAL': 9 };
-      const severity = severityMap[log.riskLevel] || 5;
-      attackCounts[attackType].severity = (attackCounts[attackType].severity + severity) / 2;
-    });
-
-    // Convert to array format for Recharts
-    return Object.entries(attackCounts).map(([type, data]) => ({
-      name: type,
-      count: data.count,
-      severity: Math.round(data.severity)
-    })).sort((a, b) => b.count - a.count);
-  }, [backendData.logs]);
-
-  const recentAlerts = [
-    { id: 1, type: 'critical', message: 'Brute force attack detected from IP 192.168.1.105', time: '2 min ago', source: 'Firewall' },
-    { id: 2, type: 'warning', message: 'Unusual login pattern detected for user admin', time: '5 min ago', source: 'Auth System' },
-    { id: 3, type: 'info', message: 'System backup completed successfully', time: '15 min ago', source: 'Backup Service' },
-    { id: 4, type: 'critical', message: 'Malware signature blocked in real-time', time: '1 hour ago', source: 'Antivirus' },
-    { id: 5, type: 'warning', message: 'High CPU usage detected on server-03', time: '2 hours ago', source: 'Monitor' },
-  ];
-
-  const getAlertColor = (type) => {
-    switch (type) {
-      case 'critical': return 'text-neon-red border-neon-red bg-neon-red/10';
-      case 'warning': return 'text-neon-yellow border-neon-yellow bg-neon-yellow/10';
-      case 'info': return 'text-neon-blue border-neon-blue bg-neon-blue/10';
-      default: return 'text-gray-400 border-gray-400 bg-gray-400/10';
-    }
+  const handleRefresh = () => {
+    fetchDashboardData();
   };
 
-  const ShimmerEffect = () => (
-    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
-  );
-
   return (
-    <div className="p-6 space-y-6">
-      {/* Error Message */}
-      {error && (
-        <div className="p-4 bg-neon-red/10 border border-neon-red/30 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <FiAlertTriangle className="text-neon-red" size={20} />
-              <div>
-                <p className="text-neon-red font-semibold">Error Loading Dashboard</p>
-                <p className="text-gray-300 text-sm">{error}</p>
-              </div>
-            </div>
-            <button
-              onClick={fetchDashboardData}
-              className="px-3 py-1 bg-neon-red/20 border border-neon-red/30 rounded-lg 
-                         text-neon-red hover:bg-neon-red/30 transition-all duration-300 text-sm"
-            >
-              Retry
-            </button>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Security Dashboard
+          </h1>
+          <p className="text-gray-400">
+            Real-time network monitoring and threat detection
+          </p>
         </div>
-      )}
-
-      {/* Loading Skeleton */}
-      {dataLoading && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, index) => (
-            <div key={index} className="glass-card p-6 relative overflow-hidden">
-              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="h-4 w-24 bg-gray-600 rounded animate-pulse"></div>
-                <div className="h-8 w-8 bg-gray-600 rounded-full animate-pulse"></div>
-              </div>
-              <div className="h-8 w-16 bg-gray-600 rounded animate-pulse mb-2"></div>
-              <div className="h-4 w-20 bg-gray-600 rounded animate-pulse"></div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Stats Cards */}
-      {!dataLoading && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div 
-              key={index} 
-              className={`
-                glass-card p-6 relative overflow-hidden transition-all duration-300 
-                hover:scale-105 hover:shadow-2xl hover:shadow-${stat.color}/30
-                ${isLoading ? 'animate-pulse' : ''}
-              `}
-            >
-              {isLoading && <ShimmerEffect />}
-              
-              <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-lg bg-${stat.color}/20 border border-${stat.color}/30`}>
-                  <Icon size={20} className={`text-${stat.color}`} />
-                </div>
-                <span className={`text-xs font-semibold text-neon-green neon-text`}>
-                  {stat.change}
-                </span>
-              </div>
-              
-              <div>
-                <h3 className="text-sm text-gray-400 mb-1">{stat.title}</h3>
-                <div className="flex items-baseline space-x-2">
-                  <span className={`text-3xl font-bold neon-text text-${stat.color}`}>
-                    {stat.value}
-                  </span>
-                  <span className="text-xs text-gray-500">{stat.unit}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-        </div>
-      )}
-
-      {/* AI Detection Panel */}
-      {!dataLoading && !error && (
-        <div className="glass-card p-6 neon-border relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div className="w-4 h-4 bg-neon-green rounded-full animate-pulse"></div>
-                <div className="absolute inset-0 w-4 h-4 bg-neon-green rounded-full animate-ping"></div>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-neon-green neon-text">AI Detection: ACTIVE</h3>
-                <p className="text-sm text-gray-400">Advanced threat intelligence running</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-400">Accuracy</div>
-              <div className="text-2xl font-bold text-neon-green neon-text">99.7%</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Charts Section */}
-      {!dataLoading && !error && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Traffic Line Chart */}
-          <div className="glass-card p-6">
-            <h3 className="text-xl font-semibold mb-4 text-white">Network Traffic Overview</h3>
-          <div className="h-64 cyber-grid-bg rounded-lg p-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trafficData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 245, 255, 0.1)" />
-                <XAxis dataKey="time" stroke="#9ca3af" />
-                <YAxis stroke="#9ca3af" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(11, 15, 25, 0.9)', 
-                    border: '1px solid rgba(0, 245, 255, 0.3)',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="traffic" 
-                  stroke="#00F5FF" 
-                  strokeWidth={2}
-                  dot={{ fill: '#00F5FF', r: 4 }}
-                  activeDot={{ r: 6 }}
-                  name="Traffic (packets/sec)"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="threats" 
-                  stroke="#FF3B3B" 
-                  strokeWidth={2}
-                  dot={{ fill: '#FF3B3B', r: 4 }}
-                  activeDot={{ r: 6 }}
-                  name="Threats"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Attack Bar Chart */}
-        <div className="glass-card p-6">
-          <h3 className="text-xl font-semibold mb-4 text-white">Attack Types Distribution</h3>
-          <div className="h-64 cyber-grid-bg rounded-lg p-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={attackData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 245, 255, 0.1)" />
-                <XAxis dataKey="type" stroke="#9ca3af" />
-                <YAxis stroke="#9ca3af" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(11, 15, 25, 0.9)', 
-                    border: '1px solid rgba(0, 245, 255, 0.3)',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Legend />
-                <Bar 
-                  dataKey="count" 
-                  fill="#22FF88" 
-                  name="Occurrences"
-                  radius={[8, 8, 0, 0]}
-                />
-                <Bar 
-                  dataKey="severity" 
-                  fill="#FFC857" 
-                  name="Severity (1-10)"
-                  radius={[8, 8, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleRefresh}
+          className="flex items-center space-x-2 p-3 glass-card rounded-lg hover:bg-white/10 transition-all"
+        >
+          <RefreshCw size={18} className="text-neon-blue" />
+          <span className="text-sm text-gray-300">Refresh</span>
+        </motion.button>
       </div>
 
-      {/* Recent Alerts */}
-      {!dataLoading && !error && (
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-white">Recent Alerts</h3>
-            <button className="text-sm text-neon-blue hover:text-neon-blue/80 transition-colors">
-              View All →
-            </button>
+      {/* Threat Level Indicator */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className={`glass-card p-6 border-2 ${threatConfig.bg} ${threatConfig.border}`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <motion.div
+              animate={{ 
+                scale: [1, 1.1, 1],
+                opacity: [1, 0.8, 1]
+              }}
+              transition={{ 
+                duration: 2,
+                repeat: Infinity,
+                ease: 'easeInOut'
+              }}
+              className={`w-12 h-12 rounded-full flex items-center justify-center ${threatConfig.bg} ${threatConfig.border}`}
+            >
+              <threatConfig.icon 
+                size={24} 
+                className={threatConfig.text} 
+              />
+            </motion.div>
+            
+            <div>
+              <h3 className={`text-lg font-semibold ${threatConfig.text} mb-1`}>
+                {threatConfig.label}
+              </h3>
+              <p className="text-sm text-gray-400">
+                {threatLevel === 'high' && 'Immediate action required'}
+                {threatLevel === 'medium' && 'Monitor closely'}
+                {threatLevel === 'low' && 'System operating normally'}
+              </p>
+            </div>
           </div>
           
-          <div className="space-y-2">
-            {recentAlerts.map((alert) => (
-            <div 
-              key={alert.id} 
-              className={`
-                p-4 rounded-lg border transition-all duration-300 cursor-pointer
-                hover:bg-white/5 hover:scale-[1.02] hover:shadow-lg
-                ${getAlertColor(alert.type)}
-              `}
+          <div className="text-right">
+            <div className={`text-2xl font-bold ${threatConfig.text} neon-text`}>
+              {mockData.recentAlerts.length}
+            </div>
+            <div className="text-xs text-gray-400">
+              Active Threats
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {mockData.stats.map((stat, index) => (
+          <StatCard
+            key={index}
+            {...stat}
+            loading={isLoading}
+            delay={index * 0.1}
+          />
+        ))}
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Traffic Chart */}
+        <LineChart
+          title="Network Traffic"
+          subtitle="Real-time traffic monitoring"
+          data={mockData.trafficData}
+          height={300}
+          lines={[
+            {
+              name: 'Inbound',
+              dataKey: 'inbound',
+              color: '#22ff88'
+            },
+            {
+              name: 'Outbound',
+              dataKey: 'outbound',
+              color: '#00f5ff'
+            }
+          ]}
+        />
+
+        {/* Attack Distribution */}
+        <PieChart
+          title="Attack Distribution"
+          subtitle="Security threats by type"
+          data={mockData.attackData}
+          height={300}
+          colors={['#ff3b3b', '#ffc857', '#00f5ff', '#22ff88']}
+        />
+      </div>
+
+      {/* Recent Alerts Summary */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="glass-card p-6"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-semibold text-white">
+            Recent Alerts
+          </h3>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-neon-red rounded-full animate-pulse"></div>
+            <span className="text-sm text-neon-red font-medium">
+              {mockData.recentAlerts.filter(a => a.severity === 'high').length} Critical
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {mockData.recentAlerts.slice(0, 5).map((alert, index) => (
+            <motion.div
+              key={alert.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              className={`p-4 rounded-lg border cursor-pointer transition-all duration-300 hover:bg-white/5 ${
+                alert.severity === 'high' ? 'bg-danger/10 border-danger' :
+                alert.severity === 'medium' ? 'bg-warning/10 border-warning' :
+                'bg-safe/10 border-safe'
+              }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <div className={`w-2 h-2 rounded-full ${getAlertColor(alert.type).split(' ')[0].replace('text-', 'bg-')} animate-pulse`}></div>
-                    <span className="text-xs font-semibold uppercase tracking-wider">{alert.type}</span>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <AlertTriangle size={16} className={
+                      alert.severity === 'high' ? 'text-neon-red' :
+                      alert.severity === 'medium' ? 'text-neon-yellow' : 'text-neon-green'
+                    } />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                      {alert.type}
+                    </span>
                     <span className="text-xs text-gray-500">• {alert.source}</span>
                   </div>
-                  <p className="text-sm text-gray-300 mb-1">{alert.message}</p>
-                  <span className="text-xs text-gray-500">{alert.time}</span>
+                  <p className="text-sm text-gray-300 mb-1">
+                    {alert.message}
+                  </p>
+                  <span className="text-xs text-gray-500">
+                    {alert.timestamp}
+                  </span>
                 </div>
-                <button className="ml-4 text-gray-400 hover:text-white transition-colors">
-                  <FiAlertTriangle size={16} />
-                </button>
+                
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  alert.severity === 'high' ? 'bg-danger/20' :
+                  alert.severity === 'medium' ? 'bg-warning/20' : 'bg-safe/20'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    alert.severity === 'high' ? 'bg-neon-red' :
+                    alert.severity === 'medium' ? 'bg-neon-yellow' : 'bg-neon-green'
+                  } animate-pulse`}></div>
+                </div>
               </div>
-            </div>
+            </motion.div>
           ))}
+        </div>
+
+        <div className="mt-4 text-center">
+          <button className="btn-secondary">
+            View All Alerts
+          </button>
+        </div>
+      </motion.div>
+
+      {/* System Status */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="glass-card p-6"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-semibold text-white">
+            System Status
+          </h3>
+          <div className="flex items-center space-x-2">
+            <Cpu size={20} className="text-neon-green" />
+            <span className="text-sm text-neon-green font-medium">
+              All Systems Operational
+            </span>
           </div>
         </div>
-      )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-safe/10 rounded-lg border border-safe/30">
+            <div className="text-2xl font-bold text-neon-green mb-1">
+              99.9%
+            </div>
+            <div className="text-sm text-gray-400">
+              Uptime
+            </div>
+          </div>
+          
+          <div className="text-center p-4 bg-info/10 rounded-lg border border-info/30">
+            <div className="text-2xl font-bold text-neon-blue mb-1">
+              150ms
+            </div>
+            <div className="text-sm text-gray-400">
+              Response Time
+            </div>
+          </div>
+          
+          <div className="text-center p-4 bg-warning/10 rounded-lg border border-warning/30">
+            <div className="text-2xl font-bold text-neon-yellow mb-1">
+              2.8TB
+            </div>
+            <div className="text-sm text-gray-400">
+              Data Processed
+            </div>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 };
