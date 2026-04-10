@@ -1,0 +1,174 @@
+.navbar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  padding: 15px 30px;
+  gap: 20px;
+  background: rgba(10, 15, 30, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0,255,255,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* HAMBURGER BASE */
+.hamburger {
+  width: 30px;
+  height: 22px;
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  z-index: 1100;
+}
+
+.hamburger span {
+  display: block;
+  height: 3px;
+  width: 100%;
+  background: #00f5ff;
+  border-radius: 5px;
+  transition: 0.3s ease;
+  box-shadow: 0 0 8px #00f5ff;
+}
+
+/* SHOW ONLY ON MOBILE */
+@media (max-width: 768px) {
+  .hamburger {
+    display: flex;
+  }
+
+  .nav-links {
+    display: none !important;
+  }
+  
+  .nav-right {
+    display: none;
+  }
+  
+  .navbar {
+    grid-template-columns: auto auto;
+  }
+}
+
+/* ANIMATION - MAIN MAGIC 🔥 */
+.hamburger.active span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* OPTIONAL GLOW HOVER */
+.hamburger:hover span {
+  box-shadow: 0 0 12px #00f5ff;
+}
+
+/* Logo */
+.logo {
+  font-size: 20px;
+  font-weight: bold;
+  color: #00f5ff;
+}
+
+.nav-links {
+  display: flex;
+  gap: 25px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.nav-links::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-links span {
+  white-space: nowrap;
+  font-size: 14px;
+  color: #8b9bb4;
+  cursor: pointer;
+  position: relative;
+  transition: 0.3s;
+}
+
+.nav-links span:hover {
+  color: #00f5ff;
+}
+
+/* HOVER EFFECT */
+.nav-links span:hover {
+  color: #00f5ff;
+}
+
+/* UNDERLINE ANIMATION */
+.nav-links span::after {
+  content: "";
+  position: absolute;
+  width: 0%;
+  height: 2px;
+  background: #00f5ff;
+  left: 0;
+  bottom: -5px;
+  transition: 0.3s;
+}
+
+.nav-links span:hover::after {
+  width: 100%;
+}
+
+/* RIGHT SECTION */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  justify-content: flex-end;
+}
+
+/* USER INFO */
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.user-name {
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.user-role {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.user-role.admin {
+  color: #00ff9c;
+}
+
+.user-role.user {
+  color: #ff4d4d;
+}
+
+.logout-btn {
+  padding: 6px 12px;
+  border: 1px solid #00f5ff;
+  background: transparent;
+  color: #00f5ff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: #00f5ff;
+  color: black;
+}

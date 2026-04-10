@@ -1,0 +1,263 @@
+/* Cyber Theme Color System for SecureNet IDS */
+
+/* Primary Color Palette */
+:root {
+  /* Primary Accent Colors */
+  --accent: #00f5ff;
+  --accent-hover: #00d4ff;
+  --accent-light: rgba(0, 245, 255, 0.1);
+  --accent-medium: rgba(0, 245, 255, 0.3);
+  --accent-strong: rgba(0, 245, 255, 0.6);
+  --accent-soft: rgba(0, 245, 255, 0.15);
+  
+  /* Secondary Accent Colors */
+  --accent-red: #ff3366;
+  --accent-red-hover: #ff1a4d;
+  --accent-red-light: rgba(255, 51, 102, 0.1);
+  --accent-red-medium: rgba(255, 51, 102, 0.3);
+  --accent-red-strong: rgba(255, 51, 102, 0.6);
+  --accent-red-soft: rgba(255, 51, 102, 0.15);
+  
+  --accent-orange: #ffaa00;
+  --accent-orange-hover: #ff8800;
+  --accent-orange-light: rgba(255, 170, 0, 0.1);
+  --accent-orange-medium: rgba(255, 170, 0, 0.3);
+  --accent-orange-strong: rgba(255, 170, 0, 0.6);
+  --accent-orange-soft: rgba(255, 170, 0, 0.15);
+  
+  --accent-green: #00ff00;
+  --accent-green-hover: #00cc00;
+  --accent-green-light: rgba(0, 255, 0, 0.1);
+  --accent-green-medium: rgba(0, 255, 0, 0.3);
+  --accent-green-strong: rgba(0, 255, 0, 0.6);
+  --accent-green-soft: rgba(0, 255, 0, 0.15);
+  
+  --accent-purple: #ff00ff;
+  --accent-purple-hover: #cc00cc;
+  --accent-purple-light: rgba(255, 0, 255, 0.1);
+  --accent-purple-medium: rgba(255, 0, 255, 0.3);
+  --accent-purple-strong: rgba(255, 0, 255, 0.6);
+  --accent-purple-soft: rgba(255, 0, 255, 0.15);
+  
+  /* Base Colors */
+  --background: #0a0a0a;
+  --background-light: #1a1a1a;
+  --background-dark: #000000;
+  --surface: #1a1a1a;
+  --surface-light: #2a2a2a;
+  --surface-dark: #0f0f0f;
+  
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: #b3b3b3;
+  --text-tertiary: #808080;
+  --text-muted: #666666;
+  --text-inverse: #000000;
+  
+  /* Border Colors */
+  --border: rgba(255, 255, 255, 0.1);
+  --border-light: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --border-accent: rgba(0, 245, 255, 0.3);
+  --border-danger: rgba(255, 51, 102, 0.3);
+  --border-warning: rgba(255, 170, 0, 0.3);
+  --border-success: rgba(0, 255, 0, 0.3);
+  
+  /* Glass Effect Colors */
+  --glass-bg: rgba(0, 0, 0, 0.4);
+  --glass-bg-light: rgba(0, 0, 0, 0.2);
+  --glass-bg-dark: rgba(0, 0, 0, 0.6);
+  --glass-blur: blur(10px);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  
+  /* Shadow Colors */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.3);
+  --shadow-accent: 0 0 20px rgba(0, 245, 255, 0.3);
+  --shadow-danger: 0 0 20px rgba(255, 51, 102, 0.3);
+  --shadow-warning: 0 0 20px rgba(255, 170, 0, 0.3);
+  --shadow-success: 0 0 20px rgba(0, 255, 0, 0.3);
+  
+  /* Status Colors */
+  --status-success: var(--accent-green);
+  --status-warning: var(--accent-orange);
+  --status-danger: var(--accent-red);
+  --status-info: var(--accent);
+  --status-neutral: var(--text-secondary);
+  
+  /* Severity Colors */
+  --severity-low: var(--accent-green);
+  --severity-medium: var(--accent-orange);
+  --severity-high: var(--accent-red);
+  --severity-critical: var(--accent-purple);
+  
+  /* Gradient Colors */
+  --gradient-primary: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  --gradient-danger: linear-gradient(135deg, var(--accent-red) 0%, var(--accent-red-hover) 100%);
+  --gradient-warning: linear-gradient(135deg, var(--accent-orange) 0%, var(--accent-orange-hover) 100%);
+  --gradient-success: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-green-hover) 100%);
+  --gradient-dark: linear-gradient(135deg, var(--background) 0%, var(--surface) 100%);
+  --gradient-glass: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%);
+  
+  /* Animation Colors */
+  --glow-cyan: 0 0 20px rgba(0, 245, 255, 0.5);
+  --glow-red: 0 0 20px rgba(255, 51, 102, 0.5);
+  --glow-orange: 0 0 20px rgba(255, 170, 0, 0.5);
+  --glow-green: 0 0 20px rgba(0, 255, 0, 0.5);
+  --glow-purple: 0 0 20px rgba(255, 0, 255, 0.5);
+}
+
+/* Dark Theme Overrides */
+[data-theme="dark"] {
+  --background: #000000;
+  --surface: #0f0f0f;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --border: rgba(255, 255, 255, 0.15);
+}
+
+/* High Contrast Theme */
+[data-theme="high-contrast"] {
+  --background: #000000;
+  --surface: #000000;
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
+  --border: rgba(255, 255, 255, 0.3);
+  --accent: #00ffff;
+  --accent-red: #ff0000;
+  --accent-orange: #ff8800;
+  --accent-green: #00ff00;
+  --accent-purple: #ff00ff;
+}
+
+/* Terminal Theme */
+[data-theme="terminal"] {
+  --background: #000000;
+  --surface: #000000;
+  --text-primary: #00ff00;
+  --text-secondary: #00cc00;
+  --border: #003300;
+  --accent: #00ff00;
+  --accent-light: rgba(0, 255, 0, 0.1);
+  --accent-medium: rgba(0, 255, 0, 0.3);
+  --accent-strong: rgba(0, 255, 0, 0.6);
+}
+
+/* Color Utility Classes */
+.bg-accent { background-color: var(--accent); }
+.bg-accent-light { background-color: var(--accent-light); }
+.bg-accent-medium { background-color: var(--accent-medium); }
+.bg-accent-strong { background-color: var(--accent-strong); }
+
+.bg-danger { background-color: var(--accent-red); }
+.bg-warning { background-color: var(--accent-orange); }
+.bg-success { background-color: var(--accent-green); }
+.bg-info { background-color: var(--accent); }
+
+.text-accent { color: var(--accent); }
+.text-danger { color: var(--accent-red); }
+.text-warning { color: var(--accent-orange); }
+.text-success { color: var(--accent-green); }
+.text-info { color: var(--accent); }
+
+.border-accent { border-color: var(--accent); }
+.border-danger { border-color: var(--accent-red); }
+.border-warning { border-color: var(--accent-orange); }
+.border-success { border-color: var(--accent-green); }
+.border-info { border-color: var(--accent); }
+
+.shadow-accent { box-shadow: var(--shadow-accent); }
+.shadow-danger { box-shadow: var(--shadow-danger); }
+.shadow-warning { box-shadow: var(--shadow-warning); }
+.shadow-success { box-shadow: var(--shadow-success); }
+
+/* Gradient Backgrounds */
+.gradient-primary { background: var(--gradient-primary); }
+.gradient-danger { background: var(--gradient-danger); }
+.gradient-warning { background: var(--gradient-warning); }
+.gradient-success { background: var(--gradient-success); }
+.gradient-dark { background: var(--gradient-dark); }
+.gradient-glass { background: var(--gradient-glass); }
+
+/* Glow Effects */
+.glow-cyan { box-shadow: var(--glow-cyan); }
+.glow-red { box-shadow: var(--glow-red); }
+.glow-orange { box-shadow: var(--glow-orange); }
+.glow-green { box-shadow: var(--glow-green); }
+.glow-purple { box-shadow: var(--glow-purple); }
+
+/* Text Glow Effects */
+.text-glow-cyan { text-shadow: var(--glow-cyan); }
+.text-glow-red { text-shadow: var(--glow-red); }
+.text-glow-orange { text-shadow: var(--glow-orange); }
+.text-glow-green { text-shadow: var(--glow-green); }
+.text-glow-purple { text-shadow: var(--glow-purple); }
+
+/* Animation Classes */
+.pulse-accent {
+  animation: pulseAccent 2s ease-in-out infinite;
+}
+
+@keyframes pulseAccent {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 245, 255, 0.6);
+  }
+}
+
+.pulse-danger {
+  animation: pulseDanger 2s ease-in-out infinite;
+}
+
+@keyframes pulseDanger {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 51, 102, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 51, 102, 0.6);
+  }
+}
+
+/* Responsive Color Adjustments */
+@media (max-width: 768px) {
+  :root {
+    --accent: #00e5ff;
+    --accent-red: #ff2244;
+    --accent-orange: #ff9900;
+    --accent-green: #00ee00;
+    --accent-purple: #ee00ee;
+  }
+}
+
+/* Print Styles */
+@media print {
+  :root {
+    --background: #ffffff;
+    --surface: #ffffff;
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --border: #cccccc;
+    --accent: #000000;
+  }
+  
+  .glow-cyan,
+  .glow-red,
+  .glow-orange,
+  .glow-green,
+  .glow-purple {
+    box-shadow: none;
+  }
+  
+  .text-glow-cyan,
+  .text-glow-red,
+  .text-glow-orange,
+  .text-glow-green,
+  .text-glow-purple {
+    text-shadow: none;
+  }
+}

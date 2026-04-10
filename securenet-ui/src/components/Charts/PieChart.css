@@ -1,0 +1,119 @@
+.pie-chart-container {
+  position: relative;
+  width: 100%;
+  padding: 20px;
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.pie-chart-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, rgba(255, 51, 102, 0.05), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pie-chart-container canvas {
+  filter: drop-shadow(0 0 25px rgba(255, 51, 102, 0.5));
+  position: relative;
+  z-index: 2;
+  transition: all var(--transition-normal);
+  animation: pieGlow 4s ease-in-out infinite alternate;
+}
+
+@keyframes pieGlow {
+  0% {
+    filter: drop-shadow(0 0 25px rgba(255, 51, 102, 0.5));
+  }
+  100% {
+    filter: drop-shadow(0 0 35px rgba(255, 51, 102, 0.8));
+  }
+}
+
+.pie-chart-container:hover canvas {
+  filter: drop-shadow(0 0 35px rgba(255, 51, 102, 0.8));
+  transform: scale(1.05);
+  animation: pieRotate 2s ease-in-out infinite;
+}
+
+@keyframes pieRotate {
+  0% {
+    transform: scale(1.05) rotate(0deg);
+  }
+  100% {
+    transform: scale(1.05) rotate(360deg);
+  }
+}
+
+/* Neon glow effect on hover */
+.pie-chart-container:hover {
+  border-color: #ff3366;
+  box-shadow: 0 8px 32px rgba(255, 51, 102, 0.2), 0 0 20px rgba(255, 51, 102, 0.1);
+}
+
+/* Custom legend styling */
+.pie-chart-container .chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pie-chart-container .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pie-chart-container .legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+}
+
+/* Animation for data updates */
+.pie-chart-container.updating {
+  animation: rotate 2s ease-in-out;
+}
+
+@keyframes rotate {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .pie-chart-container {
+    padding: 15px;
+  }
+  
+  .pie-chart-container canvas {
+    max-height: 250px !important;
+  }
+  
+  .pie-chart-container .chart-legend {
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+  }
+}

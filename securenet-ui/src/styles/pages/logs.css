@@ -1,0 +1,22 @@
+.terminal-logs-page {
+  padding: var(--spacing-xl);
+  min-height: 100vh;
+  background: #000;
+  font-family: 'Courier New', monospace;
+  color: #00ff00;
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-logs-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse at center, transparent 0%, rgba(0, 255, 0, 0.02) 100%);
+  pointer-events: none;
+  z-index: 1;
+}

@@ -1,0 +1,143 @@
+.animated-counter {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  position: relative;
+}
+
+.counter-value {
+  display: inline-block;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.animated-counter.animating .counter-value {
+  color: #00f5ff;
+  text-shadow: 0 0 10px rgba(0, 245, 255, 0.8);
+  animation: counterPulse 0.5s ease;
+}
+
+@keyframes counterPulse {
+  0% {
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(0, 245, 255, 0.8);
+  }
+  50% {
+    transform: scale(1.1);
+    text-shadow: 0 0 20px rgba(0, 245, 255, 1);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(0, 245, 255, 0.8);
+  }
+}
+
+/* Counter with different themes */
+.animated-counter.success .counter-value {
+  color: #00ff00;
+}
+
+.animated-counter.success.animating .counter-value {
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+  animation: successPulse 0.5s ease;
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+  }
+  50% {
+    transform: scale(1.1);
+    text-shadow: 0 0 20px rgba(0, 255, 0, 1);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+  }
+}
+
+.animated-counter.warning .counter-value {
+  color: #ffaa00;
+}
+
+.animated-counter.warning.animating .counter-value {
+  text-shadow: 0 0 10px rgba(255, 170, 0, 0.8);
+  animation: warningPulse 0.5s ease;
+}
+
+@keyframes warningPulse {
+  0% {
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(255, 170, 0, 0.8);
+  }
+  50% {
+    transform: scale(1.1);
+    text-shadow: 0 0 20px rgba(255, 170, 0, 1);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(255, 170, 0, 0.8);
+  }
+}
+
+.animated-counter.danger .counter-value {
+  color: #ff3366;
+}
+
+.animated-counter.danger.animating .counter-value {
+  text-shadow: 0 0 10px rgba(255, 51, 102, 0.8);
+  animation: dangerPulse 0.5s ease;
+}
+
+@keyframes dangerPulse {
+  0% {
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(255, 51, 102, 0.8);
+  }
+  50% {
+    transform: scale(1.1);
+    text-shadow: 0 0 20px rgba(255, 51, 102, 1);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: 0 0 10px rgba(255, 51, 102, 0.8);
+  }
+}
+
+/* Large counter variant */
+.animated-counter.large {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.animated-counter.medium {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.animated-counter.small {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Compact counter */
+.animated-counter.compact {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Glowing effect */
+.animated-counter.glow .counter-value {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  0% {
+    text-shadow: 0 0 5px rgba(0, 245, 255, 0.5);
+  }
+  100% {
+    text-shadow: 0 0 15px rgba(0, 245, 255, 0.8);
+  }
+}

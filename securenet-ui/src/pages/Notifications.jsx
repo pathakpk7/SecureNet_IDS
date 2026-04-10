@@ -1,300 +1,310 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Bell, 
-  Shield, 
-  AlertTriangle, 
-  Info, 
-  CheckCircle, 
-  X,
-  Filter,
-  Trash2,
-  Settings,
-  Clock
-} from 'lucide-react';
+import React, { useState } from 'react';
+import Card from '../components/ui/Card';
+import '../styles/pages/notifications.css';
 
 const Notifications = () => {
+  const [selectedFilter, setSelectedFilter] = useState('all');
   const [notifications, setNotifications] = useState([
     {
       id: 1,
-      type: 'critical',
-      title: 'Critical Security Alert',
-      message: 'Multiple DDoS attacks detected from suspicious IP ranges',
-      timestamp: '2024-01-15 14:35:22',
+      type: 'alert',
+      title: 'High Severity Alert',
+      message: 'SQL injection attempt detected on login endpoint',
+      time: '2 minutes ago',
       read: false,
-      icon: AlertTriangle
+      priority: 'high'
     },
     {
       id: 2,
-      type: 'warning',
-      title: 'Unusual Login Activity',
-      message: 'Multiple failed login attempts detected for admin account',
-      timestamp: '2024-01-15 14:32:08',
+      type: 'system',
+      title: 'System Update',
+      message: 'Security definitions updated successfully',
+      time: '15 minutes ago',
       read: false,
-      icon: Shield
+      priority: 'medium'
     },
     {
       id: 3,
-      type: 'success',
-      title: 'System Update Complete',
-      message: 'Security patches have been successfully applied',
-      timestamp: '2024-01-15 14:30:45',
+      type: 'alert',
+      title: 'Suspicious Activity',
+      message: 'Multiple failed login attempts from IP 203.0.113.45',
+      time: '1 hour ago',
       read: true,
-      icon: CheckCircle
+      priority: 'high'
     },
     {
       id: 4,
       type: 'info',
-      title: 'Scheduled Maintenance',
-      message: 'System maintenance scheduled for tonight at 2:00 AM',
-      timestamp: '2024-01-15 14:28:15',
+      title: 'Report Generated',
+      message: 'Weekly security report is ready for download',
+      time: '2 hours ago',
       read: true,
-      icon: Info
+      priority: 'low'
     },
     {
       id: 5,
-      type: 'warning',
-      title: 'High CPU Usage',
-      message: 'Detection system CPU usage exceeding 85% threshold',
-      timestamp: '2024-01-15 14:25:30',
-      read: false,
-      icon: AlertTriangle
+      type: 'alert',
+      title: 'Network Anomaly',
+      message: 'Unusual traffic pattern detected in subnet 192.168.1.0/24',
+      time: '3 hours ago',
+      read: true,
+      priority: 'medium'
+    },
+    {
+      id: 6,
+      type: 'system',
+      title: 'Backup Completed',
+      message: 'Daily system backup completed successfully',
+      time: '4 hours ago',
+      read: true,
+      priority: 'low'
+    },
+    {
+      id: 7,
+      type: 'alert',
+      title: 'Malware Detected',
+      message: 'Suspicious file quarantined from user upload',
+      time: '5 hours ago',
+      read: true,
+      priority: 'high'
+    },
+    {
+      id: 8,
+      type: 'info',
+      title: 'User Activity',
+      message: 'New user registration: alice.wilson@example.com',
+      time: '6 hours ago',
+      read: true,
+      priority: 'low'
     }
   ]);
 
-  const [filter, setFilter] = useState('all');
-  const [showSettings, setShowSettings] = useState(false);
-
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'critical': return 'text-red-400 bg-red-500/10 border-red-500/30';
-      case 'warning': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
-      case 'success': return 'text-green-400 bg-green-500/10 border-green-500/30';
-      case 'info': return 'text-blue-400 bg-blue-500/10 border-blue-500/30';
-      default: return 'text-gray-400 bg-gray-500/10 border-gray-500/30';
-    }
-  };
-
-  const getIconColor = (type) => {
-    switch (type) {
-      case 'critical': return 'text-red-400';
-      case 'warning': return 'text-yellow-400';
-      case 'success': return 'text-green-400';
-      case 'info': return 'text-blue-400';
-      default: return 'text-gray-400';
-    }
-  };
-
-  const markAsRead = (id) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
-    );
-  };
-
-  const deleteNotification = (id) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, read: true }))
-    );
-  };
-
-  const clearAll = () => {
-    setNotifications([]);
-  };
-
-  const filteredNotifications = notifications.filter(notif => {
-    if (filter === 'all') return true;
-    if (filter === 'unread') return !notif.read;
-    return notif.type === filter;
+  const filteredNotifications = notifications.filter(notification => {
+    if (selectedFilter === 'all') return true;
+    if (selectedFilter === 'unread') return !notification.read;
+    return notification.type === selectedFilter;
   });
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  return (
-    <div className="min-h-screen bg-slate-900 p-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="mb-8"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-2">Notifications</h1>
-            <p className="text-gray-400">Security alerts and system updates</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {unreadCount > 0 && (
-              <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm">
-                {unreadCount} unread
-              </span>
-            )}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-2 glass-card rounded-lg hover:bg-white/20 transition-colors"
-            >
-              <Settings className="w-5 h-5 text-blue-400" />
-            </motion.button>
-          </div>
-        </div>
-      </motion.div>
+  const markAsRead = (id) => {
+    setNotifications(notifications.map(n => 
+      n.id === id ? { ...n, read: true } : n
+    ));
+  };
 
-      {/* Settings Panel */}
-      {showSettings && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="glass-card p-6 mb-6"
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-white">Quick Actions</h3>
-            <button
-              onClick={() => setShowSettings(false)}
-              className="text-gray-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
+  const markAllAsRead = () => {
+    setNotifications(notifications.map(n => ({ ...n, read: true })));
+  };
+
+  const deleteNotification = (id) => {
+    setNotifications(notifications.filter(n => n.id !== id));
+  };
+
+  const getNotificationIcon = (type) => {
+    switch(type) {
+      case 'alert': return 'warning';
+      case 'system': return 'settings';
+      case 'info': return 'info';
+      default: return 'notifications';
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch(priority) {
+      case 'high': return '#ff3366';
+      case 'medium': return '#ffaa00';
+      case 'low': return '#00f5ff';
+      default: return '#666';
+    }
+  };
+
+  const getTypeColor = (type) => {
+    switch(type) {
+      case 'alert': return '#ff3366';
+      case 'system': return '#00f5ff';
+      case 'info': return '#666';
+      default: return '#666';
+    }
+  };
+
+  return (
+    <div className="notifications-page fade-in">
+      <div className="page-header">
+        <h1 className="page-title">Notifications</h1>
+        <p className="page-subtitle">Real-time alerts and system notifications</p>
+      </div>
+
+      <div className="notifications-stats">
+        <Card className="stat-card">
+          <div className="stat-content">
+            <span className="stat-value">{notifications.length}</span>
+            <span className="stat-label">Total</span>
           </div>
-          <div className="flex gap-3 mt-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={markAllAsRead}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-500/50 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors"
-            >
-              <CheckCircle className="w-4 h-4" />
-              Mark All Read
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={clearAll}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/50 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              Clear All
-            </motion.button>
+        </Card>
+        <Card className="stat-card">
+          <div className="stat-content">
+            <span className="stat-value">{unreadCount}</span>
+            <span className="stat-label">Unread</span>
           </div>
-        </motion.div>
+        </Card>
+        <Card className="stat-card">
+          <div className="stat-content">
+            <span className="stat-value">{notifications.filter(n => n.priority === 'high').length}</span>
+            <span className="stat-label">High Priority</span>
+          </div>
+        </Card>
+        <Card className="stat-card">
+          <div className="stat-content">
+            <span className="stat-value">{notifications.filter(n => n.type === 'alert').length}</span>
+            <span className="stat-label">Alerts</span>
+          </div>
+        </Card>
+      </div>
+
+      <div className="notifications-controls">
+        <div className="filter-tabs">
+          <button 
+            className={`filter-tab ${selectedFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setSelectedFilter('all')}
+          >
+            All Notifications
+          </button>
+          <button 
+            className={`filter-tab ${selectedFilter === 'unread' ? 'active' : ''}`}
+            onClick={() => setSelectedFilter('unread')}
+          >
+            Unread ({unreadCount})
+          </button>
+          <button 
+            className={`filter-tab ${selectedFilter === 'alert' ? 'active' : ''}`}
+            onClick={() => setSelectedFilter('alert')}
+          >
+            Alerts
+          </button>
+          <button 
+            className={`filter-tab ${selectedFilter === 'system' ? 'active' : ''}`}
+            onClick={() => setSelectedFilter('system')}
+          >
+            System
+          </button>
+          <button 
+            className={`filter-tab ${selectedFilter === 'info' ? 'active' : ''}`}
+            onClick={() => setSelectedFilter('info')}
+          >
+            Info
+          </button>
+        </div>
+        <div className="control-actions">
+          <button className="btn btn-outline" onClick={markAllAsRead}>
+            Mark All as Read
+          </button>
+          <button className="btn btn-outline">Clear All</button>
+        </div>
+      </div>
+
+      <div className="notifications-list">
+        {filteredNotifications.map((notification) => (
+          <Card 
+            key={notification.id} 
+            className={`notification-item ${!notification.read ? 'unread' : ''}`}
+          >
+            <div className="notification-content">
+              <div className="notification-header">
+                <div className="notification-icon" style={{ color: getTypeColor(notification.type) }}>
+                  {getNotificationIcon(notification.type)}
+                </div>
+                <div className="notification-info">
+                  <h4 className="notification-title">{notification.title}</h4>
+                  <p className="notification-message">{notification.message}</p>
+                </div>
+                <div className="notification-meta">
+                  <span 
+                    className="priority-badge"
+                    style={{ backgroundColor: getPriorityColor(notification.priority) }}
+                  >
+                    {notification.priority.toUpperCase()}
+                  </span>
+                  <span className="notification-time">{notification.time}</span>
+                </div>
+              </div>
+              <div className="notification-actions">
+                {!notification.read && (
+                  <button 
+                    className="btn btn-sm btn-outline"
+                    onClick={() => markAsRead(notification.id)}
+                  >
+                    Mark as Read
+                  </button>
+                )}
+                <button className="btn btn-sm btn-outline">View Details</button>
+                <button 
+                  className="btn btn-sm btn-outline"
+                  onClick={() => deleteNotification(notification.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {filteredNotifications.length === 0 && (
+        <Card className="empty-state">
+          <div className="empty-content">
+            <span className="empty-icon">notifications_none</span>
+            <h3>No notifications</h3>
+            <p>No notifications match the current filter criteria.</p>
+          </div>
+        </Card>
       )}
 
-      {/* Filter Tabs */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        className="glass-card p-6 mb-6"
-      >
-        <div className="flex items-center gap-4">
-          <Filter className="w-5 h-5 text-blue-400" />
-          <div className="flex gap-2">
-            {['all', 'unread', 'critical', 'warning', 'success', 'info'].map((filterType) => (
-              <motion.button
-                key={filterType}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setFilter(filterType)}
-                className={`px-4 py-2 rounded-lg capitalize transition-colors ${
-                  filter === filterType
-                    ? 'bg-blue-500/30 text-blue-400 border border-blue-500/50'
-                    : 'bg-white/10 text-gray-400 hover:bg-white/20'
-                }`}
-              >
-                {filterType}
-              </motion.button>
-            ))}
+      <Card className="notification-settings">
+        <h3>Notification Settings</h3>
+        <div className="settings-grid">
+          <div className="setting-item">
+            <div className="setting-info">
+              <span className="setting-name">Email Notifications</span>
+              <span className="setting-description">Receive notifications via email</span>
+            </div>
+            <label className="toggle-switch">
+              <input type="checkbox" defaultChecked />
+              <span className="slider"></span>
+            </label>
+          </div>
+          <div className="setting-item">
+            <div className="setting-info">
+              <span className="setting-name">Push Notifications</span>
+              <span className="setting-description">Receive push notifications in browser</span>
+            </div>
+            <label className="toggle-switch">
+              <input type="checkbox" defaultChecked />
+              <span className="slider"></span>
+            </label>
+          </div>
+          <div className="setting-item">
+            <div className="setting-info">
+              <span className="setting-name">High Priority Only</span>
+              <span className="setting-description">Only show high priority notifications</span>
+            </div>
+            <label className="toggle-switch">
+              <input type="checkbox" />
+              <span className="slider"></span>
+            </label>
+          </div>
+          <div className="setting-item">
+            <div className="setting-info">
+              <span className="setting-name">Sound Alerts</span>
+              <span className="setting-description">Play sound for new notifications</span>
+            </div>
+            <label className="toggle-switch">
+              <input type="checkbox" defaultChecked />
+              <span className="slider"></span>
+            </label>
           </div>
         </div>
-      </motion.div>
-
-      {/* Notifications List */}
-      <div className="space-y-4">
-        {filteredNotifications.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="glass-card p-12 text-center"
-          >
-            <Bell className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No notifications</h3>
-            <p className="text-gray-400">
-              {filter === 'unread' ? 'All notifications have been read' : 'No notifications match the current filter'}
-            </p>
-          </motion.div>
-        ) : (
-          filteredNotifications.map((notification, index) => {
-            const Icon = notification.icon;
-            return (
-              <motion.div
-                key={notification.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-                className={`glass-card p-6 border-l-4 ${
-                  notification.read ? 'opacity-75' : ''
-                } ${getTypeColor(notification.type)}`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className={`p-2 rounded-lg ${getIconColor(notification.type)}`}>
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className={`text-lg font-semibold ${notification.read ? 'text-gray-300' : 'text-white'}`}>
-                          {notification.title}
-                        </h3>
-                        {!notification.read && (
-                          <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-                        )}
-                      </div>
-                      <p className="text-gray-300 mb-2">{notification.message}</p>
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {notification.timestamp}
-                        </div>
-                        <span className="capitalize">{notification.type}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {!notification.read && (
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => markAsRead(notification.id)}
-                        className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
-                        title="Mark as read"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                      </motion.button>
-                    )}
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => deleteNotification(notification.id)}
-                      className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <X className="w-4 h-4" />
-                    </motion.button>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })
-        )}
-      </div>
+      </Card>
     </div>
   );
 };

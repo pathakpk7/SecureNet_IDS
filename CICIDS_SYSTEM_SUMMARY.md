@@ -47,17 +47,18 @@ A comprehensive real-time intrusion detection system built with FastAPI, trained
 
 ## 📡 API Endpoints
 
-| Method | Endpoint | Description |
-|---------|------------|-------------|
-| GET | `/` | Root endpoint |
-| GET | `/status` | System status and statistics |
-| POST | `/start` | Start packet monitoring |
-| POST | `/stop` | Stop packet monitoring |
-| GET | `/logs` | Recent detection logs |
-| GET | `/alerts` | Recent security alerts |
-| GET | `/stats` | System statistics |
-| WS | `/ws` | Real-time WebSocket updates |
-| GET | `/health` | Health check endpoint |
+| Method| Endpoint  | Description                  |
+|-------|-----------|------------------------------|
+| GET   | `/`       | Root endpoint                |
+| GET   | `/status` | System status and statistics |
+| POST  | `/start`  | Start packet monitoring      |
+| POST  | `/stop`   | Stop packet monitoring       |
+| GET   | `/logs`   | Recent detection logs        |
+| GET   | `/alerts` | Recent security alerts       |
+| GET   | `/stats`  | System statistics            |
+| WS    | `/ws`     | Real-time WebSocket updates  |
+| GET   | `/health` | Health check endpoint        |
+____________________________________________________
 
 ## 🔧 CICIDS2017 Features
 

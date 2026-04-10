@@ -1,350 +1,342 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Bell, Shield, Database, Key, Eye, EyeOff, Save } from 'lucide-react';
+import Card from '../components/ui/Card';
+import '../styles/pages/settings.css';
 
 const Settings = () => {
-  const [activeTab, setActiveTab] = useState('general');
   const [settings, setSettings] = useState({
-    notifications: {
-      email: true,
-      push: false,
-      sms: false,
-      desktop: true,
-    },
-    security: {
-      twoFactor: false,
-      sessionTimeout: 30,
-      ipWhitelist: ['192.168.1.0/24', '10.0.0.0/8'],
-    },
-    api: {
-      virusTotal: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-      abuseIPDB: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-      urlScan: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    },
-    appearance: {
-      theme: 'dark',
-      language: 'en',
-      compactMode: false,
-    }
+    darkMode: false,
+    emailAlerts: true,
+    pushNotifications: true,
+    autoRefresh: true,
+    soundAlerts: false,
+    logLevel: 'info',
+    sessionTimeout: 30,
+    dataRetention: 90,
+    apiRateLimit: 1000,
+    twoFactorAuth: false,
+    passwordExpiry: 90,
+    backupFrequency: 'daily',
+    maintenanceMode: false,
+    debugMode: false
   });
-  const [showApiKeys, setShowApiKeys] = useState(false);
 
-  const tabs = [
-    { id: 'general', name: 'General', icon: SettingsIcon },
-    { id: 'notifications', name: 'Notifications', icon: Bell },
-    { id: 'security', name: 'Security', icon: Shield },
-    { id: 'api', name: 'API Keys', icon: Key },
-  ];
-
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
-  };
-
-  const handleSettingChange = (category, setting, value) => {
+  const handleToggle = (key) => {
     setSettings(prev => ({
       ...prev,
-      [category]: {
-        ...prev[category],
-        [setting]: value
-      }
+      [key]: !prev[key]
     }));
   };
 
-  const handleSaveSettings = () => {
-    // Save settings to backend
-    console.log('Saving settings:', settings);
-    // Show success message
+  const handleChange = (key, value) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
-  const maskApiKey = (key) => {
-    if (showApiKeys) return key;
-    return key.substring(0, 8) + '•'.repeat(key.length - 8);
+  const handleSave = () => {
+    console.log('Saving settings:', settings);
+    // In a real app, this would save to backend
+  };
+
+  const handleReset = () => {
+    setSettings({
+      darkMode: false,
+      emailAlerts: true,
+      pushNotifications: true,
+      autoRefresh: true,
+      soundAlerts: false,
+      logLevel: 'info',
+      sessionTimeout: 30,
+      dataRetention: 90,
+      apiRateLimit: 1000,
+      twoFactorAuth: false,
+      passwordExpiry: 90,
+      backupFrequency: 'daily',
+      maintenanceMode: false,
+      debugMode: false
+    });
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Settings
-          </h1>
-          <p className="text-gray-400">
-            Configure your SecureNet IDS preferences and security settings
-          </p>
-        </div>
-        
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleSaveSettings}
-          className="btn-primary"
-        >
-          <Save size={18} />
-          <span>Save Settings</span>
-        </motion.button>
+    <div className="settings-page fade-in">
+      <div className="page-header">
+        <h1 className="page-title">Settings</h1>
+        <p className="page-subtitle">Configure your SecureNet IDS preferences and system options</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-1 mb-6 border-b border-white/10">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-3 border-b-2 transition-all duration-300 ${
-                activeTab === tab.id
-                  ? 'border-neon-blue text-neon-blue'
-                  : 'border-transparent text-gray-400 hover:text-white'
-              }`}
-            >
-              <Icon size={18} />
-              <span className="font-medium">{tab.name}</span>
+      <div className="settings-grid">
+        <Card className="settings-section">
+          <h3>Appearance</h3>
+          <div className="settings-list">
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Dark Mode</span>
+                <span className="setting-description">Use dark theme for the interface</span>
+              </div>
+              <label className="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  checked={settings.darkMode}
+                  onChange={() => handleToggle('darkMode')}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Auto Refresh</span>
+                <span className="setting-description">Automatically refresh dashboard data</span>
+              </div>
+              <label className="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  checked={settings.autoRefresh}
+                  onChange={() => handleToggle('autoRefresh')}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Sound Alerts</span>
+                <span className="setting-description">Play sound for security alerts</span>
+              </div>
+              <label className="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  checked={settings.soundAlerts}
+                  onChange={() => handleToggle('soundAlerts')}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="settings-section">
+          <h3>Notifications</h3>
+          <div className="settings-list">
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Email Alerts</span>
+                <span className="setting-description">Receive security alerts via email</span>
+              </div>
+              <label className="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  checked={settings.emailAlerts}
+                  onChange={() => handleToggle('emailAlerts')}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Push Notifications</span>
+                <span className="setting-description">Receive browser push notifications</span>
+              </div>
+              <label className="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  checked={settings.pushNotifications}
+                  onChange={() => handleToggle('pushNotifications')}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Alert Threshold</span>
+                <span className="setting-description">Minimum severity for notifications</span>
+              </div>
+              <select 
+                className="form-select"
+                value={settings.logLevel}
+                onChange={(e) => handleChange('logLevel', e.target.value)}
+              >
+                <option value="debug">Debug</option>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="error">Error</option>
+              </select>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="settings-section">
+          <h3>Security</h3>
+          <div className="settings-list">
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Two-Factor Authentication</span>
+                <span className="setting-description">Require 2FA for all users</span>
+              </div>
+              <label className="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  checked={settings.twoFactorAuth}
+                  onChange={() => handleToggle('twoFactorAuth')}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Session Timeout</span>
+                <span className="setting-description">Auto-logout after inactivity (minutes)</span>
+              </div>
+              <input 
+                type="number" 
+                className="form-input"
+                value={settings.sessionTimeout}
+                onChange={(e) => handleChange('sessionTimeout', parseInt(e.target.value))}
+                min="5"
+                max="480"
+              />
+            </div>
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Password Expiry</span>
+                <span className="setting-description">Force password change after (days)</span>
+              </div>
+              <input 
+                type="number" 
+                className="form-input"
+                value={settings.passwordExpiry}
+                onChange={(e) => handleChange('passwordExpiry', parseInt(e.target.value))}
+                min="30"
+                max="365"
+              />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="settings-section">
+          <h3>System</h3>
+          <div className="settings-list">
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Data Retention</span>
+                <span className="setting-description">Keep logs and data for (days)</span>
+              </div>
+              <input 
+                type="number" 
+                className="form-input"
+                value={settings.dataRetention}
+                onChange={(e) => handleChange('dataRetention', parseInt(e.target.value))}
+                min="7"
+                max="365"
+              />
+            </div>
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">API Rate Limit</span>
+                <span className="setting-description">Requests per minute per user</span>
+              </div>
+              <input 
+                type="number" 
+                className="form-input"
+                value={settings.apiRateLimit}
+                onChange={(e) => handleChange('apiRateLimit', parseInt(e.target.value))}
+                min="100"
+                max="10000"
+              />
+            </div>
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Backup Frequency</span>
+                <span className="setting-description">How often to backup system data</span>
+              </div>
+              <select 
+                className="form-select"
+                value={settings.backupFrequency}
+                onChange={(e) => handleChange('backupFrequency', e.target.value)}
+              >
+                <option value="hourly">Hourly</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="settings-section">
+          <h3>Advanced</h3>
+          <div className="settings-list">
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Maintenance Mode</span>
+                <span className="setting-description">Temporarily disable user access</span>
+              </div>
+              <label className="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  checked={settings.maintenanceMode}
+                  onChange={() => handleToggle('maintenanceMode')}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Debug Mode</span>
+                <span className="setting-description">Enable detailed logging and debugging</span>
+              </div>
+              <label className="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  checked={settings.debugMode}
+                  onChange={() => handleToggle('debugMode')}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="settings-actions">
+        <div className="actions-content">
+          <div className="actions-info">
+            <h3>Settings Actions</h3>
+            <p>Save your changes or reset to default settings</p>
+          </div>
+          <div className="action-buttons">
+            <button className="btn btn-primary" onClick={handleSave}>
+              Save Settings
             </button>
-          );
-        })}
-      </div>
-
-      {/* Tab Content */}
-      <motion.div
-        key={activeTab}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="glass-card p-6"
-      >
-        {/* General Settings */}
-        {activeTab === 'general' && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4">
-                General Settings
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-300">
-                    Language
-                  </label>
-                  <select
-                    value={settings.appearance.language}
-                    onChange={(e) => handleSettingChange('appearance', 'language', e.target.value)}
-                    className="input-field w-48"
-                  >
-                    <option value="en">English</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
-                    <option value="de">Deutsch</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-300">
-                    Theme
-                  </label>
-                  <select
-                    value={settings.appearance.theme}
-                    onChange={(e) => handleSettingChange('appearance', 'theme', e.target.value)}
-                    className="input-field w-48"
-                  >
-                    <option value="dark">Dark</option>
-                    <option value="light">Light</option>
-                    <option value="auto">Auto</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-300">
-                    Compact Mode
-                  </label>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.appearance.compactMode}
-                      onChange={(e) => handleSettingChange('appearance', 'compactMode', e.target.checked)}
-                      className="sr-only"
-                    />
-                    <div className="w-12 h-6 bg-gray-600 rounded-full transition-colors duration-200 relative">
-                      <div
-                        className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
-                          settings.appearance.compactMode ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      ></div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
+            <button className="btn btn-outline" onClick={handleReset}>
+              Reset to Default
+            </button>
+            <button className="btn btn-outline">Export Settings</button>
+            <button className="btn btn-outline">Import Settings</button>
           </div>
-        )}
+        </div>
+      </Card>
 
-        {/* Notification Settings */}
-        {activeTab === 'notifications' && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4">
-                Notification Preferences
-              </h3>
-              
-              <div className="space-y-4">
-                {Object.entries(settings.notifications).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-300 capitalize">
-                      {key === 'email' ? 'Email Notifications' :
-                       key === 'push' ? 'Push Notifications' :
-                       key === 'sms' ? 'SMS Notifications' :
-                       key === 'desktop' ? 'Desktop Notifications' : key}
-                    </label>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={value}
-                        onChange={(e) => handleSettingChange('notifications', key, e.target.checked)}
-                        className="sr-only"
-                      />
-                      <div className="w-12 h-6 bg-gray-600 rounded-full transition-colors duration-200 relative">
-                        <div
-                          className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
-                            value ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        ></div>
-                      </div>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
+      <Card className="settings-info">
+        <h3>System Information</h3>
+        <div className="info-grid">
+          <div className="info-item">
+            <span className="info-label">Version:</span>
+            <span className="info-value">SecureNet IDS v3.2.1</span>
           </div>
-        )}
-
-        {/* Security Settings */}
-        {activeTab === 'security' && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4">
-                Security Settings
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-300">
-                    Two-Factor Authentication
-                  </label>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.security.twoFactor}
-                      onChange={(e) => handleSettingChange('security', 'twoFactor', e.target.checked)}
-                      className="sr-only"
-                    />
-                    <div className="w-12 h-6 bg-gray-600 rounded-full transition-colors duration-200 relative">
-                      <div
-                        className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${
-                          settings.security.twoFactor ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      ></div>
-                    </div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-300">
-                    Session Timeout (minutes)
-                  </label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="120"
-                    value={settings.security.sessionTimeout}
-                    onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value))}
-                    className="input-field w-24"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-300 mb-2">
-                    IP Whitelist
-                  </label>
-                  <div className="space-y-2">
-                    {settings.security.ipWhitelist.map((ip, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <input
-                          type="text"
-                          value={ip}
-                          onChange={(e) => {
-                            const newWhitelist = [...settings.security.ipWhitelist];
-                            newWhitelist[index] = e.target.value;
-                            handleSettingChange('security', 'ipWhitelist', newWhitelist);
-                          }}
-                          className="input-field flex-1"
-                          placeholder="192.168.1.0/24"
-                        />
-                        <button
-                          onClick={() => {
-                            const newWhitelist = settings.security.ipWhitelist.filter((_, i) => i !== index);
-                            handleSettingChange('security', 'ipWhitelist', newWhitelist);
-                          }}
-                          className="p-2 text-red-400 hover:text-red-300 transition-colors"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      onClick={() => {
-                        const newWhitelist = [...settings.security.ipWhitelist, ''];
-                        handleSettingChange('security', 'ipWhitelist', newWhitelist);
-                      }}
-                      className="btn-secondary"
-                    >
-                      Add IP
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="info-item">
+            <span className="info-label">Last Updated:</span>
+            <span className="info-value">January 15, 2024</span>
           </div>
-        )}
-
-        {/* API Keys */}
-        {activeTab === 'api' && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4">
-                API Keys
-              </h3>
-              
-              <div className="space-y-4">
-                {Object.entries(settings.api).map(([service, key]) => (
-                  <div key={service} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-gray-300 capitalize">
-                        {service === 'virusTotal' ? 'VirusTotal API Key' :
-                         service === 'abuseIPDB' ? 'AbuseIPDB API Key' :
-                         service === 'urlScan' ? 'URLScan API Key' : service}
-                      </label>
-                      <button
-                        onClick={() => setShowApiKeys(!showApiKeys)}
-                        className="p-2 text-neon-blue hover:text-neon-blue/80 transition-colors"
-                      >
-                        {showApiKeys ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                    <input
-                      type={showApiKeys ? 'text' : 'password'}
-                      value={key}
-                      onChange={(e) => handleSettingChange('api', service, e.target.value)}
-                      className="input-field flex-1 font-mono"
-                      placeholder={`Enter your ${service} API key`}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="info-item">
+            <span className="info-label">License:</span>
+            <span className="info-value">Enterprise Edition</span>
           </div>
-        )}
-      </motion.div>
+          <div className="info-item">
+            <span className="info-label">Support:</span>
+            <span className="info-value">support@securenet.com</span>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 };

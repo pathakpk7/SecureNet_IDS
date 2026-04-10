@@ -1,346 +1,235 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Activity, Globe, Zap, RefreshCw } from 'lucide-react';
-import { LineChart, TrafficChart } from '../components/Charts/LineChart';
-import { PieChart, ProtocolChart } from '../components/Charts/PieChart';
-import { getRequest } from '../api';
+import Card from '../components/ui/Card';
+import LineChart from '../components/charts/LineChart';
+import '../styles/pages/network.css';
 
 const NetworkMonitor = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [networkData, setNetworkData] = useState({
-    traffic: [],
-    protocols: [],
-    connections: [],
-    bandwidth: []
+  const [selectedTimeRange, setSelectedTimeRange] = useState('24h');
+  const [trafficData, setTrafficData] = useState({
+    incoming: {
+      labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+      values: [120, 150, 180, 220, 190, 160]
+    },
+    outgoing: {
+      labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+      values: [80, 120, 140, 180, 160, 130]
+    }
   });
 
-  // Mock data for development
-  const mockData = {
-    traffic: [
-      { timestamp: '2024-01-15T00:00:00Z', inbound: 45, outbound: 38, total: 83 },
-      { timestamp: '2024-01-15T01:00:00Z', inbound: 52, outbound: 45, total: 97 },
-      { timestamp: '2024-01-15T02:00:00Z', inbound: 38, outbound: 32, total: 70 },
-      { timestamp: '2024-01-15T03:00:00Z', inbound: 65, outbound: 58, total: 123 },
-      { timestamp: '2024-01-15T04:00:00Z', inbound: 48, outbound: 42, total: 90 },
-      { timestamp: '2024-01-15T05:00:00Z', inbound: 42, outbound: 38, total: 80 },
-    ],
-    protocols: [
-      { name: 'HTTP', value: 45, percentage: 45 },
-      { name: 'HTTPS', value: 30, percentage: 30 },
-      { name: 'FTP', value: 15, percentage: 15 },
-      { name: 'SSH', value: 10, percentage: 10 },
-    ],
-    connections: [
-      { ip: '192.168.1.100', country: 'US', status: 'active', protocol: 'HTTPS', bandwidth: '15.2 MB/s' },
-      { ip: '10.0.0.1', country: 'CN', status: 'active', protocol: 'HTTP', bandwidth: '8.7 MB/s' },
-      { ip: '172.16.0.1', country: 'DE', status: 'suspicious', protocol: 'SSH', bandwidth: '2.1 MB/s' },
-      { ip: '203.0.113.42', country: 'JP', status: 'active', protocol: 'HTTP', bandwidth: '12.3 MB/s' },
-      { ip: '185.199.108.153', country: 'RU', status: 'blocked', protocol: 'HTTP', bandwidth: '0 MB/s' },
-    ],
-    bandwidth: [
-      { time: '00:00', inbound: 45, outbound: 38 },
-      { time: '04:00', inbound: 52, outbound: 45 },
-      { time: '08:00', inbound: 38, outbound: 32 },
-      { time: '12:00', inbound: 65, outbound: 58 },
-      { time: '16:00', inbound: 48, outbound: 42 },
-      { time: '20:00', inbound: 42, outbound: 38 },
-    ]
-  };
-
+  // Simulate live data updates
   useEffect(() => {
-    const fetchNetworkData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setNetworkData(mockData);
-      } catch (err) {
-        setError(err.message || 'Failed to fetch network data');
-        console.error('Network data fetch error:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNetworkData();
-    
-    // Set up real-time updates
     const interval = setInterval(() => {
-      // Simulate real-time data updates
-      setNetworkData(prev => ({
-        ...prev,
-        traffic: prev.traffic.map(item => ({
-          ...item,
-          inbound: Math.max(20, item.inbound + (Math.random() - 0.5) * 10),
-          outbound: Math.max(15, item.outbound + (Math.random() - 0.5) * 8),
-          total: item.inbound + item.outbound
-        }))
+      setTrafficData(prev => ({
+        incoming: {
+          ...prev.incoming,
+          values: prev.incoming.values.map(value => 
+            Math.max(50, Math.min(300, value + (Math.random() - 0.5) * 20))
+          )
+        },
+        outgoing: {
+          ...prev.outgoing,
+          values: prev.outgoing.values.map(value => 
+            Math.max(30, Math.min(200, value + (Math.random() - 0.5) * 15))
+          )
+        }
       }));
     }, 3000);
 
     return () => clearInterval(interval);
   }, []);
 
-  const handleRefresh = () => {
-    // Refetch network data
-    setNetworkData(mockData);
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return 'text-neon-green';
-      case 'suspicious':
-        return 'text-neon-yellow';
-      case 'blocked':
-        return 'text-neon-red';
-      default:
-        return 'text-gray-400';
+  const trafficStats = {
+    incoming: {
+      total: '2.4TB',
+      peak: '450Mbps',
+      average: '125Mbps',
+      connections: 1247
+    },
+    outgoing: {
+      total: '1.8TB',
+      peak: '380Mbps',
+      average: '95Mbps',
+      connections: 892
     }
   };
 
-  const getStatusBg = (status) => {
-    switch (status) {
-      case 'active':
-        return 'bg-safe/10';
-      case 'suspicious':
-        return 'bg-warning/10';
-      case 'blocked':
-        return 'bg-danger/10';
-      default:
-        return 'bg-gray-600/10';
-    }
-  };
+  const protocols = [
+    { name: 'HTTP/HTTPS', traffic: '45%', color: '#00f5ff' },
+    { name: 'SSH', traffic: '25%', color: '#ff3366' },
+    { name: 'FTP', traffic: '15%', color: '#ffaa00' },
+    { name: 'Other', traffic: '15%', color: '#666' }
+  ];
+
+  const topConnections = [
+    { ip: '192.168.1.100', traffic: '125MB', status: 'active' },
+    { ip: '10.0.0.15', traffic: '98MB', status: 'active' },
+    { ip: '172.16.0.22', traffic: '76MB', status: 'monitoring' },
+    { ip: '203.0.113.45', traffic: '54MB', status: 'blocked' },
+    { ip: '192.168.1.50', traffic: '32MB', status: 'active' }
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Network Monitor
-          </h1>
-          <p className="text-gray-400">
-            Real-time network traffic analysis and monitoring
-          </p>
-        </div>
-        
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleRefresh}
-          className="flex items-center space-x-2 p-3 glass-card rounded-lg hover:bg-white/10 transition-all"
-        >
-          <RefreshCw size={18} className="text-neon-blue" />
-          <span className="text-sm text-gray-300">Refresh</span>
-        </motion.button>
+    <div className="network-monitor-page fade-in">
+      <div className="page-header">
+        <h1 className="page-title">Network Monitor</h1>
+        <p className="page-subtitle">Real-time network traffic analysis and monitoring</p>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="glass-card p-6"
+      <div className="time-range-selector">
+        <button 
+          className={`range-btn ${selectedTimeRange === '1h' ? 'active' : ''}`}
+          onClick={() => setSelectedTimeRange('1h')}
         >
-          <div className="flex items-center justify-between mb-4">
-            <Activity size={24} className="text-neon-blue" />
-            <h3 className="text-lg font-semibold text-white">
-              Active Connections
-            </h3>
-          </div>
-          <div className="text-3xl font-bold text-neon-blue neon-text">
-            {networkData.connections.filter(c => c.status === 'active').length}
-          </div>
-          <div className="text-sm text-gray-400">
-            Currently active
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="glass-card p-6"
+          1 Hour
+        </button>
+        <button 
+          className={`range-btn ${selectedTimeRange === '24h' ? 'active' : ''}`}
+          onClick={() => setSelectedTimeRange('24h')}
         >
-          <div className="flex items-center justify-between mb-4">
-            <Zap size={24} className="text-neon-yellow" />
-            <h3 className="text-lg font-semibold text-white">
-              Suspicious Activity
-            </h3>
-          </div>
-          <div className="text-3xl font-bold text-neon-yellow neon-text">
-            {networkData.connections.filter(c => c.status === 'suspicious').length}
-          </div>
-          <div className="text-sm text-gray-400">
-            Requires attention
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="glass-card p-6"
+          24 Hours
+        </button>
+        <button 
+          className={`range-btn ${selectedTimeRange === '7d' ? 'active' : ''}`}
+          onClick={() => setSelectedTimeRange('7d')}
         >
-          <div className="flex items-center justify-between mb-4">
-            <Globe size={24} className="text-neon-green" />
-            <h3 className="text-lg font-semibold text-white">
-              Total Bandwidth
-            </h3>
-          </div>
-          <div className="text-3xl font-bold text-neon-green neon-text">
-            156.7 MB/s
-          </div>
-          <div className="text-sm text-gray-400">
-            Combined usage
-          </div>
-        </motion.div>
+          7 Days
+        </button>
+        <button 
+          className={`range-btn ${selectedTimeRange === '30d' ? 'active' : ''}`}
+          onClick={() => setSelectedTimeRange('30d')}
+        >
+          30 Days
+        </button>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Traffic Chart */}
-        <TrafficChart data={networkData.traffic} />
+      <div className="traffic-overview">
+        <Card className="traffic-card incoming">
+          <div className="traffic-header">
+            <h3>Incoming Traffic</h3>
+            <span className="traffic-indicator incoming"></span>
+          </div>
+          <LineChart 
+            data={trafficData.incoming}
+            title="Incoming Traffic (Mbps)"
+            height={250}
+          />
+          <div className="traffic-stats">
+            <div className="stat-item">
+              <span className="stat-value">{trafficStats.incoming.total}</span>
+              <span className="stat-label">Total Traffic</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{trafficStats.incoming.peak}</span>
+              <span className="stat-label">Peak Speed</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{trafficStats.incoming.average}</span>
+              <span className="stat-label">Average Speed</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{trafficStats.incoming.connections}</span>
+              <span className="stat-label">Active Connections</span>
+            </div>
+          </div>
+          <div className="chart-placeholder">
+            <div className="chart-title">Traffic Flow</div>
+            <div className="chart-bars">
+              <div className="chart-bar" style={{ height: '60%' }}></div>
+              <div className="chart-bar" style={{ height: '80%' }}></div>
+              <div className="chart-bar" style={{ height: '45%' }}></div>
+              <div className="chart-bar" style={{ height: '90%' }}></div>
+              <div className="chart-bar" style={{ height: '70%' }}></div>
+              <div className="chart-bar" style={{ height: '85%' }}></div>
+              <div className="chart-bar" style={{ height: '55%' }}></div>
+              <div className="chart-bar" style={{ height: '75%' }}></div>
+            </div>
+          </div>
+        </Card>
 
-        {/* Protocol Distribution */}
-        <ProtocolChart data={networkData.protocols} />
+        <Card className="traffic-card outgoing">
+          <div className="traffic-header">
+            <h3>Outgoing Traffic</h3>
+            <span className="traffic-indicator outgoing"></span>
+          </div>
+          <div className="traffic-stats">
+            <div className="stat-item">
+              <span className="stat-value">{trafficStats.outgoing.total}</span>
+              <span className="stat-label">Total Traffic</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{trafficStats.outgoing.peak}</span>
+              <span className="stat-label">Peak Speed</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{trafficStats.outgoing.average}</span>
+              <span className="stat-label">Average Speed</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{trafficStats.outgoing.connections}</span>
+              <span className="stat-label">Active Connections</span>
+            </div>
+          </div>
+          <LineChart 
+            data={trafficData.outgoing}
+            title="Outgoing Traffic (Mbps)"
+            height={250}
+          />
+        </Card>
       </div>
 
-      {/* Active Connections */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        className="glass-card p-6"
-      >
-        <h3 className="text-xl font-semibold text-white mb-6">
-          Active Connections
-        </h3>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">
-                  IP Address
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">
-                  Country
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">
-                  Status
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">
-                  Protocol
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">
-                  Bandwidth
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {networkData.connections.map((connection, index) => (
-                <motion.tr
-                  key={connection.ip}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="border-b border-white/5 hover:bg-white/5 transition-all duration-300"
-                >
-                  <td className="py-3 px-4">
-                    <span className="font-mono text-neon-blue">
-                      {connection.ip}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-gray-300">
-                      {connection.country}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`text-sm font-medium ${getStatusColor(connection.status)}`}>
-                      {connection.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-gray-300">
-                      {connection.protocol}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-gray-300">
-                      {connection.bandwidth}
-                    </span>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </motion.div>
-
-      {/* Bandwidth Usage */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="glass-card p-6"
-      >
-        <h3 className="text-xl font-semibold text-white mb-6">
-          Bandwidth Usage
-        </h3>
-        
-        <div className="h-64 cyber-grid-bg rounded-lg p-2">
-          <svg className="w-full h-full" viewBox="0 0 300 200">
-            {/* Grid lines */}
-            {[...Array(6)].map((_, i) => (
-              <line
-                key={`h-${i}`}
-                x1="0"
-                y1={i * 40}
-                x2="300"
-                y2={i * 40}
-                stroke="rgba(0, 245, 255, 0.1)"
-                strokeWidth="1"
-              />
+      <div className="network-details">
+        <Card className="protocols-card">
+          <h3>Protocol Distribution</h3>
+          <div className="protocol-list">
+            {protocols.map((protocol, index) => (
+              <div key={index} className="protocol-item">
+                <div className="protocol-info">
+                  <span className="protocol-name">{protocol.name}</span>
+                  <span className="protocol-traffic">{protocol.traffic}</span>
+                </div>
+                <div className="protocol-bar">
+                  <div 
+                    className="protocol-fill" 
+                    style={{ 
+                      width: protocol.traffic,
+                      backgroundColor: protocol.color 
+                    }}
+                  ></div>
+                </div>
+              </div>
             ))}
-            
-            {/* Inbound bandwidth */}
-            <polyline
-              fill="none"
-              stroke="#22ff88"
-              strokeWidth="2"
-              points={networkData.bandwidth.map((item, index) => 
-                `${index * 50},${200 - item.inbound * 2}`
-              ).join(' ')}
-            />
-            
-            {/* Outbound bandwidth */}
-            <polyline
-              fill="none"
-              stroke="#00f5ff"
-              strokeWidth="2"
-              points={networkData.bandwidth.map((item, index) => 
-                `${index * 50},${200 - item.outbound * 2}`
-              ).join(' ')}
-            />
-            
-            {/* Legend */}
-            <text x="10" y="20" fill="#22ff88" fontSize="12">
-              Inbound
-            </text>
-            <text x="10" y="40" fill="#00f5ff" fontSize="12">
-              Outbound
-            </text>
-          </svg>
-        </div>
-      </motion.div>
+          </div>
+        </Card>
+
+        <Card className="connections-card">
+          <h3>Top Connections</h3>
+          <div className="connections-list">
+            {topConnections.map((connection, index) => (
+              <div key={index} className="connection-item">
+                <div className="connection-info">
+                  <span className="connection-ip">{connection.ip}</span>
+                  <span className="connection-traffic">{connection.traffic}</span>
+                </div>
+                <span className={`connection-status ${connection.status}`}>
+                  {connection.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      <div className="network-actions">
+        <Card className="actions-card">
+          <h3>Network Actions</h3>
+          <div className="action-buttons">
+            <button className="btn btn-primary">Scan Network</button>
+            <button className="btn btn-outline">Block Suspicious IPs</button>
+            <button className="btn btn-outline">Export Report</button>
+            <button className="btn btn-outline">Configure Alerts</button>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

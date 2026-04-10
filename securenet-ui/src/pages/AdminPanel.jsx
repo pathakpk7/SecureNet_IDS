@@ -1,675 +1,346 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Users, 
-  Shield, 
-  Settings, 
-  Database, 
-  AlertTriangle, 
-  RefreshCw,
-  UserPlus,
-  Ban,
-  Activity,
-  TrendingUp,
-  Eye,
-  Edit,
-  Trash2
-} from 'lucide-react';
-import { getRequest } from '../api';
+import React, { useState } from 'react';
+import Card from '../components/ui/Card';
+import '../styles/pages/admin.css';
 
 const AdminPanel = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [adminData, setAdminData] = useState({
-    users: [],
-    system: {},
-    security: {},
-    logs: [],
-    stats: {
-      totalUsers: 0,
-      activeUsers: 0,
-      totalAlerts: 0,
-      criticalAlerts: 0,
-      systemLoad: 0,
-      uptime: '99.9%'
+  const [users, setUsers] = useState([
+    {
+      id: 1,
+      name: 'John Doe',
+      email: 'john.doe@example.com',
+      role: 'admin',
+      status: 'active',
+      lastLogin: '2024-01-15 14:30:00',
+      permissions: ['read', 'write', 'delete', 'admin']
+    },
+    {
+      id: 2,
+      name: 'Jane Smith',
+      email: 'jane.smith@example.com',
+      role: 'user',
+      status: 'active',
+      lastLogin: '2024-01-15 13:45:00',
+      permissions: ['read', 'write']
+    },
+    {
+      id: 3,
+      name: 'Bob Johnson',
+      email: 'bob.johnson@example.com',
+      role: 'user',
+      status: 'inactive',
+      lastLogin: '2024-01-14 16:20:00',
+      permissions: ['read']
+    },
+    {
+      id: 4,
+      name: 'Alice Wilson',
+      email: 'alice.wilson@example.com',
+      role: 'admin',
+      status: 'active',
+      lastLogin: '2024-01-15 12:15:00',
+      permissions: ['read', 'write', 'delete', 'admin']
+    },
+    {
+      id: 5,
+      name: 'Charlie Brown',
+      email: 'charlie.brown@example.com',
+      role: 'user',
+      status: 'active',
+      lastLogin: '2024-01-15 11:30:00',
+      permissions: ['read', 'write']
     }
+  ]);
+
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    role: 'user',
+    permissions: ['read']
   });
 
-  // Mock data for development
-  const mockData = {
-    users: [
-      {
-        id: 1,
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        role: 'admin',
+  const systemStats = {
+    totalUsers: users.length,
+    activeUsers: users.filter(u => u.status === 'active').length,
+    adminUsers: users.filter(u => u.role === 'admin').length,
+    inactiveUsers: users.filter(u => u.status === 'inactive').length
+  };
+
+  const handleAddUser = () => {
+    if (newUser.name && newUser.email) {
+      const user = {
+        id: users.length + 1,
+        ...newUser,
         status: 'active',
-        lastLogin: '2024-01-15 14:30:00',
-        registered: '2024-01-01 10:00:00',
-        permissions: ['read', 'write', 'delete', 'admin'],
-        avatar: null
-      },
-      {
-        id: 2,
-        name: 'Jane Smith',
-        email: 'jane.smith@example.com',
-        role: 'user',
-        status: 'active',
-        lastLogin: '2024-01-15 13:45:00',
-        registered: '2024-01-10 15:30:00',
-        permissions: ['read'],
-        avatar: null
-      },
-      {
-        id: 3,
-        name: 'Bob Johnson',
-        email: 'bob.johnson@example.com',
-        role: 'user',
-        status: 'inactive',
-        lastLogin: '2024-01-14 09:15:00',
-        registered: '2024-01-05 11:20:00',
-        permissions: ['read'],
-        avatar: null
-      },
-      {
-        id: 4,
-        name: 'Alice Brown',
-        email: 'alice.brown@example.com',
-        role: 'user',
-        status: 'active',
-        lastLogin: '2024-01-15 16:20:00',
-        registered: '2024-01-08 10:45:00',
-        permissions: ['read'],
-        avatar: null
-      },
-      {
-        id: 5,
-        name: 'Charlie Wilson',
-        email: 'charlie.wilson@example.com',
-        role: 'user',
-        status: 'suspended',
-        lastLogin: '2024-01-12 11:30:00',
-        registered: '2024-01-02 14:00:00',
-        permissions: ['read'],
-        avatar: null,
-        reason: 'Suspicious activity detected'
-      },
-    ],
-    system: {
-      version: '2.4.1',
-      lastUpdate: '2024-01-15 12:00:00',
-      database: {
-        size: '2.3GB',
-        backups: 3,
-        lastBackup: '2024-01-15 06:00:00'
-      },
-      security: {
-        firewallStatus: 'active',
-        lastScan: '2024-01-15 11:00:00',
-        threatsBlocked: 156,
-        sslCertificates: 'valid'
-      }
-    },
-    logs: [
-      {
-        id: 1,
-        timestamp: '2024-01-15 14:32:15',
-        type: 'admin_action',
-        user: 'John Doe',
-        action: 'Created new user account',
-        details: {
-          user_id: 'jane.smith@example.com',
-          role: 'user',
-          permissions: ['read']
-        }
-      },
-      {
-        id: 2,
-        timestamp: '2024-01-15 14:28:42',
-        type: 'security_alert',
-        user: 'System',
-        action: 'DDoS attack blocked',
-        details: {
-          source_ip: '192.168.1.100',
-          rule_triggered: 'Block DDoS Attacks',
-          severity: 'high'
-        }
-      },
-      {
-        id: 3,
-        timestamp: '2024-01-15 14:15:33',
-        type: 'system_event',
-        user: 'System',
-        action: 'Database backup completed',
-        details: {
-          backup_size: '2.3GB',
-          duration: '45 minutes'
-        }
-      },
-      {
-        id: 4,
-        timestamp: '2024-01-15 13:45:22',
-        type: 'user_action',
-        user: 'John Doe',
-        action: 'Modified user permissions',
-        details: {
-          target_user: 'jane.smith@example.com',
-          old_permissions: ['read'],
-          new_permissions: ['read', 'write']
-        }
-      }
-    ],
-    stats: {
-      totalUsers: 5,
-      activeUsers: 3,
-      totalAlerts: 89,
-      criticalAlerts: 12,
-      systemLoad: 67,
-      uptime: '99.9%'
+        lastLogin: 'Never',
+        permissions: newUser.role === 'admin' ? ['read', 'write', 'delete', 'admin'] : ['read']
+      };
+      setUsers([...users, user]);
+      setNewUser({ name: '', email: '', role: 'user', permissions: ['read'] });
+      setShowAddUserModal(false);
     }
   };
 
-  useEffect(() => {
-    const fetchAdminData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setAdminData(mockData);
-      } catch (err) {
-        setError(err.message || 'Failed to fetch admin data');
-        console.error('Admin data fetch error:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAdminData();
-    
-    // Set up real-time updates
-    const interval = setInterval(() => {
-      // Simulate real-time admin data updates
-      setAdminData(prev => ({
-        ...prev,
-        stats: {
-          ...prev.stats,
-          systemLoad: Math.max(20, prev.stats.systemLoad + (Math.random() - 0.5) * 10),
-          criticalAlerts: prev.stats.criticalAlerts + (Math.random() > 0.8 ? 1 : 0),
-          totalAlerts: prev.stats.totalAlerts + (Math.random() > 0.7 ? Math.floor(Math.random() * 3) + 1 : 0)
-        }
-      }));
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleRefresh = () => {
-    // Refetch admin data
-    setAdminData(mockData);
+  const handleRemoveUser = (userId) => {
+    setUsers(users.filter(user => user.id !== userId));
   };
 
-  const handleUserAction = (userId, action) => {
-    // Handle user management actions
-    console.log(`User action: ${action} for user ${userId}`);
+  const handleToggleUserStatus = (userId) => {
+    setUsers(users.map(user => 
+      user.id === userId 
+        ? { ...user, status: user.status === 'active' ? 'inactive' : 'active' }
+        : user
+    ));
   };
 
   const getRoleColor = (role) => {
-    switch (role) {
-      case 'admin':
-        return 'text-neon-red';
-      case 'user':
-        return 'text-neon-blue';
-      case 'suspended':
-        return 'text-neon-yellow';
-      default:
-        return 'text-gray-400';
-    }
+    return role === 'admin' ? '#ff3366' : '#00f5ff';
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return 'text-neon-green';
-      case 'inactive':
-        return 'text-gray-400';
-      case 'suspended':
-        return 'text-neon-yellow';
-      default:
-        return 'text-red-400';
-    }
+    return status === 'active' ? '#00f5ff' : '#ffaa00';
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Admin Panel
-            </h1>
-            <p className="text-gray-400">
-              System administration and user management
-            </p>
-          </div>
-        
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleRefresh}
-          className="flex items-center space-x-2 p-3 glass-card rounded-lg hover:bg-white/10 transition-all"
-        >
-          <RefreshCw size={18} className="text-neon-blue" />
-          <span className="text-sm text-gray-300">Refresh</span>
-        </motion.button>
+    <div className="admin-panel-page fade-in">
+      <div className="page-header">
+        <h1 className="page-title">Admin Panel</h1>
+        <p className="page-subtitle">User management and system administration</p>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="glass-card p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <Users size={24} className="text-neon-blue" />
-            <div>
-              <h3 className="text-lg font-semibold text-white">Total Users</h3>
-              <div className="text-3xl font-bold text-neon-blue neon-text">
-                {adminData.stats.totalUsers}
-              </div>
-            </div>
+      <div className="admin-stats">
+        <Card className="stat-card">
+          <div className="stat-content">
+            <span className="stat-value">{systemStats.totalUsers}</span>
+            <span className="stat-label">Total Users</span>
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="glass-card p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <Activity size={24} className="text-neon-green" />
-            <div>
-              <h3 className="text-lg font-semibold text-white">Active Users</h3>
-              <div className="text-3xl font-bold text-neon-green neon-text">
-                {adminData.stats.activeUsers}
-              </div>
-            </div>
+        </Card>
+        <Card className="stat-card">
+          <div className="stat-content">
+            <span className="stat-value">{systemStats.activeUsers}</span>
+            <span className="stat-label">Active Users</span>
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="glass-card p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <AlertTriangle size={24} className="text-neon-yellow" />
-            <div>
-              <h3 className="text-lg font-semibold text-white">Total Alerts</h3>
-              <div className="text-3xl font-bold text-neon-yellow neon-text">
-                {adminData.stats.totalAlerts}
-              </div>
-            </div>
+        </Card>
+        <Card className="stat-card">
+          <div className="stat-content">
+            <span className="stat-value">{systemStats.adminUsers}</span>
+            <span className="stat-label">Admin Users</span>
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="glass-card p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <Shield size={24} className="text-neon-red" />
-            <div>
-              <h3 className="text-lg font-semibold text-white">Critical Alerts</h3>
-              <div className="text-3xl font-bold text-neon-red neon-text">
-                {adminData.stats.criticalAlerts}
-              </div>
-            </div>
+        </Card>
+        <Card className="stat-card">
+          <div className="stat-content">
+            <span className="stat-value">{systemStats.inactiveUsers}</span>
+            <span className="stat-label">Inactive Users</span>
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="glass-card p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <Database size={24} className="text-neon-blue" />
-            <div>
-              <h3 className="text-lg font-semibold text-white">System Load</h3>
-              <div className="text-3xl font-bold text-neon-blue neon-text">
-                {adminData.stats.systemLoad}%
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="glass-card p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-neon-green/20 rounded-full flex items-center justify-center">
-              <div className="text-2xl font-bold text-neon-green">99.9%</div>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-white">Uptime</h3>
-              <div className="text-sm text-gray-400">System Availability</div>
-            </div>
-          </div>
-        </motion.div>
+        </Card>
       </div>
 
-      {/* User Management */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.7 }}
-        className="glass-card p-6"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-white">
-            User Management
-          </h3>
-          
-          <div className="flex items-center space-x-2">
-            <button
-              className="btn-primary"
+      <div className="admin-actions">
+        <Card className="actions-card">
+          <div className="actions-header">
+            <h3>User Management</h3>
+            <button 
+              className="btn btn-primary"
+              onClick={() => setShowAddUserModal(true)}
             >
-              <UserPlus size={18} />
-              <span>Add User</span>
-            </button>
-            
-            <button
-              className="btn-secondary"
-            >
-              <Settings size={18} />
-              <span>User Settings</span>
+              Add User
             </button>
           </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">
-                  User
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">
-                  Email
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">
-                  Role
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">
-                  Status
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">
-                  Last Login
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">
-                  Registered
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-300">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {adminData.users.map((user, index) => (
-                <motion.tr
-                  key={user.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="border-b border-white/5 hover:bg-white/5 transition-all duration-300"
-                >
-                  <td className="py-3 px-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">
-                          {user.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm text-white">{user.name}</div>
-                        <div className="text-sm text-gray-300">{user.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`text-sm font-medium ${getRoleColor(user.role)}`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`text-sm font-medium ${getStatusColor(user.status)}`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-gray-400">
-                      {user.lastLogin}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-gray-400">
-                      {user.registered}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleUserAction(user.id, 'edit')}
-                        className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 transition-colors"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      
-                      <button
-                        onClick={() => handleUserAction(user.id, 'permissions')}
-                        className="p-1 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                      >
-                        <Shield size={16} />
-                      </button>
-                      
-                      <button
-                        onClick={() => handleUserAction(user.id, 'delete')}
-                        className="p-1 text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </motion.div>
-
-      {/* System Settings */}
-<motion.div
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.5, delay: 0.8 }}
-  className="glass-card p-6"
->
-  <div className="flex items-center justify-between mb-6">
-    <h3 className="text-xl font-semibold text-white">
-      System Settings
-    </h3>
-  </div>
-
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <div className="space-y-4">
-      <div>
-        <h4 className="text-sm font-medium text-gray-300 mb-2">
-          System Information
-        </h4>
-
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-400">Version</span>
-            <span className="text-sm text-white">
-              {adminData.system.version}
-            </span>
+          <div className="action-buttons">
+            <button className="btn btn-outline">Export Users</button>
+            <button className="btn btn-outline">Import Users</button>
+            <button className="btn btn-outline">Send Notifications</button>
+            <button className="btn btn-outline">System Backup</button>
           </div>
-
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-400">Last Update</span>
-            <span className="text-sm text-white">
-              {adminData.system.lastUpdate}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-400">Database</span>
-            <span className="text-sm text-white">
-              {adminData.system.database.size}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-400">Backups</span>
-            <span className="text-sm text-white">
-              {adminData.system.database.backups}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-400">Last Backup</span>
-            <span className="text-sm text-white">
-              {adminData.system.database.lastBackup}
-            </span>
-          </div>
-        </div>
+        </Card>
       </div>
-    </div>
 
-    <div className="space-y-4">
-      <div>
-        <h4 className="text-sm font-medium text-gray-300 mb-2">
-          Security Settings
-        </h4>
-
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-400">
-              Firewall Status
-            </span>
-            <span className={`text-sm font-medium ${getStatusColor(adminData.system.security.firewallStatus)}`}>
-              {adminData.system.security.firewallStatus}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-400">
-              Threats Blocked
-            </span>
-            <span className="text-sm text-white">
-              {adminData.system.security.threatsBlocked}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-400">
-              SSL Certificates
-            </span>
-            <span className={`text-sm font-medium ${getStatusColor(adminData.system.security.sslCertificates)}`}>
-              {adminData.system.security.sslCertificates}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-400">
-              Last Security Scan
-            </span>
-            <span className="text-sm text-white">
-              {adminData.system.security.lastScan}
-            </span>
+      <Card className="users-table-card">
+        <div className="table-header">
+          <h3>User List</h3>
+          <div className="table-actions">
+            <button className="btn btn-outline">Refresh</button>
+            <button className="btn btn-outline">Filter</button>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  {/* ✅ FIX: moved inside SAME motion.div */}
-  <div className="flex justify-end mt-6">
-    <button className="btn-primary">
-      Save Settings
-    </button>
-  </div>
-</motion.div>
-
-      {/* System Logs */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.9 }}
-        className="glass-card p-6"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-white">
-            System Logs
-          </h3>
-          
-          <div className="flex items-center space-x-2">
-            <button className="btn-secondary">
-              <Eye size={18} />
-              <span>View All Logs</span>
-            </button>
+        <div className="users-table">
+          <div className="table-head">
+            <div className="table-row">
+              <div className="table-cell">User</div>
+              <div className="table-cell">Role</div>
+              <div className="table-cell">Status</div>
+              <div className="table-cell">Last Login</div>
+              <div className="table-cell">Permissions</div>
+              <div className="table-cell">Actions</div>
+            </div>
           </div>
-        </div>
-
-        <div className="space-y-3">
-          {adminData.logs.slice(0, 10).map((log, index) => (
-            <motion.div
-              key={log.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-              className="p-4 rounded-lg border border-gray-600/30"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <div className={`w-2 h-2 rounded-full ${log.type === 'admin_action' ? 'bg-neon-blue' : log.type === 'security_alert' ? 'bg-neon-red' : 'bg-gray-600'}`}></div>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                      {log.type}
-                    </span>
-                    <span className="text-xs text-gray-500">• {log.user}</span>
+          <div className="table-body">
+            {users.map((user) => (
+              <div key={user.id} className="table-row">
+                <div className="table-cell user-info">
+                  <div className="user-avatar">
+                    {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <p className="text-sm text-gray-300 mb-1">
-                    {log.action}
-                  </p>
-                  <span className="text-xs text-gray-500">
-                    {log.timestamp}
+                  <div className="user-details">
+                    <span className="user-name">{user.name}</span>
+                    <span className="user-email">{user.email}</span>
+                  </div>
+                </div>
+                <div className="table-cell">
+                  <span 
+                    className="role-badge"
+                    style={{ backgroundColor: getRoleColor(user.role) }}
+                  >
+                    {user.role.toUpperCase()}
                   </span>
                 </div>
+                <div className="table-cell">
+                  <span 
+                    className="status-badge"
+                    style={{ backgroundColor: getStatusColor(user.status) }}
+                  >
+                    {user.status.toUpperCase()}
+                  </span>
+                </div>
+                <div className="table-cell last-login">
+                  {user.lastLogin}
+                </div>
+                <div className="table-cell permissions">
+                  <div className="permission-tags">
+                    {user.permissions.map((perm, index) => (
+                      <span key={index} className="permission-tag">
+                        {perm}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="table-cell actions">
+                  <button className="btn btn-sm btn-outline">Edit</button>
+                  <button 
+                    className="btn btn-sm btn-outline"
+                    onClick={() => handleToggleUserStatus(user.id)}
+                  >
+                    {user.status === 'active' ? 'Disable' : 'Enable'}
+                  </button>
+                  <button 
+                    className="btn btn-sm btn-outline"
+                    onClick={() => handleRemoveUser(user.id)}
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
-            </motion.div>
-          ))}
+            ))}
+          </div>
         </div>
-        
-        <div className="mt-4 text-center">
-          <button className="btn-secondary">
-            View All Logs
-          </button>
+      </Card>
+
+      {showAddUserModal && (
+        <div className="modal-overlay">
+          <Card className="modal-card">
+            <div className="modal-header">
+              <h3>Add New User</h3>
+              <button 
+                className="btn btn-outline"
+                onClick={() => setShowAddUserModal(false)}
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="modal-content">
+              <div className="form-group">
+                <label>Name</label>
+                <input
+                  type="text"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                  placeholder="Enter user name"
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                  placeholder="Enter email address"
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>Role</label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                  className="form-select"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-outline"
+                onClick={() => setShowAddUserModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary"
+                onClick={handleAddUser}
+              >
+                Add User
+              </button>
+            </div>
+          </Card>
         </div>
-      </motion.div>
+      )}
+
+      <div className="system-settings">
+        <Card className="settings-card">
+          <h3>System Settings</h3>
+          <div className="settings-list">
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">User Registration</span>
+                <span className="setting-description">Allow new user registration</span>
+              </div>
+              <div className="setting-control">
+                <label className="toggle-switch">
+                  <input type="checkbox" defaultChecked />
+                  <span className="slider"></span>
+                </label>
+              </div>
+            </div>
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Email Notifications</span>
+                <span className="setting-description">Send email alerts to users</span>
+              </div>
+              <div className="setting-control">
+                <label className="toggle-switch">
+                  <input type="checkbox" defaultChecked />
+                  <span className="slider"></span>
+                </label>
+              </div>
+            </div>
+            <div className="setting-item">
+              <div className="setting-info">
+                <span className="setting-name">Two-Factor Auth</span>
+                <span className="setting-description">Require 2FA for all users</span>
+              </div>
+              <div className="setting-control">
+                <label className="toggle-switch">
+                  <input type="checkbox" />
+                  <span className="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };
