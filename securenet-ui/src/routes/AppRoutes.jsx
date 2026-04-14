@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { AuthProvider } from '../context/AuthContext';
 import ProtectedRoute from '../components/common/ProtectedRoute';
 import DashboardLayout from '../layouts/DashboardLayout';
 
@@ -23,11 +24,12 @@ import Settings from '../pages/Settings';
 
 const AppRoutes = () => {
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+    <AuthProvider>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
 
       {/* Protected Routes */}
       <Route
@@ -103,7 +105,7 @@ const AppRoutes = () => {
       <Route
         path="/admin-panel"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute role="admin">
             <DashboardLayout>
               <AdminPanel />
             </DashboardLayout>
@@ -160,7 +162,8 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-    </Routes>
+      </Routes>
+    </AuthProvider>
   );
 };
 

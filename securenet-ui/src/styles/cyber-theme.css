@@ -47,12 +47,31 @@
   --surface-light: #2a2a2a;
   --surface-dark: #0f0f0f;
   
+  /* Font Sizes */
+  --font-xs: 0.7rem;
+  --font-sm: 0.8rem;
+  --font-md: 0.9rem;
+  --font-lg: 1rem;
+  --font-xl: 1.2rem;
+  --font-2xl: 1.4rem;
+  --font-3xl: 1.6rem;
+  
+  /* Spacing */
+  --spacing-xs: 0.2rem;
+  --spacing-sm: 0.4rem;
+  --spacing-md: 0.8rem;
+  --spacing-lg: 1rem;
+  --spacing-xl: 1.5rem;
+  --spacing-2xl: 2rem;
+  
   /* Text Colors */
   --text-primary: #ffffff;
   --text-secondary: #b3b3b3;
   --text-tertiary: #808080;
   --text-muted: #666666;
   --text-inverse: #000000;
+  --text-on-light: #000000;  /* Black text on light backgrounds */
+  --text-on-yellow: #000000;  /* Black text on yellow backgrounds */
   
   /* Border Colors */
   --border: rgba(255, 255, 255, 0.1);

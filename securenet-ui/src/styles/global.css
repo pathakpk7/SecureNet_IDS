@@ -103,6 +103,17 @@ input, textarea, select, button {
   color: var(--text-inverse);
 }
 
+/* Role-based Variables */
+body.admin {
+  --accent: #ff3366;
+  --glow: rgba(255,51,102,0.4);
+}
+
+body.user {
+  --accent: #00f5ff;
+  --glow: rgba(0,245,255,0.4);
+}
+
 /* Utility Classes */
 .sr-only {
   position: absolute;

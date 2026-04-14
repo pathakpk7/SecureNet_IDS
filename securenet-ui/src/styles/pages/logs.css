@@ -8,6 +8,116 @@
   overflow: hidden;
 }
 
+/* Logs Stats Flex Layout */
+.logs-stats {
+  display: flex !important;     /* 🔥 FORCE ROW */
+  gap: 20px;
+  justify-content: center;
+  align-items: stretch;
+  margin-top: 20px;
+}
+
+/* Stat Card Style */
+.stat-card {
+  flex: 1;
+  max-width: 220px;     /* 🔥 prevents stretching */
+
+  padding: 12px;
+  height: auto;
+  background: rgba(0, 20, 0, 0.6);
+  border: 1px solid rgba(0,255,0,0.15);
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* Stat Card Typography */
+.stat-value {
+  font-size: 18px;
+  color: #00ff00;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #00ff00;
+  margin: 0;
+}
+
+/* Remove Extra Space Inside */
+.terminal-card * {
+  margin: 2px 0;
+}
+
+/* Filter Buttons */
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;   /* spacing between buttons */
+  margin-bottom: 12px;
+}
+
+.filter-buttons button {
+  background: transparent;
+  border: 1px solid rgba(0,255,0,0.4);
+  color: #00ff00;
+
+  padding: 4px 10px;
+  font-size: 12px;
+
+  border-radius: 4px;
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.filter-buttons button:hover {
+  background: rgba(0,255,0,0.1);
+  border-color: #00ff00;
+}
+
+.filter-buttons button.active {
+  background: rgba(0,255,0,0.2);
+  border-color: #00ff00;
+}
+
+/* Compact Log Block */
+.terminal-log {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(0,255,0,0.1);
+  padding: 8px;
+
+  font-size: 11px;
+  line-height: 1.3;
+
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Full Width Terminal */
+.full-width-terminal {
+  grid-column: span 2;
+}
+
+/* Hover Effects */
+.terminal-card:hover {
+  border-color: #00ff00;
+  box-shadow: 0 0 12px rgba(0,255,0,0.2);
+  transform: translateY(-2px);
+  transition: 0.2s ease;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .logs-stats {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .stat-card {
+    flex: 1 1 45%;
+  }
+}
+
 .terminal-logs-page::before {
   content: '';
   position: absolute;
@@ -19,4 +129,615 @@
     radial-gradient(ellipse at center, transparent 0%, rgba(0, 255, 0, 0.02) 100%);
   pointer-events: none;
   z-index: 1;
+}
+
+/* Role-based Logs Styling */
+
+/* Admin Logs - Terminal UI */
+body.admin .admin-logs {
+  background: #000;
+  font-family: 'Courier New', monospace;
+  color: #00ff00;
+  position: relative;
+  overflow: hidden;
+}
+
+body.admin .admin-logs .terminal-header {
+  background: rgba(0, 40, 0, 0.8);
+  border: 1px solid rgba(0, 255, 0, 0.3);
+  border-radius: 8px 8px 0 0;
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+body.admin .admin-logs .terminal-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-family: 'Courier New', monospace;
+}
+
+body.admin .admin-logs .terminal-prompt {
+  color: #00ff00;
+  font-weight: bold;
+}
+
+body.admin .admin-logs .terminal-command {
+  color: #ffffff;
+}
+
+body.admin .admin-logs .terminal-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: rgba(0, 20, 0, 0.6);
+  border: 1px solid rgba(0, 255, 0, 0.15);
+  border-radius: var(--radius-md);
+}
+
+body.admin .admin-logs .control-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+body.admin .admin-logs .terminal-input {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(0, 255, 0, 0.3);
+  border-radius: 4px;
+  padding: var(--spacing-sm);
+  min-width: 300px;
+}
+
+body.admin .admin-logs .terminal-input input {
+  background: transparent;
+  border: none;
+  color: #00ff00;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  outline: none;
+  flex: 1;
+}
+
+body.admin .admin-logs .terminal-cursor {
+  color: #00ff00;
+  animation: terminalBlink 1s infinite;
+}
+
+@keyframes terminalBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+body.admin .admin-logs .terminal-btn {
+  background: transparent;
+  border: 1px solid rgba(0, 255, 0, 0.4);
+  color: #00ff00;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+body.admin .admin-logs .terminal-btn:hover {
+  background: rgba(0, 255, 0, 0.1);
+  border-color: #00ff00;
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.3);
+}
+
+body.admin .admin-logs .terminal-btn.active {
+  background: rgba(0, 255, 0, 0.2);
+  border-color: #00ff00;
+}
+
+body.admin .admin-logs .terminal-btn.export:hover {
+  border-color: #00f5ff;
+  color: #00f5ff;
+  box-shadow: 0 0 8px rgba(0, 245, 255, 0.3);
+}
+
+body.admin .admin-logs .terminal-btn.clear:hover {
+  border-color: #ff3366;
+  color: #ff3366;
+  box-shadow: 0 0 8px rgba(255, 51, 102, 0.3);
+}
+
+body.admin .admin-logs .terminal-stats-card {
+  background: rgba(0, 20, 0, 0.6);
+  border: 1px solid rgba(0, 255, 0, 0.15);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+body.admin .admin-logs .terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid rgba(0, 255, 0, 0.15);
+}
+
+body.admin .admin-logs .terminal-header h3 {
+  color: #00ff00;
+  font-family: 'Courier New', monospace;
+  margin: 0;
+}
+
+body.admin .admin-logs .terminal-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+body.admin .admin-logs .terminal-stats {
+  padding: var(--spacing-md);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+body.admin .admin-logs .stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs);
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+}
+
+body.admin .admin-logs .stat-label {
+  color: #00ff00;
+  font-size: 12px;
+}
+
+body.admin .admin-logs .stat-value {
+  color: #00ff00;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+}
+
+body.admin .admin-logs .terminal-output {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+body.admin .admin-logs .terminal-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid rgba(0, 255, 0, 0.05);
+  transition: all var(--transition-fast);
+}
+
+body.admin .admin-logs .terminal-line:hover {
+  background: rgba(0, 255, 0, 0.05);
+}
+
+body.admin .admin-logs .terminal-timestamp {
+  color: #666;
+  font-size: 11px;
+}
+
+body.admin .admin-logs .terminal-status {
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+body.admin .admin-logs .terminal-source {
+  color: #00f5ff;
+  font-weight: bold;
+}
+
+body.admin .admin-logs .terminal-event {
+  color: #ffffff;
+  font-weight: bold;
+}
+
+body.admin .admin-logs .terminal-details {
+  color: #00ff00;
+  flex: 1;
+}
+
+body.admin .admin-logs .terminal-user {
+  color: #ffaa00;
+  font-size: 10px;
+}
+
+body.admin .admin-logs .terminal-cursor-line {
+  color: #00ff00;
+  animation: terminalBlink 1s infinite;
+}
+
+/* User Logs - Clean UI */
+body.user .user-logs-page {
+  background: radial-gradient(circle at top, rgba(0, 245, 255, 0.05), transparent);
+  padding: var(--spacing-xl);
+  min-height: 100vh;
+}
+
+body.user .user-logs-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+}
+
+body.user .user-logs-controls .control-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+body.user .search-input {
+  position: relative;
+}
+
+body.user .search-field {
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-md);
+  outline: none;
+  transition: all var(--transition-normal);
+  min-width: 300px;
+}
+
+body.user .search-field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(0, 245, 255, 0.2);
+}
+
+body.user .filter-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+body.user .filter-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+body.user .filter-btn:hover {
+  background: rgba(0, 245, 255, 0.1);
+  border-color: rgba(0, 245, 255, 0.3);
+  color: var(--accent);
+}
+
+body.user .filter-btn.active {
+  background: rgba(0, 245, 255, 0.2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+body.user .action-btn {
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: rgba(0, 245, 255, 0.1);
+  border: 1px solid rgba(0, 245, 255, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+body.user .action-btn:hover {
+  background: rgba(0, 245, 255, 0.2);
+  border-color: rgba(0, 245, 255, 0.5);
+  box-shadow: 0 4px 16px rgba(0, 245, 255, 0.3);
+}
+
+body.user .user-logs-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+body.user .user-logs-stats .stat-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  text-align: center;
+  transition: all var(--transition-normal);
+}
+
+body.user .user-logs-stats .stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0, 245, 255, 0.15);
+  border-color: rgba(0, 245, 255, 0.2);
+}
+
+body.user .user-logs-stats .stat-value {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: var(--spacing-xs);
+}
+
+body.user .user-logs-stats .stat-label {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+body.user .user-logs-summary {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+body.user .summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.user .summary-header h3 {
+  color: var(--text-primary);
+  margin: 0;
+}
+
+body.user .summary-stats {
+  padding: var(--spacing-lg);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-lg);
+}
+
+body.user .summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-md);
+}
+
+body.user .summary-label {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+body.user .summary-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+body.user .summary-value.secure {
+  color: #00ff00;
+}
+
+body.user .user-logs-list {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+body.user .logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.user .logs-header h3 {
+  color: var(--text-primary);
+  margin: 0;
+}
+
+body.user .logs-info {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+body.user .logs-output {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+}
+
+body.user .log-item {
+  padding: var(--spacing-lg);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  transition: all var(--transition-normal);
+}
+
+body.user .log-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 245, 255, 0.1);
+  border-color: rgba(0, 245, 255, 0.2);
+}
+
+body.user .log-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+body.user .log-timestamp {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  font-family: 'Courier New', monospace;
+}
+
+body.user .log-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+body.user .log-source {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: var(--font-sm);
+}
+
+body.user .log-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+body.user .log-event {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+body.user .log-details {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+body.user .user-logs-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+}
+
+body.user .pagination-info {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+body.user .pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+body.user .page-info {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+/* Responsive adjustments for role-based layouts */
+@media (max-width: 1200px) {
+  body.admin .terminal-controls .control-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
+  
+  body.user .user-logs-controls .control-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
+  
+  body.user .user-logs-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  body.user .summary-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .terminal-logs-page,
+  .user-logs-page {
+    padding: var(--spacing-sm);
+  }
+  
+  body.admin .terminal-controls {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  body.admin .control-left,
+  body.admin .control-right {
+    width: 100%;
+  }
+  
+  body.admin .terminal-input {
+    min-width: auto;
+  }
+  
+  body.user .user-logs-controls {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  body.user .user-logs-controls .control-left,
+  body.user .user-logs-controls .control-right {
+    width: 100%;
+  }
+  
+  body.user .search-field {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  body.user .user-logs-stats {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  
+  body.user .log-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+  
+  body.user .user-logs-pagination {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  .logs-stats {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .stat-card {
+    flex: 1 1 45%;
+  }
 }

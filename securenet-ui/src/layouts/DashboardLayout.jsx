@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Navbar from '../components/dashboard/Topbar';
 import Sidebar from '../components/dashboard/Sidebar';
+import AdminBanner from '../components/common/AdminBanner';
 import './DashboardLayout.css';
 
 function DashboardLayout({ children }) {
@@ -20,6 +21,7 @@ function DashboardLayout({ children }) {
 
   return (
     <div className="layout">
+      <AdminBanner />
 
       <Navbar 
         toggleMenu={() => setMenuOpen(prev => !prev)} 

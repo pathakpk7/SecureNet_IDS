@@ -16,14 +16,37 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    setUser(currentUser);
-    setLoading(false);
+    // Get initial user session
+    const initializeAuth = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error('Error getting current user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setUser(session?.user || null);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, password, rememberMe = false) => {
     try {
-      const loggedInUser = authService.login(email, password);
+      const loggedInUser = await authService.login(email, password, rememberMe);
       setUser(loggedInUser);
       return loggedInUser;
     } catch (error) {
@@ -33,16 +56,46 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const newUser = authService.register(userData);
+      const newUser = await authService.register(userData);
       return newUser;
     } catch (error) {
       throw error;
     }
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
+  const logout = async () => {
+    try {
+      await authService.logout();
+      setUser(null);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const resetPassword = async (email) => {
+    try {
+      await authService.resetPassword(email);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const resendEmailConfirmation = async (email) => {
+    try {
+      await authService.resendEmailConfirmation(email);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const updateUserProfile = async (updates) => {
+    try {
+      const updatedUser = await authService.updateUserProfile(updates);
+      setUser(updatedUser);
+      return updatedUser;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const value = {
@@ -50,6 +103,9 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    resetPassword,
+    resendEmailConfirmation,
+    updateUserProfile,
     loading
   };
 

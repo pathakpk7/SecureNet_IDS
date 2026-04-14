@@ -60,6 +60,9 @@
 
 .animated-counter.warning .counter-value {
   color: #ffaa00;
+  background: rgba(255, 170, 0, 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
 .animated-counter.warning.animating .counter-value {

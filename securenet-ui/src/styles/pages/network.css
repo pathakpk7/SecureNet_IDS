@@ -1,4 +1,821 @@
+/* Network Monitor Page Styles */
 .network-monitor {
-  padding: var(--spacing-xl);
+  padding: var(--spacing-md);
   min-height: 100vh;
+}
+
+/* Page Header */
+.page-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.page-title {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.page-subtitle {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Traffic Overview */
+.traffic-overview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);   /* 🔥 2 cards */
+  gap: 20px;
+  align-items: start;   /* 🔥 prevents stretching */
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  padding: 18px;
+  background: rgba(10,15,30,0.7);
+  border-radius: 12px;
+  border: 1px solid rgba(0,255,255,0.1);
+  text-align: center;
+  height: auto;
+  max-width: 100%;
+}
+
+.traffic-card {
+  height: auto;
+  min-height: unset;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.stat-value {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.stat-label {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 5px 0;
+}
+
+/* Protocol Distribution */
+.protocol-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.traffic-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);  /* 2x2 stats grid */
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.stat-item {
+  text-align: left;
+}
+
+.stat-value {
+  font-size: 20px;   /* reduced */
+}
+
+.section-title {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.protocol-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.protocol-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.protocol-name {
+  font-size: var(--font-md);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.protocol-traffic {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.traffic-bar {
+  width: 120px;
+  height: 8px;
+  background: var(--surface-dark);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.traffic-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.protocol-percentage {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Traffic Chart */
+.traffic-chart {
+  margin-bottom: var(--spacing-xl);
+}
+
+.chart-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  height: 300px;
+}
+
+/* Live Traffic */
+.live-traffic {
+  margin-bottom: var(--spacing-xl);
+}
+
+/* Network Details */
+.network-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+/* Network Actions */
+.network-actions {
+  margin-top: 20px;
+}
+
+.actions-card {
+  max-width: 600px;
+}
+
+.section-title {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.traffic-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.traffic-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.traffic-info {
+  flex: 1;
+}
+
+.traffic-source {
+  font-size: var(--font-md);
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.traffic-details {
+  display: flex;
+  gap: var(--spacing-xs);
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.traffic-type {
+  padding: 2px 6px;
+  background: rgba(0, 245, 255, 0.1);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  color: var(--accent);
+}
+
+.traffic-volume {
+  color: var(--text-secondary);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .stats-overview {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+  
+  .stat-card {
+    height: auto;
+  }
+  
+  .protocol-list {
+    gap: var(--spacing-xs);
+  }
+  
+  .chart-container {
+    height: 250px;
+    padding: var(--spacing-md);
+  }
+}
+
+/* Role-based Network Monitor Styling */
+
+/* Admin Network Monitor - Dense + Powerful */
+body.admin .admin-network-monitor {
+  background: radial-gradient(circle at top, rgba(255, 51, 102, 0.08), transparent);
+}
+
+body.admin .admin-network-monitor .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+body.admin .monitor-toggle-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: rgba(255, 51, 102, 0.1);
+  border: 1px solid rgba(255, 51, 102, 0.3);
+  border-radius: var(--radius-md);
+  color: #ff3366;
+  font-weight: 600;
+  font-size: var(--font-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+body.admin .monitor-toggle-btn.enabled {
+  background: rgba(255, 51, 102, 0.2);
+  border-color: rgba(255, 51, 102, 0.5);
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.3);
+}
+
+body.admin .monitor-toggle-btn.disabled {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+}
+
+body.admin .global-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+body.admin .global-stats-grid .stat-card {
+  background: rgba(255, 51, 102, 0.05);
+  border: 1px solid rgba(255, 51, 102, 0.2);
+  padding: var(--spacing-md);
+  text-align: center;
+}
+
+body.admin .global-stats-grid .stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(255, 51, 102, 0.3);
+  border-color: rgba(255, 51, 102, 0.4);
+}
+
+body.admin .full-network-graph {
+  margin-bottom: var(--spacing-xl);
+}
+
+body.admin .network-graph-card {
+  background: rgba(255, 51, 102, 0.03);
+  border: 1px solid rgba(255, 51, 102, 0.15);
+}
+
+body.admin .graph-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+body.admin .live-indicator {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: #ff3366;
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: livePulse 1.5s infinite;
+}
+
+body.admin .dual-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+body.admin .all-ips-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+body.admin .all-ips-card {
+  background: rgba(255, 51, 102, 0.03);
+  border: 1px solid rgba(255, 51, 102, 0.15);
+}
+
+body.admin .ips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+}
+
+body.admin .ip-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+body.admin .ip-card.high {
+  border-color: rgba(255, 170, 0, 0.3);
+  background: rgba(255, 170, 0, 0.05);
+}
+
+body.admin .ip-card.critical {
+  border-color: rgba(255, 51, 102, 0.5);
+  background: rgba(255, 51, 102, 0.1);
+}
+
+body.admin .ip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+body.admin .ip-address {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+body.admin .ip-status {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+body.admin .ip-status.active {
+  background: rgba(0, 255, 0, 0.2);
+  color: #00ff00;
+}
+
+body.admin .ip-status.blocked {
+  background: rgba(255, 51, 102, 0.2);
+  color: #ff3366;
+}
+
+body.admin .ip-controls {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+body.admin .control-btn {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+body.admin .control-btn:hover:not(:disabled) {
+  background: rgba(255, 51, 102, 0.2);
+  border-color: rgba(255, 51, 102, 0.4);
+  color: #ff3366;
+}
+
+body.admin .control-btn.monitor-btn.active {
+  background: rgba(0, 245, 255, 0.2);
+  border-color: rgba(0, 245, 255, 0.4);
+  color: #00f5ff;
+}
+
+body.admin .live-traffic-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+body.admin .live-traffic-card {
+  background: rgba(255, 51, 102, 0.03);
+  border: 1px solid rgba(255, 51, 102, 0.15);
+}
+
+body.admin .traffic-feed {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+body.admin .traffic-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+body.admin .traffic-item.blocked {
+  background: rgba(255, 51, 102, 0.1);
+  border-color: rgba(255, 51, 102, 0.3);
+}
+
+body.admin .traffic-flow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-family: 'Courier New', monospace;
+  font-size: var(--font-sm);
+}
+
+body.admin .traffic-arrow {
+  color: var(--accent);
+}
+
+body.admin .protocol-analysis .protocol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+body.admin .protocol-analysis .protocol-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+/* User Network Monitor - Simplified Cards */
+body.user .user-network-monitor {
+  background: radial-gradient(circle at top, rgba(0, 245, 255, 0.05), transparent);
+}
+
+body.user .personal-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+body.user .personal-stat-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  text-align: center;
+  transition: all var(--transition-normal);
+}
+
+body.user .personal-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0, 245, 255, 0.15);
+  border-color: rgba(0, 245, 255, 0.2);
+}
+
+body.user .personal-activity-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+body.user .personal-activity-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.user .personal-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+body.user .my-sessions-section,
+body.user .my-connections-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+body.user .my-sessions-card,
+body.user .my-connections-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.user .sessions-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+}
+
+body.user .session-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  transition: all var(--transition-normal);
+}
+
+body.user .session-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 245, 255, 0.1);
+}
+
+body.user .session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+body.user .session-device {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+body.user .session-status.active {
+  color: #00ff00;
+  font-weight: 600;
+}
+
+body.user .session-status.inactive {
+  color: var(--text-muted);
+}
+
+body.user .connections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+body.user .connection-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  transition: all var(--transition-normal);
+}
+
+body.user .connection-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 245, 255, 0.1);
+}
+
+body.user .connection-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: var(--font-lg);
+}
+
+body.user .connection-info {
+  flex: 1;
+}
+
+body.user .connection-service {
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: var(--spacing-xs);
+}
+
+body.user .connection-address,
+body.user .connection-duration {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  display: block;
+}
+
+body.user .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+body.user .status-dot.connected {
+  background: #00ff00;
+  box-shadow: 0 0 8px #00ff00;
+}
+
+body.user .protocol-usage-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+body.user .protocol-usage-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.user .protocol-usage-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+body.user .protocol-usage-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+}
+
+body.user .protocol-usage-info {
+  flex: 1;
+}
+
+body.user .protocol-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: var(--spacing-xs);
+}
+
+body.user .protocol-usage-desc {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+body.user .protocol-usage-traffic {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+body.user .usage-bar {
+  width: 100px;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+body.user .usage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  transition: width var(--transition-normal);
+}
+
+body.user .quick-info-section {
+  margin-top: var(--spacing-xl);
+}
+
+body.user .quick-info-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+}
+
+body.user .info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.user .info-item:last-child {
+  border-bottom: none;
+}
+
+body.user .info-label {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+body.user .info-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+body.user .info-value.secure {
+  color: #00ff00;
+}
+
+/* Responsive adjustments for role-based layouts */
+@media (max-width: 1200px) {
+  body.admin .global-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  body.user .personal-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .network-monitor {
+    padding: var(--spacing-sm);
+  }
+  
+  body.admin .global-stats-grid,
+  body.user .personal-stats-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  
+  body.admin .dual-charts,
+  body.user .personal-charts {
+    grid-template-columns: 1fr;
+  }
+  
+  body.admin .ips-grid,
+  body.user .sessions-list,
+  body.user .connections-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  body.admin .ip-controls {
+    flex-direction: column;
+  }
+  
+  body.user .connection-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .stat-card {
+    height: auto;
+    aspect-ratio: unset;
+  }
+  
+  .protocol-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+  
+  .traffic-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+  
+  .chart-container {
+    height: 200px;
+    padding: var(--spacing-sm);
+  }
+  
+  .section-title {
+    font-size: var(--font-md);
+  }
 }
