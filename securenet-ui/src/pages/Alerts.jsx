@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../api/supabase';
 import Card from '../components/ui/Card';
 import '../styles/pages/alerts.css';
 
 const Alerts = () => {
   const [selectedSeverity, setSelectedSeverity] = useState('all');
-
-  const alerts = [
+  const [alertData, setAlertData] = useState([
     {
       id: 1,
       threatType: 'SQL Injection Attempt',
@@ -60,11 +60,11 @@ const Alerts = () => {
       sourceIP: '10.0.0.8',
       description: 'Anomalous network traffic pattern detected'
     }
-  ];
+  ]);
 
   const filteredAlerts = selectedSeverity === 'all' 
-    ? alerts 
-    : alerts.filter(alert => alert.severity === selectedSeverity);
+    ? alertData 
+    : alertData.filter(alert => alert.severity === selectedSeverity);
 
   const getSeverityColor = (severity) => {
     switch(severity) {
@@ -126,19 +126,19 @@ const Alerts = () => {
       <div className="alerts-stats">
         <Card className="stat-card">
           <div className="stat-content">
-            <div className="stat-value">{alerts.length}</div>
+            <div className="stat-value">{alertData.length}</div>
             <div className="stat-label">Total Alerts</div>
           </div>
         </Card>
         <Card className="stat-card">
           <div className="stat-content">
-            <div className="stat-value">{alerts.filter(a => a.severity === 'high').length}</div>
+            <div className="stat-value">{alertData.filter(a => a.severity === 'high').length}</div>
             <div className="stat-label">High Severity</div>
           </div>
         </Card>
         <Card className="stat-card">
           <div className="stat-content">
-            <div className="stat-value">{alerts.filter(a => a.status === 'active').length}</div>
+            <div className="stat-value">{alertData.filter(a => a.status === 'active').length}</div>
             <div className="stat-label">Active Threats</div>
           </div>
         </Card>

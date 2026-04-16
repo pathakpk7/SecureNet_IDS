@@ -3,6 +3,7 @@ import Card from '../components/ui/Card';
 import LineChart from '../components/charts/LineChart';
 import PieChart from '../components/charts/PieChart';
 import AnimatedCounter from '../components/ui/AnimatedCounter';
+import OrgDebug from '../components/debug/OrgDebug';
 import '../styles/pages/dashboard.css';
 
 const AdminDashboard = () => {
@@ -258,6 +259,9 @@ const AdminDashboard = () => {
           </div>
         </Card>
       </div>
+
+      {/* Organization Debug Panel */}
+      <OrgDebug />
     </div>
   );
 };

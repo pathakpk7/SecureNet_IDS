@@ -21,6 +21,7 @@ import Notifications from '../pages/Notifications';
 import Simulation from '../pages/Simulation';
 import Integrations from '../pages/Integrations';
 import Settings from '../pages/Settings';
+import RealtimeLogs from '../pages/RealtimeLogs';
 
 const AppRoutes = () => {
   return (
@@ -158,6 +159,16 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <DashboardLayout>
               <Settings />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/realtime-logs"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <RealtimeLogs />
             </DashboardLayout>
           </ProtectedRoute>
         }

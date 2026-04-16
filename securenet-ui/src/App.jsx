@@ -1,6 +1,8 @@
-import React, { useEffect } from 'react';
-import AppRoutes from './routes/AppRoutes';
-import { useAuth } from './context/AuthContext';
+import React, { useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
+import AppRoutes from "./routes/AppRoutes";
+import { useAuth } from "./context/AuthContext";
+import RealtimeLogs from "./pages/RealtimeLogs";
 
 function App() {
   const { user } = useAuth();
@@ -11,7 +13,13 @@ function App() {
 
   return (
     <div className="App">
-      <AppRoutes />
+      <Routes>
+        {/* All existing routes */}
+        <Route path="/*" element={<AppRoutes />} />
+
+        {/* New realtime route */}
+        <Route path="/realtime-logs" element={<RealtimeLogs />} />
+      </Routes>
     </div>
   );
 }

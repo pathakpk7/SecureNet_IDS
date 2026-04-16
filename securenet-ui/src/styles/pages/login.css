@@ -55,9 +55,9 @@
 
 /* Auth Card */
 .auth-card {
-  width: 360px;
-  max-width: 90vw;
-  padding: 18px 20px;
+  width: 400px;
+  max-width: 95vw;
+  padding: 20px;
   position: relative;
   z-index: 10;
   animation: cardFloat 6s ease-in-out infinite;
@@ -72,9 +72,10 @@
 /* Login Selection Container */
 .login-selection-container {
   text-align: center;
-  max-width: 1200px;
+  max-width: 1400px;
   width: 100%;
   padding: 0 20px;
+  margin: 0 auto;
 }
 
 .selection-header {
@@ -97,9 +98,20 @@
 /* Login Cards Grid */
 .login-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 30px;
   margin-top: 40px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 900px) {
+  .login-cards {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+  }
 }
 
 /* Login Card Styles */
@@ -107,14 +119,19 @@
   background: rgba(10, 15, 30, 0.8);
   border: 2px solid rgba(0, 245, 255, 0.2);
   border-radius: 16px;
-  padding: 20px;
+  padding: 25px;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: left;
   position: relative;
   overflow: hidden;
-  max-height: 80vh;
+  max-height: 70vh;
   overflow-y: auto;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .login-card::before {
@@ -446,7 +463,7 @@
 .error-message {
   position: relative;
   margin-bottom: 8px;
-  padding: 6px 8px;
+  padding: 6px 12px;
   background: rgba(255, 51, 102, 0.1);
   border: 1px solid rgba(255, 51, 102, 0.3);
   border-radius: var(--radius-md);
@@ -455,10 +472,10 @@
   text-align: center;
   animation: errorShake 0.5s ease;
   z-index: 1000;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 90%;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 @keyframes errorShake {
@@ -471,7 +488,7 @@
 .success-message {
   position: relative;
   margin-bottom: 8px;
-  padding: 6px 8px;
+  padding: 6px 12px;
   background: rgba(76, 175, 80, 0.1);
   border: 1px solid rgba(76, 175, 80, 0.3);
   border-radius: var(--radius-md);
@@ -480,10 +497,10 @@
   text-align: center;
   animation: successPulse 0.5s ease;
   z-index: 1000;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 90%;
+  width: 100%;
+  box-sizing: border-box;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 @keyframes successPulse {

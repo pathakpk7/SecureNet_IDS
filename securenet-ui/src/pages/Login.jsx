@@ -103,7 +103,54 @@ const Login = () => {
       setError('');
       setSuccess('');
       
-      // Attempt login with new auth service
+      // Check if this is a demo account
+      const isAdminDemo = formData.email === demoAccounts.admin.email && formData.password === demoAccounts.admin.password;
+      const isUserDemo = formData.email === demoAccounts.user.email && formData.password === demoAccounts.user.password;
+      
+      if (isAdminDemo || isUserDemo) {
+        // Create mock user for demo
+        const mockUser = {
+          id: isAdminDemo ? 'demo-admin-id' : 'demo-user-id',
+          email: formData.email,
+          role: isAdminDemo ? 'admin' : 'user',
+          org_id: 'demo-org-id',
+          organization: { id: 'demo-org-id', name: "Demo Organization" },
+          permissions: isAdminDemo ? {
+            canManageUsers: true,
+            canManageOrgSettings: true,
+            canInviteUsers: true,
+            canViewLogs: true,
+            canBlockIP: true,
+            canRunSimulation: true,
+            canViewAnalytics: true,
+            canGenerateReports: true,
+            canExportData: true,
+            canViewUsers: true,
+            canResetPasswords: true,
+            canDeactivateUsers: true
+          } : {
+            canViewLogs: true,
+            canBlockIP: false,
+            canManageUsers: false,
+            canRunSimulation: false,
+            canViewAnalytics: true,
+            canGenerateReports: true,
+            canExportData: true,
+            canViewUsers: true,
+            canResetPasswords: true,
+            canDeactivateUsers: true
+          }
+        };
+        
+        // Store mock user in localStorage for demo
+        localStorage.setItem('demoUser', JSON.stringify(mockUser));
+        
+        // Redirect to dashboard
+        navigate('/dashboard');
+        return;
+      }
+      
+      // Attempt real login with auth service
       const user = await login(formData.email, formData.password, formData.rememberMe);
       
       if (user) {
@@ -111,6 +158,53 @@ const Login = () => {
         navigate('/dashboard');
       }
     } catch (err) {
+      // If real login fails, check if it's a demo account
+      const isAdminDemo = formData.email === demoAccounts.admin.email && formData.password === demoAccounts.admin.password;
+      const isUserDemo = formData.email === demoAccounts.user.email && formData.password === demoAccounts.user.password;
+      
+      if (isAdminDemo || isUserDemo) {
+        // Create mock user for demo
+        const mockUser = {
+          id: isAdminDemo ? 'demo-admin-id' : 'demo-user-id',
+          email: formData.email,
+          role: isAdminDemo ? 'admin' : 'user',
+          org_id: 'demo-org-id',
+          organization: { id: 'demo-org-id', name: "Demo Organization" },
+          permissions: isAdminDemo ? {
+            canManageUsers: true,
+            canManageOrgSettings: true,
+            canInviteUsers: true,
+            canViewLogs: true,
+            canBlockIP: true,
+            canRunSimulation: true,
+            canViewAnalytics: true,
+            canGenerateReports: true,
+            canExportData: true,
+            canViewUsers: true,
+            canResetPasswords: true,
+            canDeactivateUsers: true
+          } : {
+            canViewLogs: true,
+            canBlockIP: false,
+            canManageUsers: false,
+            canRunSimulation: false,
+            canViewAnalytics: true,
+            canGenerateReports: true,
+            canExportData: true,
+            canViewUsers: true,
+            canResetPasswords: true,
+            canDeactivateUsers: true
+          }
+        };
+        
+        // Store mock user in localStorage for demo
+        localStorage.setItem('demoUser', JSON.stringify(mockUser));
+        
+        // Redirect to dashboard
+        navigate('/dashboard');
+        return;
+      }
+      
       setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);

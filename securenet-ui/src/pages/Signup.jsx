@@ -8,13 +8,17 @@ const Signup = () => {
     name: '',
     email: '',
     password: '',
-    role: 'user'
+    role: 'user',
+    orgId: '', // For user signup
+    orgName: '', // For admin signup
+    orgDescription: '' // For admin signup
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [success, setSuccess] = useState('');
   
-  const { register } = useAuth();
+  const { adminSignup, userSignup, debugGetAllOrganizations } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -33,9 +37,12 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
+      console.log("Starting signup process for role:", formData.role);
+
       // Validation
       if (!formData.name || !formData.email || !formData.password) {
         setError('Please fill in all fields');
@@ -65,12 +72,39 @@ const Signup = () => {
         return;
       }
 
-      // Attempt registration
-      const user = await register(formData);
+      // Organization validation for user signup
+      if (formData.role === 'user' && !formData.orgId) {
+        setError('Please select an organization to join');
+        setLoading(false);
+        return;
+      }
+
+      let result;
+
+      if (formData.role === 'admin') {
+        // ADMIN SIGNUP FLOW
+        console.log("ADMIN SIGNUP FLOW STARTED");
+        result = await adminSignup(formData.email, formData.password, formData.orgName, formData.orgDescription);
+        console.log("ADMIN SIGNUP COMPLETED:", result);
+        setSuccess('Admin account created successfully! Organization created. You can now login.');
+      } else {
+        // USER SIGNUP FLOW
+        console.log("USER SIGNUP FLOW STARTED");
+        result = await userSignup(formData.email, formData.password, formData.orgId);
+        console.log("USER SIGNUP COMPLETED:", result);
+        setSuccess('User account created successfully! You can now login.');
+      }
+
+      // DEBUG LOGS
+      console.log("SIGNUP RESULT:", result);
       
       // Redirect to login after successful registration
-      navigate('/login');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+      
     } catch (err) {
+      console.error("Signup error:", err);
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
@@ -84,11 +118,12 @@ const Signup = () => {
         <div className="particles"></div>
       </div>
       
-      <div className="auth-card glass neon-border fade-in">
-        <div className="auth-header">
-          <h2>Create SecureNet Account</h2>
-          <p>Join our advanced intrusion detection system</p>
-        </div>
+      <div className="auth-content-wrapper">
+        <div className="auth-card glass neon-border fade-in">
+          <div className="auth-header">
+            <h2>Create SecureNet Account</h2>
+            <p>Join our advanced intrusion detection system</p>
+          </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
@@ -157,9 +192,67 @@ const Signup = () => {
             </select>
           </div>
 
+          {formData.role === 'admin' && (
+            <div className="form-group">
+              <label htmlFor="orgName">Organization Name</label>
+              <input
+                type="text"
+                id="orgName"
+                name="orgName"
+                value={formData.orgName}
+                onChange={handleChange}
+                placeholder="Enter your organization name"
+                className="auth-input"
+                required
+              />
+            </div>
+          )}
+
+          {formData.role === 'admin' && (
+            <div className="form-group">
+              <label htmlFor="orgDescription">Organization Description</label>
+              <textarea
+                id="orgDescription"
+                name="orgDescription"
+                value={formData.orgDescription}
+                onChange={handleChange}
+                placeholder="Describe your organization (optional)"
+                className="auth-input auth-textarea"
+                rows="3"
+              />
+            </div>
+          )}
+
+          {formData.role === 'user' && (
+            <div className="form-group">
+              <label htmlFor="orgId">Organization</label>
+              <select
+                id="orgId"
+                name="orgId"
+                value={formData.orgId}
+                onChange={handleChange}
+                className="auth-input auth-select"
+                required
+              >
+                <option value="">Select an organization to join</option>
+                {/* For now, hardcoded admin org ID - in production, fetch from API */}
+                <option value="PASTE_ADMIN_ORG_ID_HERE">Test Organization</option>
+              </select>
+              <small className="form-help-text">
+                For testing: Ask your admin for the organization ID
+              </small>
+            </div>
+          )}
+
           {error && (
             <div className="error-message">
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="success-message">
+              {success}
             </div>
           )}
 
@@ -180,6 +273,7 @@ const Signup = () => {
             </a>
           </p>
         </div>
+      </div>
       </div>
     </div>
   );
