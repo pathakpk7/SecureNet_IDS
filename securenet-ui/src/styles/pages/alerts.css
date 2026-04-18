@@ -3,6 +3,17 @@
   min-height: 100vh;
 }
 
+.alert-glow {
+  animation: alertPulse 1s ease-in-out 2;
+  border: 1px solid red !important;
+}
+
+@keyframes alertPulse {
+  0% { box-shadow: 0 0 0px rgba(255,0,0,0); }
+  50% { box-shadow: 0 0 20px rgba(255,0,0,0.9); }
+  100% { box-shadow: 0 0 0px rgba(255,0,0,0); }
+}
+
 /* Stats Cards - One Row */
 .alerts-stats {
   display: flex;

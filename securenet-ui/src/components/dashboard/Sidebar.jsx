@@ -1,25 +1,15 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { getNavItemsByRole } from '../../config/navConfig';
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen = true, setMenuOpen }) => {
   const location = useLocation();
-
-  const menuItems = [
-    { path: '/dashboard', icon: 'dashboard', text: 'Dashboard' },
-    { path: '/alerts', icon: 'warning', text: 'Alerts' },
-    { path: '/network-monitor', icon: 'network', text: 'Network Monitor' },
-    { path: '/attack-analysis', icon: 'security', text: 'Attack Analysis' },
-    { path: '/ai-insights', icon: 'psychology', text: 'AI Insights' },
-    { path: '/logs', icon: 'description', text: 'Logs' },
-    { path: '/reports', icon: 'assessment', text: 'Reports' },
-    { path: '/admin-panel', icon: 'admin', text: 'Admin Panel' },
-    { path: '/user-profile', icon: 'person', text: 'User Profile' },
-    { path: '/notifications', icon: 'notifications', text: 'Notifications' },
-    { path: '/simulation', icon: 'science', text: 'Simulation' },
-    { path: '/integrations', icon: 'integration', text: 'Integrations' },
-    { path: '/settings', icon: 'settings', text: 'Settings' }
-  ];
+  const { user } = useAuth();
+  
+  const navConfig = getNavItemsByRole(user?.role || 'user');
+  const menuItems = navConfig.flatMap(group => group.items);
 
   const getIcon = (iconName) => {
     const icons = {
@@ -61,20 +51,28 @@ const Sidebar = ({ isOpen = true, setMenuOpen }) => {
         
         <nav className="sidebar-nav">
           <ul className="nav-list">
-            {menuItems.map((item, index) => (
-              <li key={item.path} className="nav-item">
-                <Link 
-                  to={item.path} 
-                  className={`nav-link ${location.pathname === item.path ? 'active' : ''}`}
-                  onClick={() => setMenuOpen && setMenuOpen(false)}
-                >
-                  <span className="nav-icon">{getIcon(item.icon)}</span>
-                  <span className="nav-text">{item.text}</span>
-                  {location.pathname === item.path && (
-                    <div className="nav-indicator"></div>
-                  )}
-                </Link>
-              </li>
+            {navConfig.map((group, groupIndex) => (
+              <React.Fragment key={group.group}>
+                {groupIndex > 0 && <div className="nav-separator"></div>}
+                <li className="nav-group">
+                  <div className="nav-group-title">{group.group}</div>
+                  {group.items.map((item) => (
+                    <li key={item.path} className="nav-item">
+                      <Link 
+                        to={item.path} 
+                        className={`nav-link ${location.pathname === item.path ? 'active' : ''}`}
+                        onClick={() => setMenuOpen && setMenuOpen(false)}
+                      >
+                        <span className="nav-icon">{getIcon(item.icon)}</span>
+                        <span className="nav-text">{item.name}</span>
+                        {location.pathname === item.path && (
+                          <div className="nav-indicator"></div>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </li>
+              </React.Fragment>
             ))}
           </ul>
         </nav>

@@ -6,29 +6,27 @@ import DashboardLayout from '../layouts/DashboardLayout';
 
 // Import pages
 import Landing from '../pages/Landing';
+import CyberLanding from '../pages/CyberLanding';
 import Login from '../pages/Login';
 import Signup from '../pages/Signup';
 import Dashboard from '../pages/Dashboard';
 import Alerts from '../pages/Alerts';
 import NetworkMonitor from '../pages/NetworkMonitor';
 import AttackAnalysis from '../pages/AttackAnalysis';
-import AIInsights from '../pages/AIInsights';
 import Logs from '../pages/Logs';
-import Reports from '../pages/Reports';
 import AdminPanel from '../pages/AdminPanel';
-import UserProfile from '../pages/UserProfile';
+import Profile from '../pages/Profile';
 import Notifications from '../pages/Notifications';
-import Simulation from '../pages/Simulation';
-import Integrations from '../pages/Integrations';
 import Settings from '../pages/Settings';
-import RealtimeLogs from '../pages/RealtimeLogs';
+import AIInsights from '../pages/AIInsights';
 
 const AppRoutes = () => {
   return (
     <AuthProvider>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<CyberLanding />} />
+        <Route path="/landing" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
@@ -94,16 +92,6 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/reports"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <Reports />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/admin-panel"
         element={
           <ProtectedRoute role="admin">
@@ -114,11 +102,11 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/user-profile"
+        path="/profile"
         element={
           <ProtectedRoute>
             <DashboardLayout>
-              <UserProfile />
+              <Profile />
             </DashboardLayout>
           </ProtectedRoute>
         }
@@ -134,41 +122,11 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/simulation"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <Simulation />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/integrations"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <Integrations />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/settings"
         element={
           <ProtectedRoute>
             <DashboardLayout>
               <Settings />
-            </DashboardLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/realtime-logs"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout>
-              <RealtimeLogs />
             </DashboardLayout>
           </ProtectedRoute>
         }

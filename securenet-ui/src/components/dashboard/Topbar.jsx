@@ -34,7 +34,7 @@ function Navbar({ toggleMenu, menuOpen }) {
     {
       name: "Admin",
       children: [
-        ...(user?.user_metadata?.role === 'admin' ? [{ name: "Admin Panel", path: "/admin-panel" }] : []),
+        ...(user?.role === 'admin' ? [{ name: "Admin Panel", path: "/admin-panel" }] : []),
         { name: "User Profile", path: "/user-profile" }
       ]
     },

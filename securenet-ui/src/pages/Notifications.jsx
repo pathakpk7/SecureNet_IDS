@@ -1,14 +1,11 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import AdminNotifications from './AdminNotifications';
-import UserNotifications from './UserNotifications';
+import { usePermissions } from '../hooks/usePermissions';
+import AdminView from '../components/notifications/AdminView';
+import UserView from '../components/notifications/UserView';
 import '../styles/pages/notifications.css';
 
-const Notifications = () => {
-  const { user } = useAuth();
-  
-  if (user?.role === "admin") return <AdminNotifications />;
-  else return <UserNotifications />;
-};
+export default function Notifications() {
+  const { can } = usePermissions();
 
-export default Notifications;
+  return can("VIEW_ADVANCED_ANALYTICS") ? <AdminView /> : <UserView />;
+}

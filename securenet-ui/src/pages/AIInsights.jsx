@@ -1,13 +1,17 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import AdminAIInsights from './AdminAIInsights';
-import UserAIInsights from './UserAIInsights';
+import { usePermissions } from '../hooks/usePermissions';
+import AdminAIInsights from '../components/analysis/AdminAIInsights';
+import UserAIInsights from '../components/analysis/UserAIInsights';
+import '../styles/pages/analysis.css';
 
 const AIInsights = () => {
-  const { user } = useAuth();
-  
-  if (user?.role === "admin") return <AdminAIInsights />;
-  else return <UserAIInsights />;
+  const { can } = usePermissions();
+
+  if (can('view_admin_insights')) {
+    return <AdminAIInsights />;
+  }
+
+  return <UserAIInsights />;
 };
 
 export default AIInsights;

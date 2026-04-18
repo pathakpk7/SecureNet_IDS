@@ -1,13 +1,9 @@
-import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import AdminLogs from './AdminLogs';
-import UserLogs from './UserLogs';
+import { usePermissions } from "../hooks/usePermissions";
+import AdminView from "../components/logs/AdminView";
+import UserView from "../components/logs/UserView";
 
-const Logs = () => {
-  const { user } = useAuth();
-  
-  if (user?.role === "admin") return <AdminLogs />;
-  else return <UserLogs />;
-};
+export default function Logs() {
+  const { can } = usePermissions();
 
-export default Logs;
+  return can("VIEW_ADVANCED_ANALYTICS") ? <AdminView /> : <UserView />;
+}

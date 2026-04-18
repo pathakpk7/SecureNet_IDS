@@ -1,13 +1,9 @@
-import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import AdminNetworkMonitor from './AdminNetworkMonitor';
-import UserNetworkMonitor from './UserNetworkMonitor';
+import { usePermissions } from "../hooks/usePermissions";
+import AdminView from "../components/network/AdminView";
+import UserView from "../components/network/UserView";
 
-const NetworkMonitor = () => {
-  const { user } = useAuth();
-  
-  if (user?.role === "admin") return <AdminNetworkMonitor />;
-  else return <UserNetworkMonitor />;
-};
+export default function NetworkMonitor() {
+  const { can } = usePermissions();
 
-export default NetworkMonitor;
+  return can("VIEW_ADVANCED_ANALYTICS") ? <AdminView /> : <UserView />;
+}
