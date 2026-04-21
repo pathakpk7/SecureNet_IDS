@@ -1,9 +1,9 @@
 /* Cyber Landing Page Styles */
 
-/* Smooth Scroll */
-html {
+/* Smooth Scroll - disabled for better GSAP performance */
+/* html {
   scroll-behavior: smooth;
-}
+} */
 
 body {
   margin: 0;
@@ -20,18 +20,20 @@ body {
   perspective: 1200px;
 }
 
-/* Cyber Core */
+/* Cyber Core - optimized */
 .cyber-core {
   position: fixed;
   top: 50%;
   left: 50%;
-  width: 260px;
-  height: 260px;
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
   background: radial-gradient(circle, #00ffff, transparent);
-  box-shadow: 0 0 80px rgba(0,255,255,0.8);
+  box-shadow: 0 0 40px rgba(0,255,255,0.6); /* Reduced shadow */
   transform: translate(-50%, -50%);
   z-index: 5;
+  will-change: transform; /* Optimize for animations */
+  pointer-events: none; /* Allow clicks to pass through */
 }
 
 /* Scene Styling */
@@ -45,9 +47,11 @@ body {
   background: radial-gradient(circle at 50% 50%, #0a0f1c 0%, #000 100%);
 }
 
-/* Particles Canvas */
+/* Particles Canvas - optimized */
 .particles-canvas {
   position: fixed;
+  will-change: transform;
+  transform: translateZ(0); /* Hardware acceleration */
   top: 0;
   left: 0;
   width: 100%;
@@ -162,6 +166,7 @@ body {
   width: 100%;
   height: 100%;
   z-index: 2;
+  pointer-events: none; /* Allow clicks to pass through to buttons */
 }
 
 /* Geo Attack Map */
@@ -173,6 +178,7 @@ body {
   height: 100%;
   opacity: 0.25;
   z-index: 1;
+  pointer-events: none; /* Allow clicks to pass through */
 }
 
 /* AI Wave */
@@ -183,6 +189,7 @@ body {
   height: 200px;
   z-index: 3;
   opacity: 0.6;
+  pointer-events: none; /* Allow clicks to pass through */
 }
 
 /* Floating Elements */
@@ -210,6 +217,7 @@ body {
   height: 3px;
   background: rgba(255, 255, 255, 0.1);
   z-index: 1000;
+  pointer-events: none; /* Allow clicks to pass through */
 }
 
 .progress-fill {
@@ -599,6 +607,8 @@ section {
   text-align: center;
   padding: 5rem 2rem;
   background: linear-gradient(135deg, rgba(0, 255, 255, 0.05) 0%, rgba(0, 153, 204, 0.05) 100%);
+  position: relative;
+  z-index: 50;
 }
 
 .cta-content {
@@ -624,6 +634,8 @@ section {
   justify-content: center;
   margin-bottom: 3rem;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 100;
 }
 
 .cta-button {
@@ -637,6 +649,8 @@ section {
   transition: all 0.3s ease;
   border: 2px solid transparent;
   display: inline-block;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .cta-button.primary {
