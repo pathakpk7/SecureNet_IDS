@@ -9,7 +9,7 @@ A production-style, real-time Intrusion Detection System that combines machine l
 - **Machine Learning Detection**: Trained RandomForest model for anomaly detection
 - **Threat Intelligence Integration**: Multiple API sources (VirusTotal, AbuseIPDB, URLScan, OTX)
 - **Risk Assessment**: Combined ML and threat intel scoring for accurate risk levels
-- **Database Storage**: Supabase/PostgreSQL for logs, alerts, and statistics
+- **Database Storage**: Supabase for logs, alerts, and statistics
 - **REST API**: Complete FastAPI backend for frontend integration
 - **Real-time Updates**: WebSocket support for live monitoring
 - **Blacklist Management**: Dynamic IP blacklist system
