@@ -1,0 +1,76 @@
+.line-chart-container {
+  position: relative;
+  width: 100%;
+  padding: 20px;
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.line-chart-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 245, 255, 0.05), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.line-chart-container canvas {
+  filter: drop-shadow(0 0 20px rgba(0, 245, 255, 0.6));
+  position: relative;
+  z-index: 2;
+  transition: all var(--transition-normal);
+  animation: chartGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes chartGlow {
+  0% {
+    filter: drop-shadow(0 0 20px rgba(0, 245, 255, 0.6));
+  }
+  100% {
+    filter: drop-shadow(0 0 30px rgba(0, 245, 255, 0.8));
+  }
+}
+
+.line-chart-container:hover canvas {
+  filter: drop-shadow(0 0 25px rgba(0, 245, 255, 0.5));
+  transform: translateY(-2px);
+}
+
+/* Neon glow effect on hover */
+.line-chart-container:hover {
+  border-color: var(--accent);
+  box-shadow: 0 8px 32px rgba(0, 245, 255, 0.2), 0 0 20px rgba(0, 245, 255, 0.1);
+}
+
+/* Animation for data updates */
+.line-chart-container.updating {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .line-chart-container {
+    padding: 15px;
+  }
+  
+  .line-chart-container canvas {
+    max-height: 250px !important;
+  }
+}

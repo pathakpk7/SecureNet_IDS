@@ -1,0 +1,99 @@
+.page-transition {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Fade Transition */
+.page-transition--fade.page-transition--hidden {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-transition--fade.page-transition--visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Slide Transition */
+.page-transition--slide.page-transition--hidden {
+  opacity: 0;
+  transform: translateX(-100px);
+}
+
+.page-transition--slide.page-transition--visible {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scale Transition */
+.page-transition--scale.page-transition--hidden {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.page-transition--scale.page-transition--visible {
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Cyber Transition */
+.page-transition--cyber.page-transition--hidden {
+  opacity: 0;
+  transform: translateY(30px) scale(0.98);
+  filter: blur(2px);
+}
+
+.page-transition--cyber.page-transition--visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Glitch Transition */
+.page-transition--glitch.page-transition--hidden {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-transition--glitch.page-transition--visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.3s ease;
+}
+
+.page-transition--glitch.page-transition--visible::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    transparent 30%, 
+    rgba(0, 245, 255, 0.1) 50%, 
+    transparent 70%
+  );
+  animation: glitch 0.3s ease;
+  pointer-events: none;
+}
+
+@keyframes glitch {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}

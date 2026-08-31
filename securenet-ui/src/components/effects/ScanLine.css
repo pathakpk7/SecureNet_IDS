@@ -1,0 +1,64 @@
+.scan-line {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 245, 255, 0.1) 45%, 
+    rgba(0, 245, 255, 0.3) 50%, 
+    rgba(0, 245, 255, 0.1) 55%, 
+    transparent 100%
+  );
+  z-index: 9999;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.scan-beam {
+  position: absolute;
+  top: 0;
+  width: 100px;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 245, 255, 0.8) 10%, 
+    rgba(0, 245, 255, 0.8) 90%, 
+    transparent 100%
+  );
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.6);
+  animation: scanMove 5s linear infinite;
+}
+
+.scan-glow {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 120px;
+  height: 20px;
+  background: radial-gradient(ellipse at center, 
+    rgba(0, 245, 255, 0.4) 0%, 
+    transparent 70%
+  );
+  transform: translateX(-50%);
+  animation: scanGlow 5s linear infinite;
+}
+
+@keyframes scanMove {
+  0% {
+    transform: translateX(-100px);
+  }
+  100% {
+    transform: translateX(calc(100vw + 100px));
+  }
+}
+
+@keyframes scanGlow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "accuracy": 0.9993333333333333,
+  "precision": 1.0,
+  "recall": 0.9980952380952381,
+  "f1_score": 0.9990467111534795,
+  "confusion_matrix": [
+    [
+      4875,
+      0
+    ],
+    [
+      5,
+      2620
+    ]
+  ],
+  "feature_importance": {
+    "Flow Duration": 0.16478122686257088,
+    "Total Fwd Packets": 0.38215598100398707,
+    "Total Backward Packets": 0.09243437636410584,
+    "Fwd Packets Length Total": 0.19855482903476285,
+    "Bwd Packets Length Total": 0.16207358673457323
+  },
+  "features": [
+    "Flow Duration",
+    "Total Fwd Packets",
+    "Total Backward Packets",
+    "Fwd Packets Length Total",
+    "Bwd Packets Length Total"
+  ],
+  "dataset_size": 30000
+}

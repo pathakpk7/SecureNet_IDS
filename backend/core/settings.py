@@ -1,0 +1,42 @@
+"""
+Core settings management for SecureNet IDS
+Alternative settings interface for better organization
+"""
+
+from .config import Settings, settings
+from .constants import (
+    PROTOCOL_MAPPING,
+    RISK_LEVELS,
+    ATTACK_TYPES,
+    TCP_FLAGS,
+    DB_TABLES,
+    DEFAULT_RATE_LIMIT,
+    DEFAULT_THREAT_INTEL_RATE_LIMIT,
+    DEFAULT_CONFIDENCE_THRESHOLD,
+    DEFAULT_MAX_PACKET_SIZE,
+    DEFAULT_CONNECTION_TIMEOUT,
+    DEFAULT_LOG_LEVEL,
+    DEFAULT_WEBSOCKET_PORT,
+    DEFAULT_ML_WEIGHT,
+    DEFAULT_THREAT_INTEL_WEIGHT
+)
+
+# Re-export for convenience
+__all__ = [
+    'Settings',
+    'settings',
+    'PROTOCOL_MAPPING',
+    'RISK_LEVELS',
+    'ATTACK_TYPES',
+    'TCP_FLAGS',
+    'DB_TABLES',
+    'DEFAULT_RATE_LIMIT',
+    'DEFAULT_THREAT_INTEL_RATE_LIMIT',
+    'DEFAULT_CONFIDENCE_THRESHOLD',
+    'DEFAULT_MAX_PACKET_SIZE',
+    'DEFAULT_CONNECTION_TIMEOUT',
+    'DEFAULT_LOG_LEVEL',
+    'DEFAULT_WEBSOCKET_PORT',
+    'DEFAULT_ML_WEIGHT',
+    'DEFAULT_THREAT_INTEL_WEIGHT'
+]

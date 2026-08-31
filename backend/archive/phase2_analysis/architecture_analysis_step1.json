@@ -1,0 +1,141 @@
+{
+  "module_sizes": {
+    "ARCHITECTURE_ANALYSIS": 13539,
+    "capture": 14410,
+    "config": 2568,
+    "csv_logger": 12356,
+    "database": 19255,
+    "feature_engineering": 6857,
+    "main": 29078,
+    "predictor": 21756,
+    "schemas": 4571,
+    "threat_intel": 39251,
+    "utils": 15140
+  },
+  "file_dependencies": {
+    "ARCHITECTURE_ANALYSIS": "{'sys', 'pathlib.Path', 'ast', 'collections.defaultdict', 'json', 'collections.Counter'}",
+    "capture": "{'typing.Callable', 'queue.Queue', 'time', 'typing.Any', 'config.PROTOCOL_MAPPING', 'schemas.PacketData', 'logging', 'asyncio', 'typing.Optional', 'typing.Dict', 'pyshark', 'datetime.datetime', 'threading', 'scapy.all', 'queue.Empty', 'schemas.ProtocolType', 'config.settings'}",
+    "config": "{'pydantic.Field', 'typing.Optional', 'pydantic_settings.BaseSettings', 'os'}",
+    "csv_logger": "{'pathlib.Path', 'csv', 'typing.Any', 'logging', 'typing.Optional', 'datetime.timezone', 'typing.Dict', 'datetime.datetime', 'threading', 'queue', 'os', 'concurrent.futures.ThreadPoolExecutor'}",
+    "database": "{'database.repositories.user_repository.UserRepository', 'typing.List', 'database.repositories.organization_repository.OrganizationRepository', 'typing.Dict', 'database.repositories.audit_repository.AuditRepository', 'datetime.datetime', 'json', 'logging', 'schemas.BlacklistEntry', 'schemas.LogEntry', 'typing.Any', 'database.repositories.alert_repository.AlertRepository', 'supabase.create_client', 'asyncio', 'schemas.MonitoringStatus', 'supabase.Client', 'datetime.timedelta', 'schemas.Alert', 'typing.Optional', 'config.DB_TABLES', 'schemas.Stats', 'database.repositories.base_repository.BaseRepository', 'config.settings'}",
+    "feature_engineering": "{'time', 'typing.Any', 'typing.List', 'schemas.PacketData', 'datetime.timedelta', 'typing.Optional', 'collections.defaultdict', 'typing.Dict', 'collections.deque', 'datetime.datetime', 'threading', 'numpy', 'logging', 'config.settings'}",
+    "main": "{'schemas.schemas.WebSocketMessage', 'fastapi.HTTPException', 'typing.List', 'capture.AsyncPacketCapture', 'utils.create_response', 'slowapi._rate_limit_exceeded_handler', 'schemas.schemas.APIResponse', 'csv_logger.initialize_csv_logging', 'fastapi.Depends', 'fastapi.middleware.cors.CORSMiddleware', 'os', 'database.db_manager', 'schemas.schemas.MonitoringStatus', 'contextlib.asynccontextmanager', 'slowapi.Limiter', 'typing.Dict', 'datetime.datetime', 'json', 'logging', 'utils.export_data_to_csv', 'utils.validate_ip_address', 'schemas.schemas.Alert', 'uvicorn', 'utils.setup_logging', 'csv_logger.write_log_entry', 'fastapi.responses.JSONResponse', 'typing.Any', 'fastapi.BackgroundTasks', 'fastapi.FastAPI', 'threat_intel.threat_intel_manager', 'fastapi.WebSocketDisconnect', 'asyncio', 'schemas.schemas.Stats', 'slowapi.util.get_remote_address', 'core.config.settings', 'slowapi.errors.RateLimitExceeded', 'csv_logger.get_csv_logger_stats', 'schemas.schemas.LogEntry', 'time', 'fastapi.WebSocket', 'utils.get_system_info', 'dotenv.load_dotenv', 'typing.Optional', 'predictor.ml_predictor', 'feature_engineering.FeatureEngineering', 'schemas.schemas.HealthCheck', 'schemas.schemas.BlacklistEntry'}",
+    "predictor": "{'typing.List', 'sklearn.model_selection.train_test_split', 'pandas', 'typing.Tuple', 'sklearn.metrics.accuracy_score', 'numpy', 'schemas.PredictionResult', 'schemas.ThreatIntelResult', 'sklearn.ensemble.RandomForestClassifier', 'sklearn.preprocessing.StandardScaler', 'typing.Dict', 'config.ATTACK_TYPES', 'logging', 'schemas.MLFeatures', 'sklearn.metrics.confusion_matrix', 'schemas.AttackType', 'schemas.RiskLevel', 'typing.Any', 'pathlib.Path', 'typing.Optional', 'pickle', 'sklearn.metrics.classification_report', 'config.settings'}",
+    "schemas": "{'typing.Any', 'typing.List', 'pydantic.BaseModel', 'pydantic.Field', 'typing.Optional', 'enum.Enum', 'typing.Dict', 'datetime.datetime'}",
+    "threat_intel": "{'os', 'schemas.RiskLevel', 'time', 'typing.Any', 'aiohttp', 'typing.List', 'datetime.timedelta', 'asyncio', 'dotenv.load_dotenv', 'typing.Optional', 'typing.Dict', 'datetime.datetime', 'json', 'logging', 'schemas.ThreatIntelResult', 'requests', 'config.settings'}",
+    "utils": "{'typing.List', 'psutil', 'platform', 'typing.Union', 'csv', 'ipaddress', 'typing.Dict', 'datetime.datetime', 'json', 'logging', 'hashlib', 'typing.Any', 'asyncio', 'pathlib.Path', 're', 'time', 'datetime.timedelta', 'typing.Optional', 'config.settings'}"
+  },
+  "import_graph": {
+    "ARCHITECTURE_ANALYSIS": "{'sys', 'pathlib.Path', 'ast', 'collections.defaultdict', 'json', 'collections.Counter'}",
+    "capture": "{'typing.Callable', 'queue.Queue', 'time', 'typing.Any', 'config.PROTOCOL_MAPPING', 'schemas.PacketData', 'logging', 'asyncio', 'typing.Optional', 'typing.Dict', 'pyshark', 'datetime.datetime', 'threading', 'scapy.all', 'queue.Empty', 'schemas.ProtocolType', 'config.settings'}",
+    "config": "{'pydantic.Field', 'typing.Optional', 'pydantic_settings.BaseSettings', 'os'}",
+    "csv_logger": "{'pathlib.Path', 'csv', 'typing.Any', 'logging', 'typing.Optional', 'datetime.timezone', 'typing.Dict', 'datetime.datetime', 'threading', 'queue', 'os', 'concurrent.futures.ThreadPoolExecutor'}",
+    "database": "{'database.repositories.user_repository.UserRepository', 'typing.List', 'database.repositories.organization_repository.OrganizationRepository', 'typing.Dict', 'database.repositories.audit_repository.AuditRepository', 'datetime.datetime', 'json', 'logging', 'schemas.BlacklistEntry', 'schemas.LogEntry', 'typing.Any', 'database.repositories.alert_repository.AlertRepository', 'supabase.create_client', 'asyncio', 'schemas.MonitoringStatus', 'supabase.Client', 'datetime.timedelta', 'schemas.Alert', 'typing.Optional', 'config.DB_TABLES', 'schemas.Stats', 'database.repositories.base_repository.BaseRepository', 'config.settings'}",
+    "feature_engineering": "{'time', 'typing.Any', 'typing.List', 'schemas.PacketData', 'datetime.timedelta', 'typing.Optional', 'collections.defaultdict', 'typing.Dict', 'collections.deque', 'datetime.datetime', 'threading', 'numpy', 'logging', 'config.settings'}",
+    "main": "{'schemas.schemas.WebSocketMessage', 'fastapi.HTTPException', 'typing.List', 'capture.AsyncPacketCapture', 'utils.create_response', 'slowapi._rate_limit_exceeded_handler', 'schemas.schemas.APIResponse', 'csv_logger.initialize_csv_logging', 'fastapi.Depends', 'fastapi.middleware.cors.CORSMiddleware', 'os', 'database.db_manager', 'schemas.schemas.MonitoringStatus', 'contextlib.asynccontextmanager', 'slowapi.Limiter', 'typing.Dict', 'datetime.datetime', 'json', 'logging', 'utils.export_data_to_csv', 'utils.validate_ip_address', 'schemas.schemas.Alert', 'uvicorn', 'utils.setup_logging', 'csv_logger.write_log_entry', 'fastapi.responses.JSONResponse', 'typing.Any', 'fastapi.BackgroundTasks', 'fastapi.FastAPI', 'threat_intel.threat_intel_manager', 'fastapi.WebSocketDisconnect', 'asyncio', 'schemas.schemas.Stats', 'slowapi.util.get_remote_address', 'core.config.settings', 'slowapi.errors.RateLimitExceeded', 'csv_logger.get_csv_logger_stats', 'schemas.schemas.LogEntry', 'time', 'fastapi.WebSocket', 'utils.get_system_info', 'dotenv.load_dotenv', 'typing.Optional', 'predictor.ml_predictor', 'feature_engineering.FeatureEngineering', 'schemas.schemas.HealthCheck', 'schemas.schemas.BlacklistEntry'}",
+    "predictor": "{'typing.List', 'sklearn.model_selection.train_test_split', 'pandas', 'typing.Tuple', 'sklearn.metrics.accuracy_score', 'numpy', 'schemas.PredictionResult', 'schemas.ThreatIntelResult', 'sklearn.ensemble.RandomForestClassifier', 'sklearn.preprocessing.StandardScaler', 'typing.Dict', 'config.ATTACK_TYPES', 'logging', 'schemas.MLFeatures', 'sklearn.metrics.confusion_matrix', 'schemas.AttackType', 'schemas.RiskLevel', 'typing.Any', 'pathlib.Path', 'typing.Optional', 'pickle', 'sklearn.metrics.classification_report', 'config.settings'}",
+    "schemas": "{'typing.Any', 'typing.List', 'pydantic.BaseModel', 'pydantic.Field', 'typing.Optional', 'enum.Enum', 'typing.Dict', 'datetime.datetime'}",
+    "threat_intel": "{'os', 'schemas.RiskLevel', 'time', 'typing.Any', 'aiohttp', 'typing.List', 'datetime.timedelta', 'asyncio', 'dotenv.load_dotenv', 'typing.Optional', 'typing.Dict', 'datetime.datetime', 'json', 'logging', 'schemas.ThreatIntelResult', 'requests', 'config.settings'}",
+    "utils": "{'typing.List', 'psutil', 'platform', 'typing.Union', 'csv', 'ipaddress', 'typing.Dict', 'datetime.datetime', 'json', 'logging', 'hashlib', 'typing.Any', 'asyncio', 'pathlib.Path', 're', 'time', 'datetime.timedelta', 'typing.Optional', 'config.settings'}"
+  },
+  "current_structure": {
+    "archive": {
+      "files": [
+        "capture_realtime.py",
+        "config_enhanced.py",
+        "database_enhanced.py",
+        "database_fixed.py",
+        "feature_engineering_fixed.py",
+        "feature_engineering_realtime.py",
+        "predictor_fixed.py",
+        "main_cicids.py",
+        "main_enhanced.py",
+        "main_fixed.py",
+        "main_realtime.py",
+        "comprehensive_validation.py",
+        "dependency_validator.py",
+        "startup_validator.py",
+        "validate_main.py"
+      ],
+      "count": 15
+    },
+    "background_jobs": {
+      "files": [
+        "scheduler.py",
+        "tasks.py"
+      ],
+      "count": 2
+    },
+    "config": {
+      "files": [],
+      "count": 0
+    },
+    "controllers": {
+      "files": [],
+      "count": 0
+    },
+    "database": {
+      "files": [
+        "__init__.py",
+        "alert_repository.py",
+        "audit_repository.py",
+        "base_repository.py",
+        "organization_repository.py",
+        "user_repository.py"
+      ],
+      "count": 6
+    },
+    "node_modules": {
+      "files": [],
+      "count": 0
+    },
+    "rbac": {
+      "files": [
+        "permissions.py"
+      ],
+      "count": 1
+    },
+    "reporting": {
+      "files": [
+        "__init__.py",
+        "csv_generator.py",
+        "pdf_generator.py",
+        "report_templates.py"
+      ],
+      "count": 4
+    },
+    "routes": {
+      "files": [
+        "health_routes.py",
+        "monitoring_routes.py",
+        "organization_routes.py",
+        "report_routes.py"
+      ],
+      "count": 4
+    },
+    "siem": {
+      "files": [
+        "adapters.py",
+        "base_connector.py",
+        "elk_connector.py",
+        "qradar_connector.py",
+        "splunk_connector.py"
+      ],
+      "count": 5
+    },
+    "tests": {
+      "files": [
+        "__init__.py"
+      ],
+      "count": 1
+    },
+    "utils": {
+      "files": [
+        "central_logging.py",
+        "health_monitor.py",
+        "__init__.py"
+      ],
+      "count": 3
+    }
+  }
+}

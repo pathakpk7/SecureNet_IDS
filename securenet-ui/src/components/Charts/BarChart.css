@@ -1,0 +1,97 @@
+.bar-chart-container {
+  position: relative;
+  width: 100%;
+  padding: 20px;
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.bar-chart-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(255, 170, 0, 0.05), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.bar-chart-container canvas {
+  filter: drop-shadow(0 0 25px rgba(0, 245, 255, 0.6));
+  position: relative;
+  z-index: 2;
+  transition: all var(--transition-normal);
+  animation: barGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes barGlow {
+  0% {
+    filter: drop-shadow(0 0 25px rgba(0, 245, 255, 0.6));
+  }
+  100% {
+    filter: drop-shadow(0 0 35px rgba(0, 245, 255, 0.8));
+  }
+}
+
+.bar-chart-container:hover canvas {
+  filter: drop-shadow(0 0 35px rgba(0, 245, 255, 0.8));
+  transform: translateY(-4px) scale(1.02);
+  animation: barPulse 1s ease-in-out infinite;
+}
+
+@keyframes barPulse {
+  0%, 100% {
+    transform: translateY(-4px) scale(1.02);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.04);
+  }
+}
+
+/* Neon glow effect on hover */
+.bar-chart-container:hover {
+  border-color: #ffaa00;
+  box-shadow: 0 8px 32px rgba(255, 170, 0, 0.2), 0 0 20px rgba(255, 170, 0, 0.1);
+}
+
+/* Animation for data updates */
+.bar-chart-container.updating {
+  animation: slideIn 1s ease-out;
+}
+
+@keyframes slideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Bar glow effect */
+.bar-chart-container .chart-bar {
+  transition: all var(--transition-fast);
+}
+
+.bar-chart-container .chart-bar:hover {
+  filter: brightness(1.2) drop-shadow(0 0 10px rgba(255, 170, 0, 0.8));
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .bar-chart-container {
+    padding: 15px;
+  }
+  
+  .bar-chart-container canvas {
+    max-height: 250px !important;
+  }
+}

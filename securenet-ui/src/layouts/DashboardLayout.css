@@ -1,0 +1,59 @@
+.layout {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.content {
+  width: 100%;
+  padding: 30px;
+  margin-top: 70px;   /* push content below navbar (navbar is now 60px tall) */
+}
+
+.dashboard {
+  margin-top: 30px;
+}
+
+.hero {
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+.hero h1 {
+  font-size: 48px;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.hero p {
+  color: #8b9bb4;
+}
+
+/* Prevent content shift */
+body {
+  overflow-x: hidden;
+}
+
+/* Mobile Overlay */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+  }
+  
+  .content-area {
+    padding: var(--spacing-md);
+  }
+}
