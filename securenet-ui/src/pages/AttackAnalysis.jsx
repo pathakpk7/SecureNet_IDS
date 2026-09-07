@@ -7,6 +7,7 @@ import UserAIInsights from "../components/analysis/UserAIInsights";
 import Reports from "../components/analysis/Reports";
 import AdminSimulation from "../components/simulation/AdminSimulation";
 import UserSimulation from "../components/simulation/UserSimulation";
+import "../styles/pages/analysis.css";
 
 export default function AttackAnalysis() {
   const [activeTab, setActiveTab] = useState("analysis");

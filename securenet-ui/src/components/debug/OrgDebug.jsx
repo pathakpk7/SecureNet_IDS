@@ -110,11 +110,11 @@ const OrgDebug = () => {
         <div style={{ padding: '10px', background: 'rgba(255,255,0,0.1)', marginTop: '20px' }}>
           <h4>Expected Results:</h4>
           <ul>
-            <li>✅ Organizations table populated</li>
-            <li>✅ Profiles have org_id</li>
-            <li>✅ Admin + User share same org_id</li>
-            <li>✅ Frontend user has org_id</li>
-            <li>✅ Multiple orgs are isolated</li>
+            <li>[PASS] Organizations table populated</li>
+            <li>[PASS] Profiles have org_id</li>
+            <li>[PASS] Admin + User share same org_id</li>
+            <li>[PASS] Frontend user has org_id</li>
+            <li>[PASS] Multiple orgs are isolated</li>
           </ul>
         </div>
       </div>

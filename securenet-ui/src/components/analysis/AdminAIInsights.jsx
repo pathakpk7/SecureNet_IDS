@@ -3,7 +3,7 @@ import Card from '../../components/ui/Card';
 import LineChart from '../../components/Charts/LineChart';
 import PieChart from '../../components/Charts/PieChart';
 import AnimatedCounter from '../../components/ui/AnimatedCounter';
-import '../../styles/pages/analysis.css';
+import '../../styles/pages/ai.css';
 
 const AdminAIInsights = () => {
   const [aiMetrics, setAiMetrics] = useState({
@@ -43,9 +43,10 @@ const AdminAIInsights = () => {
     <div className="ai-insights-page fade-in">
       <div className="page-header">
         <h1 className="page-title">AI Security Insights</h1>
-        <p className="page-subtitle">Machine learning-powered threat analysis and predictions</p>
+        <p className="page-subtitle">Machine learning-powered threat analysis, real-time predictions, and autonomous recommendations</p>
       </div>
 
+      {/* Row 1: 4 KPI CARDS IN ONE ROW */}
       <div className="ai-metrics-grid">
         <Card className="metric-card">
           <div className="metric-content">
@@ -59,7 +60,9 @@ const AdminAIInsights = () => {
 
         <Card className="metric-card">
           <div className="metric-content">
-            <div className="metric-value">{aiMetrics.accuracy}%</div>
+            <div className="metric-value">
+              {typeof aiMetrics.accuracy === 'number' ? aiMetrics.accuracy.toFixed(1) : aiMetrics.accuracy}%
+            </div>
             <div className="metric-label">AI Accuracy</div>
             <div className="metric-trend positive">+2.3% improvement</div>
           </div>
@@ -75,45 +78,58 @@ const AdminAIInsights = () => {
 
         <Card className="metric-card">
           <div className="metric-content">
-            <div className="metric-value">{aiMetrics.responseTime}s</div>
+            <div className="metric-value">
+              {typeof aiMetrics.responseTime === 'number' ? aiMetrics.responseTime.toFixed(2) : aiMetrics.responseTime}s
+            </div>
             <div className="metric-label">Avg Response Time</div>
             <div className="metric-trend positive">-0.3s faster</div>
           </div>
         </Card>
       </div>
 
-      <div className="insights-grid">
-        <Card className="insights-card">
-          <h3 className="card-title">Threat Prediction Trends</h3>
-          <div className="chart-container">
-            <LineChart data={threatTrends} />
-          </div>
-        </Card>
+      {/* Row 2: THREAT PREDICTION TRENDS CHART */}
+      <Card className="insights-card" style={{ marginBottom: '24px' }}>
+        <div className="aa-card-header">
+          <h3>Threat Prediction Trends</h3>
+          <span className="aa-badge">7-DAY FORECAST</span>
+        </div>
+        <div className="chart-container" style={{ height: '260px', position: 'relative' }}>
+          <LineChart data={threatTrends} height="100%" />
+        </div>
+      </Card>
 
+      {/* Row 3: AI MODEL PERFORMANCE & AI RECOMMENDATIONS IN ONE ROW */}
+      <div className="ai-models-recs-row">
         <Card className="insights-card">
-          <h3 className="card-title">AI Model Performance</h3>
+          <div className="aa-card-header">
+            <h3>AI Model Performance</h3>
+            <span className="aa-badge">v3.2.1 ENGINE</span>
+          </div>
           <div className="model-stats">
             <div className="stat-row">
               <span>Model Version:</span>
-              <span>v3.2.1</span>
+              <span className="font-mono text-cyan font-bold">v3.2.1-RandomForest</span>
             </div>
             <div className="stat-row">
               <span>Training Data:</span>
-              <span>2.4M events</span>
+              <span className="text-gray-200">2.4M CICIDS2017 Events</span>
             </div>
             <div className="stat-row">
               <span>Last Updated:</span>
-              <span>2 hours ago</span>
+              <span className="text-gray-300">2 hours ago</span>
             </div>
             <div className="stat-row">
               <span>Confidence Score:</span>
-              <span>96.2%</span>
+              <span className="text-emerald font-bold">96.2%</span>
             </div>
           </div>
         </Card>
 
-        <Card className="insights-card full-width">
-          <h3 className="card-title">AI Recommendations</h3>
+        <Card className="insights-card">
+          <div className="aa-card-header">
+            <h3>AI Recommendations</h3>
+            <span className="aa-badge">AUTONOMOUS</span>
+          </div>
           <div className="recommendations-list">
             {aiRecommendations.map(rec => (
               <div key={rec.id} className={`recommendation-item ${rec.priority.toLowerCase()}`}>

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { Globe } from 'lucide-react';
 import Card from '../ui/Card';
-import BarChart from '../charts/BarChart';
-import PieChart from '../charts/PieChart';
+import BarChart from '../Charts/BarChart';
+import PieChart from '../Charts/PieChart';
+import toast from 'react-hot-toast';
 import '../../styles/pages/analysis.css';
 
 const AdminAttackAnalysis = () => {
@@ -12,327 +14,277 @@ const AdminAttackAnalysis = () => {
   });
 
   const [attackTypeData, setAttackTypeData] = useState({
-    labels: ['SQL Injection', 'DDoS', 'Brute Force', 'Port Scan', 'Malware', 'Phishing'],
-    values: [47, 23, 156, 89, 12, 34]
+    labels: ['SQL Injection', 'DDoS SYN Flood', 'Brute Force', 'Port Scan', 'Ransomware C2', 'XSS Scripting'],
+    values: [347, 289, 412, 156, 89, 234]
   });
 
-  const [fullAttackData, setFullAttackData] = useState([
-    { id: 1, type: 'SQL Injection', source: '192.168.1.105', target: 'Database Server', severity: 'critical', status: 'active', time: 'Just now', blocked: false },
-    { id: 2, type: 'DDoS Attack', source: '10.0.0.15', target: 'Web Server', severity: 'high', status: 'mitigated', time: '2 min ago', blocked: true },
-    { id: 3, type: 'Brute Force', source: '172.16.0.22', target: 'SSH Server', severity: 'medium', status: 'active', time: '5 min ago', blocked: false },
-    { id: 4, type: 'Port Scan', source: '203.0.113.45', target: 'Firewall', severity: 'low', status: 'blocked', time: '8 min ago', blocked: true },
-    { id: 5, type: 'Malware', source: '192.168.1.50', target: 'Workstation', severity: 'high', status: 'quarantined', time: '12 min ago', blocked: true },
-    { id: 6, type: 'Phishing', source: 'external', target: 'Email Server', severity: 'medium', status: 'filtered', time: '15 min ago', blocked: true },
-    { id: 7, type: 'SQL Injection', source: '10.0.0.25', target: 'API Server', severity: 'critical', status: 'active', time: '18 min ago', blocked: false },
-    { id: 8, type: 'Ransomware', source: '172.16.0.33', target: 'File Server', severity: 'critical', status: 'isolated', time: '22 min ago', blocked: true }
+  const [mitreAttacks, setMitreAttacks] = useState([
+    { id: 1, type: 'SQL Injection (Union-based)', mitre: 'T1190', target: 'Database Cluster (MySQL)', severity: 'critical', count: 347, trend: 'up', percentage: '+28%' },
+    { id: 2, type: 'DDoS SYN Flood Burst', mitre: 'T1498', target: 'Web Gateway Edge', severity: 'high', count: 289, trend: 'down', percentage: '-14%' },
+    { id: 3, type: 'SSH Credential Brute Force', mitre: 'T1110', target: 'Bastion SSH Node', severity: 'high', count: 412, trend: 'up', percentage: '+18%' },
+    { id: 4, type: 'Port Reconnaissance Sweep', mitre: 'T1046', target: 'DMZ Firewall Interface', severity: 'medium', count: 156, trend: 'stable', percentage: '0%' },
+    { id: 5, type: 'Ransomware C2 Beaconing', mitre: 'T1071', target: 'File Storage Server', severity: 'critical', count: 89, trend: 'down', percentage: '-6%' },
+    { id: 6, type: 'Cross-Site Scripting (XSS)', mitre: 'T1059', target: 'Client API Gateway', severity: 'medium', count: 234, trend: 'up', percentage: '+12%' }
   ]);
 
-  // Simulate live data updates
+  const [threatActorIPs, setThreatActorIPs] = useState([
+    { ip: '203.0.113.45', country: 'Russia (RU)', target: 'API Gateway', riskScore: 98, status: 'Active Threat', blocked: false },
+    { ip: '45.33.32.156', country: 'China (CN)', target: 'Web Edge', riskScore: 94, status: 'Blocked', blocked: true },
+    { ip: '198.51.100.77', country: 'United States (US)', target: 'Database Server', riskScore: 88, status: 'Monitoring', blocked: false },
+    { ip: '185.220.101.5', country: 'Germany (DE)', target: 'File Storage', riskScore: 96, status: 'Blocked', blocked: true },
+    { ip: '192.168.1.105', country: 'Internal Subnet', target: 'Core Switch', riskScore: 82, status: 'Quarantined', blocked: false }
+  ]);
+
+  // Simulate live threat updates
   useEffect(() => {
     const interval = setInterval(() => {
       setAttackFrequencyData(prev => ({
         ...prev,
-        values: prev.values.map(value => 
-          Math.max(10, Math.min(100, value + (Math.random() - 0.5) * 10))
-        )
+        values: prev.values.map(val => Math.max(10, Math.min(100, val + Math.floor((Math.random() - 0.5) * 8))))
       }));
-
-      // Add new attack occasionally
-      if (Math.random() > 0.8) {
-        const newAttack = {
-          id: Date.now(),
-          type: ['SQL Injection', 'DDoS', 'Brute Force', 'Port Scan', 'Malware', 'Phishing'][Math.floor(Math.random() * 6)],
-          source: `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-          target: ['Database Server', 'Web Server', 'SSH Server', 'Firewall', 'Workstation', 'Email Server'][Math.floor(Math.random() * 6)],
-          severity: ['low', 'medium', 'high', 'critical'][Math.floor(Math.random() * 4)],
-          status: 'active',
-          time: 'Just now',
-          blocked: false
-        };
-        setFullAttackData(prev => [newAttack, ...prev.slice(0, 9)]);
-      }
-    }, 3000);
+    }, 4000);
 
     return () => clearInterval(interval);
   }, []);
 
-  const globalAttackStats = {
-    totalAttacks: 1247,
-    blockedAttacks: 892,
-    activeAttacks: 45,
-    criticalAttacks: 23,
-    mitigatedAttacks: 156,
-    detectionRate: 94.7
-  };
-
-  const attackTypes = [
-    { type: 'SQL Injection', count: 347, trend: 'up', severity: 'critical', percentage: 28 },
-    { type: 'DDoS Attack', count: 289, trend: 'down', severity: 'high', percentage: 23 },
-    { type: 'Brute Force', count: 412, trend: 'up', severity: 'medium', percentage: 33 },
-    { type: 'Port Scanning', count: 156, trend: 'stable', severity: 'medium', percentage: 12 },
-    { type: 'Malware', count: 89, trend: 'down', severity: 'high', percentage: 7 },
-    { type: 'Phishing', count: 234, trend: 'up', severity: 'low', percentage: 19 }
-  ];
-
-  const sourceIPs = [
-    { ip: '192.168.1.105', country: 'Unknown', attacks: 89, status: 'active', risk: 'critical', blocked: false },
-    { ip: '10.0.0.15', country: 'US', attacks: 67, status: 'blocked', risk: 'high', blocked: true },
-    { ip: '172.16.0.22', country: 'CN', attacks: 45, status: 'monitoring', risk: 'medium', blocked: false },
-    { ip: '203.0.113.45', country: 'RU', attacks: 34, status: 'blocked', risk: 'high', blocked: true },
-    { ip: '192.168.1.50', country: 'Unknown', attacks: 23, status: 'active', risk: 'low', blocked: false },
-    { ip: '8.8.8.8', country: 'US', attacks: 12, status: 'whitelisted', risk: 'low', blocked: false }
-  ];
-
-  const getTrendIcon = (trend) => {
-    switch(trend) {
-      case 'up': return ' ';
-      case 'down': return ' ';
-      case 'stable': return ' ';
-      default: return ' ';
-    }
-  };
-
-  const getSeverityColor = (severity) => {
-    switch(severity) {
-      case 'critical': return '#ff0000';
-      case 'high': return '#ff3366';
-      case 'medium': return '#ffaa00';
-      case 'low': return '#00f5ff';
-      default: return '#666';
-    }
-  };
-
   const handleBlockIP = (ip) => {
-    setFullAttackData(prev => 
-      prev.map(attack => 
-        attack.source === ip ? { ...attack, blocked: true, status: 'blocked' } : attack
+    setThreatActorIPs(prev =>
+      prev.map(item =>
+        item.ip === ip ? { ...item, status: 'Blocked', blocked: true } : item
       )
     );
-    setSourceIPs(prev => 
-      prev.map(ipData => 
-        ipData.ip === ip ? { ...ipData, blocked: true, status: 'blocked' } : ipData
-      )
-    );
-    console.log(`Blocked IP: ${ip}`);
+    toast.success(`Attacker IP ${ip} blocked on perimeter firewall`);
   };
 
-  const handleExportReport = () => {
-    console.log('Exporting attack analysis report...');
-    // Add actual export logic here
+  const handleDeployWAF = () => {
+    toast.success('WAF Rule ruleset deployed to cloud gateway');
   };
 
-  const handleDeployFirewallRule = () => {
-    console.log('Deploying firewall rule...');
-    // Add actual firewall rule deployment logic here
+  const handleExportPCAP = () => {
+    toast.success('PCAP Forensic Log archive download initiated');
+  };
+
+  const handleQuarantine = () => {
+    toast.success('Target host quarantined from internal VLAN');
+  };
+
+  const getSeverityBadgeColor = (severity) => {
+    switch (String(severity).toLowerCase()) {
+      case 'critical': return '#ef4444';
+      case 'high': return '#f87171';
+      case 'medium': return '#fbbf24';
+      default: return '#00f5ff';
+    }
   };
 
   return (
-    <div className="attack-analysis-page admin-attack-analysis fade-in">
-      <div className="page-header">
-        <h1 className="page-title">Admin Attack Analysis</h1>
-        <p className="page-subtitle">Full attack visibility and threat response controls</p>
+    <div className="attack-analysis-page fade-in">
+      {/* Top Box: Header, Range Controls, and 6 KPI Pills */}
+      <Card className="aa-header-kpi-card">
+        <div className="aa-header-content">
+          <div className="page-header-text">
+            <h1 className="page-title">Cyber Threat & Attack Vector Analysis</h1>
+            <p className="page-subtitle">In-depth attack taxonomy, MITRE ATT&CK mappings, threat actor geolocations, and incident response playbooks</p>
+          </div>
+          <div className="aa-controls-group">
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginRight: '6px' }}>Range:</span>
+            {['24h', '7d', '30d', '90d'].map(range => (
+              <button
+                key={range}
+                className={`range-btn ${selectedTimeRange === range ? 'active' : ''}`}
+                onClick={() => setSelectedTimeRange(range)}
+              >
+                {range.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 6 KPI Pills */}
+        <div className="aa-kpi-row">
+          <div className="aa-kpi-pill">
+            <span className="val text-red">1,247</span>
+            <span className="lbl">Total Cyber Attacks</span>
+          </div>
+          <div className="aa-kpi-pill">
+            <span className="val text-emerald">892</span>
+            <span className="lbl">Automated Blocks</span>
+          </div>
+          <div className="aa-kpi-pill">
+            <span className="val text-yellow">45</span>
+            <span className="lbl">Active Exploits</span>
+          </div>
+          <div className="aa-kpi-pill">
+            <span className="val text-red">23</span>
+            <span className="lbl">Critical Severity</span>
+          </div>
+          <div className="aa-kpi-pill">
+            <span className="val text-cyan">156</span>
+            <span className="lbl">Mitigated Incidents</span>
+          </div>
+          <div className="aa-kpi-pill">
+            <span className="val text-emerald">98.6%</span>
+            <span className="lbl">AI Detection Rate</span>
+          </div>
+        </div>
+      </Card>
+
+      {/* Row 2: CHARTS ROW (Attack Frequency BarChart + Threat Taxonomy PieChart) */}
+      <div className="aa-charts-row">
+        <Card className="aa-chart-card">
+          <div className="aa-card-header">
+            <h3>Attack Frequency Histogram (Daily Surges)</h3>
+            <span className="aa-badge">7-DAY HISTOGRAM</span>
+          </div>
+          <div style={{ height: '240px', position: 'relative' }}>
+            <BarChart 
+              data={attackFrequencyData} 
+              title="Daily Attack Frequency"
+              height="100%"
+            />
+          </div>
+        </Card>
+
+        <Card className="aa-chart-card">
+          <div className="aa-card-header">
+            <h3>Threat Vector Distribution</h3>
+            <span className="aa-badge">TAXONOMY</span>
+          </div>
+          <div style={{ height: '240px', position: 'relative' }}>
+            <PieChart 
+              data={attackTypeData}
+              title="Attack Vector Categories"
+              height="100%"
+            />
+          </div>
+        </Card>
       </div>
 
-      <div className="analysis-controls">
-        <div className="time-range-selector">
-          <button 
-            className={`range-btn ${selectedTimeRange === '24h' ? 'active' : ''}`}
-            onClick={() => setSelectedTimeRange('24h')}
-          >
-            24 Hours
+      {/* Row 3: SIDE-BY-SIDE TABLES ROW (MITRE ATT&CK + Threat Actor IPs) */}
+      <div className="aa-tables-row">
+        <Card className="aa-table-card">
+          <div className="aa-card-header">
+            <h3>MITRE ATT&CK Threat Vector Classification</h3>
+            <span className="aa-badge mitre">MITRE v14 MAPPED</span>
+          </div>
+
+          <div className="aa-table-wrapper">
+            <table className="aa-table">
+              <thead>
+                <tr>
+                  <th>Attack Category</th>
+                  <th>MITRE ID</th>
+                  <th>Target Asset</th>
+                  <th>Severity</th>
+                  <th>Count</th>
+                  <th>Trend</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mitreAttacks.map((item) => (
+                  <tr key={item.id}>
+                    <td className="font-bold text-white">{item.type}</td>
+                    <td><span className="mitre-code">{item.mitre}</span></td>
+                    <td className="text-gray-300">{item.target}</td>
+                    <td>
+                      <span 
+                        className="nm-status-badge"
+                        style={{ 
+                          backgroundColor: `${getSeverityBadgeColor(item.severity)}18`, 
+                          color: getSeverityBadgeColor(item.severity),
+                          border: `1px solid ${getSeverityBadgeColor(item.severity)}40` 
+                        }}
+                      >
+                        {item.severity.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="font-bold font-mono text-cyan">{item.count}</td>
+                    <td>
+                      <span className={`trend-badge ${item.trend}`}>
+                        {item.percentage}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <Card className="aa-table-card">
+          <div className="aa-card-header">
+            <h3>Attacker Geolocation & Threat Actor IP Intelligence</h3>
+            <span className="aa-badge">5 HIGH-RISK NODES</span>
+          </div>
+
+          <div className="aa-table-wrapper">
+            <table className="aa-table">
+              <thead>
+                <tr>
+                  <th>Attacker Source IP</th>
+                  <th>Location</th>
+                  <th>Target</th>
+                  <th>Risk Score</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {threatActorIPs.map((actor, idx) => (
+                  <tr key={idx}>
+                    <td className="font-mono text-cyan font-bold">{actor.ip}</td>
+                    <td className="text-gray-200" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Globe size={13} style={{ color: '#00f0ff' }} />
+                      {actor.country}
+                    </td>
+                    <td className="text-gray-300">{actor.target}</td>
+                    <td>
+                      <span className="font-mono font-bold text-red">{actor.riskScore}/100</span>
+                    </td>
+                    <td>
+                      <span className={`nm-status-badge ${actor.blocked ? 'btn-active-mon' : 'btn-block-action'}`}>
+                        {actor.status}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        className="nm-btn-sm btn-block-action"
+                        onClick={() => handleBlockIP(actor.ip)}
+                        disabled={actor.blocked}
+                      >
+                        {actor.blocked ? 'Blocked' : 'Block'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+
+      {/* Row 4: INCIDENT CONTAINMENT PLAYBOOKS & ACTION RESPONSE */}
+      <Card className="aa-playbooks-card">
+        <div className="aa-card-header">
+          <h3>Automated Incident Containment & Response Playbooks</h3>
+          <span className="aa-badge">ACTIVE RESPONSE</span>
+        </div>
+
+        <div className="aa-playbooks-grid">
+          <button className="aa-playbook-btn btn-waf" onClick={handleDeployWAF}>
+            Deploy WAF Rule
           </button>
-          <button 
-            className={`range-btn ${selectedTimeRange === '7d' ? 'active' : ''}`}
-            onClick={() => setSelectedTimeRange('7d')}
-          >
-            7 Days
+          <button className="aa-playbook-btn btn-pcap" onClick={handleExportPCAP}>
+            Export PCAP Forensic Log
           </button>
-          <button 
-            className={`range-btn ${selectedTimeRange === '30d' ? 'active' : ''}`}
-            onClick={() => setSelectedTimeRange('30d')}
-          >
-            30 Days
+          <button className="aa-playbook-btn btn-quarantine" onClick={handleQuarantine}>
+            Trigger Host Containment
+          </button>
+          <button className="aa-playbook-btn btn-notify" onClick={() => toast.success('SOC Incident Response Team notified')}>
+            Notify SOC Team
           </button>
         </div>
-      </div>
-
-      {/* Global Attack Stats */}
-      <div className="global-attack-stats">
-        <Card className="stats-overview-card">
-          <h3>Global Attack Overview</h3>
-          <div className="overview-stats-grid">
-            <div className="stat-item critical">
-              <span className="stat-value">{globalAttackStats.totalAttacks}</span>
-              <span className="stat-label">Total Attacks</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-value">{globalAttackStats.blockedAttacks}</span>
-              <span className="stat-label">Blocked</span>
-            </div>
-            <div className="stat-item high">
-              <span className="stat-value">{globalAttackStats.activeAttacks}</span>
-              <span className="stat-label">Active</span>
-            </div>
-            <div className="stat-item critical">
-              <span className="stat-value">{globalAttackStats.criticalAttacks}</span>
-              <span className="stat-label">Critical</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-value">{globalAttackStats.mitigatedAttacks}</span>
-              <span className="stat-label">Mitigated</span>
-            </div>
-            <div className="stat-item success">
-              <span className="stat-value">{globalAttackStats.detectionRate}%</span>
-              <span className="stat-label">Detection Rate</span>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Full Attack Data */}
-      <div className="full-attack-data">
-        <Card className="attack-data-card">
-          <div className="card-header">
-            <h3>Live Attack Feed</h3>
-            <span className="live-indicator">LIVE</span>
-          </div>
-          <div className="attack-feed">
-            {fullAttackData.map((attack) => (
-              <div key={attack.id} className={`attack-item ${attack.severity} ${attack.status}`}>
-                <div className="attack-flow">
-                  <span className="attack-source">{attack.source}</span>
-                  <span className="attack-arrow">{'->'}</span>
-                  <span className="attack-target">{attack.target}</span>
-                </div>
-                <div className="attack-details">
-                  <span className="attack-type">{attack.type}</span>
-                  <span className={`severity-badge ${attack.severity}`} style={{ backgroundColor: getSeverityColor(attack.severity) }}>
-                    {attack.severity.toUpperCase()}
-                  </span>
-                  <span className="attack-time">{attack.time}</span>
-                  <span className={`attack-status ${attack.status}`}>{attack.status}</span>
-                </div>
-                <div className="attack-controls">
-                  <button 
-                    className="control-btn block-btn"
-                    onClick={() => handleBlockIP(attack.source)}
-                    disabled={attack.blocked}
-                  >
-                    {attack.blocked ? 'Blocked' : 'Block IP'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Attack Analysis Grid */}
-      <div className="analysis-grid">
-        <Card className="attack-types-card">
-          <h3>Attack Types Analysis</h3>
-          <div className="attack-types-list">
-            {attackTypes.map((attack, index) => (
-              <div key={index} className={`attack-type-item ${attack.severity}`}>
-                <div className="attack-info">
-                  <span className="attack-name">{attack.type}</span>
-                  <span className="attack-count">{attack.count}</span>
-                  <span className="attack-percentage">{attack.percentage}%</span>
-                </div>
-                <div className="attack-meta">
-                  <span 
-                    className="severity-badge"
-                    style={{ backgroundColor: getSeverityColor(attack.severity) }}
-                  >
-                    {attack.severity.toUpperCase()}
-                  </span>
-                  <span className="trend-indicator" style={{ color: getTrendColor(attack.trend) }}>
-                    {getTrendIcon(attack.trend)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card className="source-ips-card">
-          <h3>Source IP Analysis</h3>
-          <div className="source-ips-list">
-            {sourceIPs.map((ipData, index) => (
-              <div key={index} className={`source-ip-item ${ipData.risk} ${ipData.status}`}>
-                <div className="ip-info">
-                  <span className="ip-address">{ipData.ip}</span>
-                  <span className="ip-country">{ipData.country}</span>
-                  <span className="ip-attacks">{ipData.attacks} attacks</span>
-                </div>
-                <div className="ip-meta">
-                  <span className={`risk-badge ${ipData.risk}`}>{ipData.risk}</span>
-                  <span className={`ip-status ${ipData.status}`}>{ipData.status}</span>
-                </div>
-                <div className="ip-controls">
-                  <button 
-                    className="control-btn block-ip-btn"
-                    onClick={() => handleBlockIP(ipData.ip)}
-                    disabled={ipData.blocked}
-                  >
-                    {ipData.blocked ? 'Blocked' : 'Block'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Attack Charts */}
-      <div className="charts-row">
-        <Card className="attack-distribution-card">
-          <PieChart 
-            data={attackTypeData}
-            title="Attack Types Distribution"
-            height={300}
-          />
-        </Card>
-        <Card className="frequency-card">
-          <BarChart 
-            data={attackFrequencyData}
-            title="Attack Frequency (Daily)"
-            height={300}
-          />
-        </Card>
-      </div>
-
-      {/* Admin Control Actions */}
-      <div className="admin-control-actions">
-        <Card className="control-actions-card">
-          <div className="card-header">
-            <h3>Threat Response Actions</h3>
-            <span className="control-indicator">ADMIN</span>
-          </div>
-          <div className="control-buttons">
-            <button className="control-btn-primary block-ip-btn" onClick={() => handleBlockIP('selected')}>
-              <span className="btn-icon">block</span>
-              Block IP
-            </button>
-            <button className="control-btn-primary export-btn" onClick={handleExportReport}>
-              <span className="btn-icon">download</span>
-              Export Report
-            </button>
-            <button className="control-btn-primary firewall-btn" onClick={handleDeployFirewallRule}>
-              <span className="btn-icon">shield</span>
-              Deploy Firewall Rule
-            </button>
-            <button className="control-btn-secondary quarantine-btn">
-              <span className="btn-icon">security</span>
-              Quarantine Systems
-            </button>
-            <button className="control-btn-secondary notify-btn">
-              <span className="btn-icon">notifications</span>
-              Notify Team
-            </button>
-          </div>
-        </Card>
-      </div>
+      </Card>
     </div>
   );
 };

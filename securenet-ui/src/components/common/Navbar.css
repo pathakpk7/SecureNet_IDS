@@ -32,6 +32,17 @@
   color: var(--accent);
   text-decoration: none;
   transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-logo-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 0 14px rgba(0, 245, 255, 0.5);
 }
 
 .logo-link:hover {

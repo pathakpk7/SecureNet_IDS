@@ -3,54 +3,54 @@ import './AnimatedCounter.css';
 
 const AnimatedCounter = ({ 
   value, 
-  duration = 2000, 
+  duration = 400, 
   prefix = '', 
   suffix = '', 
   className = '',
-  formatValue = (val) => val 
+  decimals = 0
 }) => {
-  const [displayValue, setDisplayValue] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const previousValue = useRef(0);
+  const targetValue = typeof value === 'number' ? value : parseFloat(value) || 0;
+  const [displayValue, setDisplayValue] = useState(targetValue);
+  const previousValue = useRef(targetValue);
   const animationRef = useRef(null);
 
   useEffect(() => {
-    const targetValue = typeof value === 'number' ? value : parseFloat(value) || 0;
+    const endValue = typeof value === 'number' ? value : parseFloat(value) || 0;
+    const startValue = previousValue.current;
     
-    if (targetValue !== previousValue.current) {
-      setIsAnimating(true);
-      const startValue = previousValue.current;
-      const endValue = targetValue;
-      const startTime = Date.now();
+    if (Math.abs(endValue - startValue) < 0.001) {
+      setDisplayValue(endValue);
+      return;
+    }
+
+    const startTime = Date.now();
+    
+    const animate = () => {
+      const now = Date.now();
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
       
-      const animate = () => {
-        const now = Date.now();
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        
-        // Easing function (easeInOutQuad)
-        const easeProgress = progress < 0.5 
-          ? 2 * progress * progress 
-          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-        
-        const currentValue = startValue + (endValue - startValue) * easeProgress;
-        setDisplayValue(currentValue);
-        
-        if (progress < 1) {
-          animationRef.current = requestAnimationFrame(animate);
-        } else {
-          setIsAnimating(false);
-          previousValue.current = endValue;
-        }
-      };
+      const easeProgress = progress < 0.5 
+        ? 2 * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
       
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+      const curr = startValue + (endValue - startValue) * easeProgress;
+      setDisplayValue(curr);
+      
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        setDisplayValue(endValue);
+        previousValue.current = endValue;
       }
-      
-      animationRef.current = requestAnimationFrame(animate);
+    };
+    
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
     }
     
+    animationRef.current = requestAnimationFrame(animate);
+
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -58,12 +58,18 @@ const AnimatedCounter = ({
     };
   }, [value, duration]);
 
-  const formattedValue = formatValue(displayValue);
+  // Format clean integer vs decimal values (prevent 15686.291812 float spam)
+  const formatNumber = (num) => {
+    if (decimals > 0) {
+      return num.toFixed(decimals);
+    }
+    return Math.round(num).toLocaleString();
+  };
 
   return (
-    <span className={`animated-counter ${isAnimating ? 'animating' : ''} ${className}`}>
+    <span className={`animated-counter ${className}`}>
       {prefix}
-      <span className="counter-value">{formattedValue}</span>
+      <span className="counter-value">{formatNumber(displayValue)}</span>
       {suffix}
     </span>
   );

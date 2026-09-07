@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePermissions } from "../hooks/usePermissions";
 import ThreatIntelligence from "../components/security/ThreatIntelligence";
 import AttackTimeline from "../components/security/AttackTimeline";
@@ -11,6 +12,7 @@ import '../styles/pages/dashboard.css';
 
 // Overview component connected to live backend metrics
 function Overview({ monitoringActive, onToggleMonitoring }) {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalPackets: 1240,
     attacksDetected: 18,
@@ -75,63 +77,86 @@ function Overview({ monitoringActive, onToggleMonitoring }) {
     return () => {
       isMounted = false;
       clearInterval(interval);
-      if (ws) ws.close();
+      if (ws) {
+        ws.onclose = null;
+        ws.onerror = null;
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        } else if (ws.readyState === WebSocket.CONNECTING) {
+          ws.onopen = () => ws.close();
+        }
+      }
     };
   }, []);
 
   return (
-    <div className="mb-8">
+    <div className="db-overview-section">
       {/* Control Banner */}
-      <div className="flex flex-wrap items-center justify-between bg-slate-900/90 border border-slate-800 p-4 rounded-xl mb-6 gap-4">
-        <div className="flex items-center gap-3">
-          <div className={`w-3.5 h-3.5 rounded-full ${monitoringActive ? 'bg-emerald-400 animate-pulse shadow-lg shadow-emerald-500/50' : 'bg-red-400'}`}></div>
+      <div className="db-banner">
+        <div className="db-banner-info">
+          <div className={`db-status-dot ${monitoringActive ? 'active' : 'inactive'}`}></div>
           <div>
-            <div className="text-white font-semibold text-sm">
-              Live Network Inspection Engine: <span className={monitoringActive ? 'text-emerald-400' : 'text-red-400'}>{monitoringActive ? 'ACTIVE & STREAMING' : 'STOPPED'}</span>
+            <div className="db-banner-title">
+              Live Inspection Engine: <span className={monitoringActive ? 'text-emerald' : 'text-red'}>{monitoringActive ? 'ACTIVE & STREAMING' : 'STOPPED'}</span>
             </div>
-            <div className="text-xs text-gray-400">ML Model: CICIDS2017 RandomForest • Threat Intel: 5 APIs Connected</div>
+            <div className="db-banner-sub">ML Model: CICIDS2017 RandomForest • Threat Intel: 5 APIs Connected</div>
           </div>
         </div>
         <button
           onClick={onToggleMonitoring}
-          className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${monitoringActive ? 'bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500 hover:text-white' : 'bg-emerald-500 text-black hover:bg-emerald-400 font-bold'}`}
+          className={`db-banner-btn ${monitoringActive ? 'btn-stop' : 'btn-start'}`}
         >
-          {monitoringActive ? '⏹ Stop Capture' : '▶ Start Capture'}
+          {monitoringActive ? 'Stop Capture' : 'Start Capture'}
         </button>
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="overview-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="stat-card bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-          <div className="stat-content">
-            <div className="stat-value text-3xl font-bold text-cyan-400">
-              <AnimatedCounter value={stats.totalPackets} />
-            </div>
-            <div className="stat-label text-xs text-gray-400 mt-1">Packets Inspected</div>
+      <div className="db-kpi-grid">
+        <div 
+          className="db-kpi-card db-card-clickable" 
+          onClick={() => navigate('/network-monitor')}
+          title="Click to view live network traffic monitor"
+        >
+          <div className="db-kpi-value text-cyan">
+            <AnimatedCounter value={stats.totalPackets} />
           </div>
-        </Card>
-        <Card className="stat-card bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-          <div className="stat-content">
-            <div className="stat-value text-3xl font-bold text-red-400">
-              <AnimatedCounter value={stats.attacksDetected} />
-            </div>
-            <div className="stat-label text-xs text-gray-400 mt-1">Intrusion Attacks Detected</div>
+          <div className="db-kpi-label">Packets Inspected</div>
+          <div className="db-kpi-link">Inspect Traffic →</div>
+        </div>
+
+        <div 
+          className="db-kpi-card db-card-clickable" 
+          onClick={() => navigate('/alerts')}
+          title="Click to view intrusion detection alerts"
+        >
+          <div className="db-kpi-value text-red">
+            <AnimatedCounter value={stats.attacksDetected} />
           </div>
-        </Card>
-        <Card className="stat-card bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-          <div className="stat-content">
-            <div className="stat-value text-3xl font-bold text-yellow-400">
-              <AnimatedCounter value={stats.blockedThreats} />
-            </div>
-            <div className="stat-label text-xs text-gray-400 mt-1">Threat Intel Verifications</div>
+          <div className="db-kpi-label">Intrusions Detected</div>
+          <div className="db-kpi-link">View Alerts →</div>
+        </div>
+
+        <div 
+          className="db-kpi-card db-card-clickable" 
+          onClick={() => navigate('/attack-analysis')}
+          title="Click to view threat intelligence verification"
+        >
+          <div className="db-kpi-value text-yellow">
+            <AnimatedCounter value={stats.blockedThreats} />
           </div>
-        </Card>
-        <Card className="stat-card bg-slate-900/90 border border-slate-800 rounded-xl p-4">
-          <div className="stat-content">
-            <div className="stat-value text-3xl font-bold text-emerald-400">{stats.systemHealth}%</div>
-            <div className="stat-label text-xs text-gray-400 mt-1">System Health Score</div>
-          </div>
-        </Card>
+          <div className="db-kpi-label">Threat Intel Checks</div>
+          <div className="db-kpi-link">Threat Details →</div>
+        </div>
+
+        <div 
+          className="db-kpi-card db-card-clickable" 
+          onClick={() => navigate('/ai-insights')}
+          title="Click to view AI system health telemetry"
+        >
+          <div className="db-kpi-value text-emerald">{stats.systemHealth}%</div>
+          <div className="db-kpi-label">System Health Score</div>
+          <div className="db-kpi-link">AI Insights →</div>
+        </div>
       </div>
     </div>
   );
@@ -139,21 +164,29 @@ function Overview({ monitoringActive, onToggleMonitoring }) {
 
 // Advanced Analytics (admin only)
 function AdvancedStats() {
+  const navigate = useNavigate();
+
   return (
-    <Card className="analytics-card bg-slate-900/90 border border-slate-800 rounded-xl p-5">
-      <h3 className="text-base font-bold text-white mb-3">AI Engine Telemetry</h3>
-      <div className="analytics-content space-y-2 text-sm text-gray-300">
-        <div className="flex justify-between border-b border-slate-800 pb-2">
-          <span className="text-gray-400">Average Classification Latency:</span>
-          <span className="font-semibold text-cyan-400">0.8ms</span>
+    <Card 
+      className="db-card-clickable" 
+      onClick={() => navigate('/ai-insights')}
+    >
+      <div className="db-card-header">
+        <h3 className="db-card-title">AI Engine Telemetry</h3>
+        <span className="db-card-link-badge">Open AI Insights →</span>
+      </div>
+      <div className="db-telemetry-list">
+        <div className="db-telemetry-row">
+          <span className="label">Classification Latency:</span>
+          <span className="val text-cyan">0.8ms</span>
         </div>
-        <div className="flex justify-between border-b border-slate-800 pb-2">
-          <span className="text-gray-400">ML Threat Detection Accuracy:</span>
-          <span className="font-semibold text-emerald-400">99.4%</span>
+        <div className="db-telemetry-row">
+          <span className="label">Detection Accuracy:</span>
+          <span className="val text-emerald">99.4%</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400">False Positive Rate:</span>
-          <span className="font-semibold text-yellow-400">0.0%</span>
+        <div className="db-telemetry-row">
+          <span className="label">False Positive Rate:</span>
+          <span className="val text-yellow">0.0%</span>
         </div>
       </div>
     </Card>
@@ -162,21 +195,34 @@ function AdvancedStats() {
 
 // User Activity
 function UserActivity() {
+  const navigate = useNavigate();
   const [userActivity] = useState([
-    { id: 1, user: 'Security Bot', action: 'Blacklisted IP 45.33.32.156', time: 'Just now', severity: 'high' },
-    { id: 2, user: 'Analyst', action: 'Exported Executive Threat Report', time: '5 min ago', severity: 'medium' },
-    { id: 3, user: 'IDS Engine', action: 'Mitigated SYN Flood Burst', time: '12 min ago', severity: 'medium' }
+    { id: 1, user: 'Security Bot', action: 'Blacklisted IP 45.33.32.156', time: 'Just now' },
+    { id: 2, user: 'Analyst', action: 'Exported Executive Threat Report', time: '5 min ago' },
+    { id: 3, user: 'IDS Engine', action: 'Mitigated SYN Flood Burst', time: '12 min ago' }
   ]);
 
   return (
-    <Card className="activity-card bg-slate-900/90 border border-slate-800 rounded-xl p-5">
-      <h3 className="text-base font-bold text-white mb-3">Recent Security Activity</h3>
-      <div className="activity-list space-y-2">
+    <Card className="db-activity-card">
+      <div className="db-card-header">
+        <h3 className="db-card-title">Recent Security Activity</h3>
+        <button 
+          onClick={(e) => { e.stopPropagation(); navigate('/audit-logs'); }}
+          className="db-card-link-btn"
+        >
+          Audit Logs →
+        </button>
+      </div>
+      <div className="db-activity-list">
         {userActivity.map(activity => (
-          <div key={activity.id} className="activity-item flex justify-between items-center text-xs p-2 bg-slate-950/60 rounded border border-slate-800/80">
-            <span className="activity-user font-bold text-cyan-300">{activity.user}</span>
-            <span className="activity-action text-gray-300">{activity.action}</span>
-            <span className="activity-time text-gray-500">{activity.time}</span>
+          <div 
+            key={activity.id} 
+            className="db-activity-item db-card-clickable"
+            onClick={() => navigate('/audit-logs')}
+          >
+            <span className="user">{activity.user}</span>
+            <span className="action">{activity.action}</span>
+            <span className="time">{activity.time}</span>
           </div>
         ))}
       </div>
@@ -218,10 +264,10 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="dashboard-page p-6 max-w-7xl mx-auto">
-      <div className="dashboard-header mb-6">
-        <h1 className="text-3xl font-bold text-cyan-400">Security Dashboard</h1>
-        <p className="text-gray-400">Real-time network packet inspection, ML anomaly detection, and threat intelligence</p>
+    <div className="dashboard-container">
+      <div className="dashboard-header">
+        <h1 className="dashboard-title">Security Dashboard</h1>
+        <p className="dashboard-sub">Real-time network packet inspection, ML anomaly detection, and threat intelligence</p>
       </div>
 
       {/* Shared Live Overview */}
@@ -231,18 +277,18 @@ export default function Dashboard() {
       />
 
       {/* Security Threat Grid */}
-      <div className="dashboard-grid grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="db-main-grid">
         <ThreatIntelligence alerts={alerts} />
         <IncidentPanel alert={alerts[0]} />
       </div>
 
       {/* Timeline & Secondary Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+      <div className="db-bottom-grid">
+        <div className="db-timeline-col">
           <AttackTimeline alerts={alerts.slice(0, 8)} />
         </div>
 
-        <div className="space-y-6">
+        <div className="db-side-stack">
           {can("VIEW_ADVANCED_ANALYTICS") && <AdvancedStats />}
           <UserActivity />
         </div>

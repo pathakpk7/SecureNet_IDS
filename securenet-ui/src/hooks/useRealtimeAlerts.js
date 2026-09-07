@@ -33,8 +33,11 @@ export function useRealtimeAlerts() {
     fetchInitial();
 
     // 2. Connect to real-time FastAPI WebSocket
+    let isDisposed = false;
     let reconnectTimeout = null;
+
     const connectWs = () => {
+      if (isDisposed) return;
       try {
         const ws = new WebSocket("ws://localhost:8000/ws");
         wsRef.current = ws;
@@ -53,14 +56,16 @@ export function useRealtimeAlerts() {
         };
 
         ws.onclose = () => {
-          reconnectTimeout = setTimeout(connectWs, 3000);
+          if (!isDisposed) {
+            reconnectTimeout = setTimeout(connectWs, 3000);
+          }
         };
 
-        ws.onerror = () => {
-          ws.close();
-        };
+        ws.onerror = () => {};
       } catch (err) {
-        reconnectTimeout = setTimeout(connectWs, 3000);
+        if (!isDisposed) {
+          reconnectTimeout = setTimeout(connectWs, 3000);
+        }
       }
     };
 
@@ -84,8 +89,19 @@ export function useRealtimeAlerts() {
     } catch (e) {}
 
     return () => {
+      isDisposed = true;
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
-      if (wsRef.current) wsRef.current.close();
+      if (wsRef.current) {
+        const ws = wsRef.current;
+        ws.onclose = null;
+        ws.onerror = null;
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        } else if (ws.readyState === WebSocket.CONNECTING) {
+          ws.onopen = () => ws.close();
+        }
+        wsRef.current = null;
+      }
       if (channel) supabase.removeChannel(channel);
     };
   }, []);

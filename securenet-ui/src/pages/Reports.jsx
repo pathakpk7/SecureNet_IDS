@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import Card from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
+import '../styles/pages/reports.css';
 
 /**
  * Enterprise Reports Page
@@ -12,6 +13,8 @@ const Reports = () => {
   const [reportType, setReportType] = useState('executive_summary');
   const [format, setFormat] = useState('pdf');
   const [loading, setLoading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const [reportHistory, setReportHistory] = useState([
     {
       id: 'rep-01',
@@ -28,6 +31,38 @@ const Reports = () => {
       format: 'csv',
       created_at: new Date(Date.now() - 86400000).toISOString(),
       size: '24.5 KB'
+    },
+    {
+      id: 'rep-03',
+      title: 'Network Traffic & Throughput Analysis',
+      report_type: 'network_performance',
+      format: 'pdf',
+      created_at: new Date(Date.now() - 172800000).toISOString(),
+      size: '18.2 KB'
+    },
+    {
+      id: 'rep-04',
+      title: 'SOC Compliance Audit & User Activity',
+      report_type: 'compliance_audit',
+      format: 'json',
+      created_at: new Date(Date.now() - 259200000).toISOString(),
+      size: '42.1 KB'
+    },
+    {
+      id: 'rep-05',
+      title: 'DDoS & Threat Intelligence Digest',
+      report_type: 'threat_analysis',
+      format: 'pdf',
+      created_at: new Date(Date.now() - 432000000).toISOString(),
+      size: '12.4 KB'
+    },
+    {
+      id: 'rep-06',
+      title: 'Weekly Intrusion Telemetry Dump',
+      report_type: 'incident_summary',
+      format: 'csv',
+      created_at: new Date(Date.now() - 604800000).toISOString(),
+      size: '115.8 KB'
     }
   ]);
 
@@ -117,123 +152,174 @@ const Reports = () => {
     }
   };
 
+  const displayedReports = isExpanded ? reportHistory : reportHistory.slice(0, 3);
+
   return (
-    <div className="reports-page p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-cyan-400">Security Reports & Compliance</h1>
-        <p className="text-gray-400">Generate executive summaries, export raw telemetry, and manage audit records</p>
+    <div className="reports-page-container fade-in">
+      <div className="page-header" style={{ marginBottom: '24px' }}>
+        <h1 className="page-title">Security Reports & Compliance</h1>
+        <p className="page-subtitle">Generate executive summaries, export raw telemetry, and manage audit records</p>
       </div>
 
-      {/* Report Generation Section */}
-      <Card className="bg-slate-900/90 border border-slate-800 rounded-xl p-6 mb-6">
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <span>📊</span> Generate Custom Security Report
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Report Template
-            </label>
-            <select
-              value={reportType}
-              onChange={(e) => setReportType(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
-            >
-              <option value="executive_summary">Executive Summary (High-Level Overview)</option>
-              <option value="threat_analysis">Threat Intelligence & Attack Analysis</option>
-              <option value="network_performance">Network Throughput & Performance</option>
-              <option value="compliance_audit">Security Compliance & Audit Trail</option>
-            </select>
+      {/* ROW 1: Side-by-Side (Generate Custom Security Report + Direct Telemetry & Audit Exports) */}
+      <div className="reports-top-row">
+        {/* Card 1: Custom Report Generator */}
+        <Card className="reports-card">
+          <div className="reports-card-header">
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#fff' }}>Generate Custom Security Report</h3>
+            <span className="aa-badge">REPORT GENERATOR</span>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Export Format
-            </label>
-            <select
-              value={format}
-              onChange={(e) => setFormat(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-500"
-            >
-              <option value="pdf">PDF Document (Formatted with Charts & Stats)</option>
-              <option value="csv">CSV (Raw Structured Data)</option>
-              <option value="json">JSON (API & SIEM Integration)</option>
-            </select>
-          </div>
-        </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Report Template
+              </label>
+              <select
+                value={reportType}
+                onChange={(e) => setReportType(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  background: 'rgba(15, 23, 42, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '13px',
+                  outline: 'none'
+                }}
+              >
+                <option value="executive_summary">Executive Summary (High-Level Overview)</option>
+                <option value="threat_analysis">Threat Intelligence & Attack Analysis</option>
+                <option value="network_performance">Network Throughput & Performance</option>
+                <option value="compliance_audit">Security Compliance & Audit Trail</option>
+              </select>
+            </div>
 
-        <button
-          onClick={generateReport}
-          disabled={loading}
-          className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-lg transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50 flex items-center gap-2"
-        >
-          {loading ? (
-            <>
-              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-              <span>Generating Report...</span>
-            </>
-          ) : (
-            <>
-              <span>⚡</span>
-              <span>Generate & Download Report</span>
-            </>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Export Format
+              </label>
+              <select
+                value={format}
+                onChange={(e) => setFormat(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  background: 'rgba(15, 23, 42, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '13px',
+                  outline: 'none'
+                }}
+              >
+                <option value="pdf">PDF Document (Formatted with Charts & Stats)</option>
+                <option value="csv">CSV (Raw Structured Data)</option>
+                <option value="json">JSON (API & SIEM Integration)</option>
+              </select>
+            </div>
+
+            <button
+              onClick={generateReport}
+              disabled={loading}
+              className="aa-playbook-btn btn-waf"
+              style={{ width: '100%', marginTop: '8px' }}
+            >
+              {loading ? 'Generating Report...' : 'Generate & Download Report'}
+            </button>
+          </div>
+        </Card>
+
+        {/* Card 2: Direct Telemetry & Audit Exports */}
+        <Card className="reports-card">
+          <div className="reports-card-header">
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#fff' }}>Direct Telemetry & Audit Exports</h3>
+            <span className="aa-badge">RAW EXPORTS</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button
+              onClick={exportAlerts}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '14px 16px',
+                background: 'rgba(15, 23, 42, 0.8)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '8px',
+                color: '#fff',
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: '700', fontSize: '13px', color: '#00f5ff' }}>Export All Alerts (CSV)</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Download complete attack history with risk levels and payload metadata</div>
+              </div>
+              <span className="aa-badge">CSV DUMP</span>
+            </button>
+
+            <button
+              onClick={exportAuditLogs}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '14px 16px',
+                background: 'rgba(15, 23, 42, 0.8)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '8px',
+                color: '#fff',
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: '700', fontSize: '13px', color: '#10b981' }}>Export Audit Logs (CSV)</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Export admin and user operational actions for compliance audits</div>
+              </div>
+              <span className="aa-badge" style={{ borderColor: 'rgba(16,185,129,0.3)', color: '#10b981', background: 'rgba(16,185,129,0.1)' }}>AUDIT TRAIL</span>
+            </button>
+          </div>
+        </Card>
+      </div>
+
+      {/* ROW 2: SEPARATE ROW - Generated Reports History (With Expand/Collapse) */}
+      <Card className="reports-history-card">
+        <div className="reports-card-header">
+          <div>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#fff' }}>Generated Reports History</h3>
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>Showing {displayedReports.length} of {reportHistory.length} reports</span>
+          </div>
+
+          {reportHistory.length > 3 && (
+            <button
+              onClick={() => setIsExpanded(prev => !prev)}
+              className="reports-toggle-btn"
+            >
+              {isExpanded ? 'Collapse History ▲' : `Expand to View All (${reportHistory.length}) ▼`}
+            </button>
           )}
-        </button>
-      </Card>
-
-      {/* Raw Data Exports */}
-      <Card className="bg-slate-900/90 border border-slate-800 rounded-xl p-6 mb-6">
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <span>💾</span> Direct Telemetry & Audit Exports
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button
-            onClick={exportAlerts}
-            className="flex items-center justify-between p-4 bg-slate-950 border border-slate-800 hover:border-cyan-500/50 rounded-xl transition-all group text-left"
-          >
-            <div>
-              <div className="font-semibold text-white group-hover:text-cyan-400 transition-colors">Export All Alerts (CSV)</div>
-              <div className="text-xs text-gray-400 mt-1">Download complete attack history with risk levels and payload metadata</div>
-            </div>
-            <span className="text-cyan-400 text-xl group-hover:translate-x-1 transition-transform">⬇</span>
-          </button>
-
-          <button
-            onClick={exportAuditLogs}
-            className="flex items-center justify-between p-4 bg-slate-950 border border-slate-800 hover:border-cyan-500/50 rounded-xl transition-all group text-left"
-          >
-            <div>
-              <div className="font-semibold text-white group-hover:text-cyan-400 transition-colors">Export Audit Logs (CSV)</div>
-              <div className="text-xs text-gray-400 mt-1">Export admin and user operational actions for compliance audits</div>
-            </div>
-            <span className="text-cyan-400 text-xl group-hover:translate-x-1 transition-transform">⬇</span>
-          </button>
         </div>
-      </Card>
 
-      {/* Report History */}
-      <Card className="bg-slate-900/90 border border-slate-800 rounded-xl p-6">
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <span>🕒</span> Generated Reports History
-        </h2>
-        
         {reportHistory.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No reports generated yet</p>
+          <p style={{ color: '#64748b', textAlign: 'center', padding: '32px 0' }}>No reports generated yet</p>
         ) : (
-          <div className="space-y-3">
-            {reportHistory.map((report) => (
-              <div key={report.id} className="flex items-center justify-between p-4 bg-slate-950 border border-slate-800/80 rounded-lg">
+          <div className="reports-list">
+            {displayedReports.map((report) => (
+              <div key={report.id} className="report-item-card">
                 <div>
-                  <p className="font-semibold text-white">{report.title}</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Type: <strong className="text-cyan-400">{report.report_type}</strong> • Format: <strong className="text-yellow-400">{report.format.toUpperCase()}</strong> • Size: {report.size} • Created: {new Date(report.created_at).toLocaleString()}
+                  <p style={{ margin: 0, fontWeight: '700', color: '#fff', fontSize: '14px' }}>{report.title}</p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
+                    Type: <strong style={{ color: '#00f5ff' }}>{report.report_type}</strong> • Format: <strong style={{ color: '#fbbf24' }}>{report.format.toUpperCase()}</strong> • Size: {report.size} • Created: {new Date(report.created_at).toLocaleString()}
                   </p>
                 </div>
                 <button 
                   onClick={generateReport}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-cyan-400 hover:bg-slate-700 transition-colors border border-slate-700"
+                  className="range-btn"
+                  style={{ fontSize: '11px', padding: '4px 10px' }}
                 >
                   Download Again
                 </button>

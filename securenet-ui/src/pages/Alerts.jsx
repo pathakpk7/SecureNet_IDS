@@ -8,66 +8,31 @@ import IncidentPanel from '../components/security/IncidentPanel';
 import '../styles/pages/alerts.css';
 
 const INITIAL_ALERTS = [
-  {
-    id: 'alt-001',
-    threatType: 'SQL Injection Attempt',
-    severity: 'high',
-    risk_level: 'HIGH',
-    time: '2 minutes ago',
-    status: 'active',
-    sourceIP: '192.168.1.105',
-    destinationIP: '10.0.0.1',
-    protocol: 'TCP',
-    description: 'Suspicious SQL injection union select patterns detected in API endpoint'
-  },
-  {
-    id: 'alt-002',
-    threatType: 'DDoS SYN Flood',
-    severity: 'high',
-    risk_level: 'CRITICAL',
-    time: '5 minutes ago',
-    status: 'mitigated',
-    sourceIP: '45.33.32.156',
-    destinationIP: '10.0.0.1',
-    protocol: 'TCP',
-    description: 'High packet volume exceeding baseline traffic rate limits'
-  },
-  {
-    id: 'alt-003',
-    threatType: 'Port Scanning Reconnaissance',
-    severity: 'medium',
-    risk_level: 'MEDIUM',
-    time: '15 minutes ago',
-    status: 'monitoring',
-    sourceIP: '172.16.0.22',
-    destinationIP: '10.0.0.1',
-    protocol: 'TCP',
-    description: 'Sequential SYN packet sweeps targeting ports 21, 22, 80, 443, 8080'
-  },
-  {
-    id: 'alt-004',
-    threatType: 'SSH Brute Force Attack',
-    severity: 'medium',
-    risk_level: 'MEDIUM',
-    time: '1 hour ago',
-    status: 'blocked',
-    sourceIP: '203.0.113.45',
-    destinationIP: '10.0.0.1',
-    protocol: 'SSH',
-    description: 'Repeated authentication failures detected within 60 seconds'
-  },
-  {
-    id: 'alt-005',
-    threatType: 'Malware Payload Signature',
-    severity: 'low',
-    risk_level: 'LOW',
-    time: '2 hours ago',
-    status: 'quarantined',
-    sourceIP: '192.168.1.50',
-    destinationIP: '10.0.0.1',
-    protocol: 'HTTP',
-    description: 'Suspicious payload signature intercepted and quarantined'
-  }
+  { id: 'alt-001', threatType: 'SQL Injection Attempt', severity: 'high', risk_level: 'HIGH', time: '2 mins ago', status: 'active', sourceIP: '192.168.1.105', destinationIP: '10.0.0.1', protocol: 'TCP', description: 'Suspicious SQL injection union select patterns detected in API endpoint' },
+  { id: 'alt-002', threatType: 'DDoS SYN Flood', severity: 'high', risk_level: 'CRITICAL', time: '5 mins ago', status: 'mitigated', sourceIP: '45.33.32.156', destinationIP: '10.0.0.1', protocol: 'TCP', description: 'High packet volume exceeding baseline traffic rate limits' },
+  { id: 'alt-003', threatType: 'Port Scanning Reconnaissance', severity: 'medium', risk_level: 'MEDIUM', time: '15 mins ago', status: 'monitoring', sourceIP: '172.16.0.22', destinationIP: '10.0.0.1', protocol: 'TCP', description: 'Sequential SYN packet sweeps targeting ports 21, 22, 80, 443, 8080' },
+  { id: 'alt-004', threatType: 'SSH Brute Force Attack', severity: 'high', risk_level: 'HIGH', time: '25 mins ago', status: 'active', sourceIP: '203.0.113.45', destinationIP: '10.0.0.1', protocol: 'SSH', description: 'Repeated authentication failures detected within 60 seconds' },
+  { id: 'alt-005', threatType: 'Malware Payload Signature', severity: 'low', risk_level: 'LOW', time: '35 mins ago', status: 'quarantined', sourceIP: '192.168.1.50', destinationIP: '10.0.0.1', protocol: 'HTTP', description: 'Suspicious payload signature intercepted and quarantined' },
+  { id: 'alt-006', threatType: 'Cross-Site Scripting (XSS)', severity: 'high', risk_level: 'HIGH', time: '40 mins ago', status: 'active', sourceIP: '198.51.100.12', destinationIP: '10.0.0.1', protocol: 'HTTPS', description: 'Stored script injection pattern detected in client HTTP header' },
+  { id: 'alt-007', threatType: 'DNS Tunneling Anomaly', severity: 'high', risk_level: 'HIGH', time: '50 mins ago', status: 'active', sourceIP: '192.168.1.88', destinationIP: '8.8.8.8', protocol: 'UDP', description: 'Abnormal high-entropy TXT record queries to suspicious external domain' },
+  { id: 'alt-008', threatType: 'ICMP Ping Flood', severity: 'medium', risk_level: 'MEDIUM', time: '1 hour ago', status: 'active', sourceIP: '10.0.2.14', destinationIP: '10.0.0.1', protocol: 'ICMP', description: 'Continuous echo request bursts exceeding interface ICMP rate limit' },
+  { id: 'alt-009', threatType: 'Ransomware C2 Beaconing', severity: 'high', risk_level: 'CRITICAL', time: '1 hour ago', status: 'active', sourceIP: '192.168.1.200', destinationIP: '185.220.101.5', protocol: 'TCP', description: 'Encrypted outbound beaconing to known malicious C2 IP node' },
+  { id: 'alt-010', threatType: 'FTP Anonymous Exploit', severity: 'medium', risk_level: 'MEDIUM', time: '2 hours ago', status: 'active', sourceIP: '192.168.1.72', destinationIP: '10.0.0.1', protocol: 'FTP', description: 'Unauthorized directory listing request on internal storage port 21' },
+  { id: 'alt-011', threatType: 'NTP Amplification Probe', severity: 'high', risk_level: 'HIGH', time: '2 hours ago', status: 'active', sourceIP: '198.51.100.99', destinationIP: '10.0.0.1', protocol: 'UDP', description: 'monlist query pattern directed at core gateway' },
+  { id: 'alt-012', threatType: 'Unauthorized RDP Connection', severity: 'high', risk_level: 'HIGH', time: '3 hours ago', status: 'active', sourceIP: '172.16.5.10', destinationIP: '10.0.0.5', protocol: 'RDP', description: 'Multiple remote desktop login attempts outside business hours' },
+  { id: 'alt-013', threatType: 'HTTP Flood Vector', severity: 'high', risk_level: 'HIGH', time: '3 hours ago', status: 'active', sourceIP: '203.0.113.88', destinationIP: '10.0.0.1', protocol: 'HTTP', description: 'Rapid GET request burst targeting application gateway' },
+  { id: 'alt-014', threatType: 'Kerberoasting Ticket Request', severity: 'high', risk_level: 'CRITICAL', time: '4 hours ago', status: 'active', sourceIP: '192.168.1.15', destinationIP: '10.0.0.2', protocol: 'Kerberos', description: 'TGS request for service accounts with weak SPN encryption' },
+  { id: 'alt-015', threatType: 'Pass-the-Hash Movement', severity: 'high', risk_level: 'CRITICAL', time: '4 hours ago', status: 'active', sourceIP: '192.168.1.18', destinationIP: '10.0.0.4', protocol: 'SMB', description: 'NTLM authentication reusing cached hash credentials' },
+  { id: 'alt-016', threatType: 'SMB Ghost Vulnerability Probe', severity: 'high', risk_level: 'HIGH', time: '5 hours ago', status: 'active', sourceIP: '198.51.100.40', destinationIP: '10.0.0.1', protocol: 'SMB', description: 'Compressed SMB v3 packet crafted to probe CVE-2020-0796' },
+  { id: 'alt-017', threatType: 'Zero-Day Buffer Overflow', severity: 'high', risk_level: 'CRITICAL', time: '5 hours ago', status: 'active', sourceIP: '45.33.32.199', destinationIP: '10.0.0.1', protocol: 'TCP', description: 'NOP sled sequence detected in payload buffer' },
+  { id: 'alt-018', threatType: 'API Rate Limit Abuse', severity: 'medium', risk_level: 'MEDIUM', time: '6 hours ago', status: 'active', sourceIP: '192.168.1.99', destinationIP: '10.0.0.1', protocol: 'HTTPS', description: 'Exceeded 1,000 queries per minute threshold' },
+  { id: 'alt-019', threatType: 'ARP Spoofing Poisoning', severity: 'high', risk_level: 'HIGH', time: '6 hours ago', status: 'active', sourceIP: '192.168.1.12', destinationIP: '192.168.1.1', protocol: 'ARP', description: 'Duplicate MAC address announcement for default gateway' },
+  { id: 'alt-020', threatType: 'TLS Certificate Mismatch', severity: 'low', risk_level: 'LOW', time: '7 hours ago', status: 'monitoring', sourceIP: '192.168.1.33', destinationIP: '10.0.0.1', protocol: 'HTTPS', description: 'Self-signed certificate presented during handshake' },
+  { id: 'alt-021', threatType: 'LOG4J JNDI Lookup Attempt', severity: 'high', risk_level: 'CRITICAL', time: '7 hours ago', status: 'active', sourceIP: '198.51.100.77', destinationIP: '10.0.0.1', protocol: 'HTTP', description: 'jndi:ldap header payload string intercepted' },
+  { id: 'alt-022', threatType: 'BGP Hijacking Probe', severity: 'high', risk_level: 'CRITICAL', time: '8 hours ago', status: 'active', sourceIP: '203.0.113.100', destinationIP: '10.0.0.1', protocol: 'BGP', description: 'Unauthorized AS path route announcement' },
+  { id: 'alt-023', threatType: 'Web Shell Access', severity: 'high', risk_level: 'CRITICAL', time: '8 hours ago', status: 'active', sourceIP: '45.33.32.210', destinationIP: '10.0.0.1', protocol: 'HTTPS', description: 'Execution of cmd.aspx via uploaded web backdoor' },
+  { id: 'alt-024', threatType: 'SMTP Spam Relay Burst', severity: 'medium', risk_level: 'MEDIUM', time: '9 hours ago', status: 'active', sourceIP: '192.168.1.60', destinationIP: '10.0.0.1', protocol: 'SMTP', description: 'Outbound mail queue spiked over 500 messages/min' },
+  { id: 'alt-025', threatType: 'UPNP Device Scanning', severity: 'low', risk_level: 'LOW', time: '10 hours ago', status: 'active', sourceIP: '192.168.1.44', destinationIP: '239.255.255.250', protocol: 'UDP', description: 'Multicast SSDP discovery broadcast from internal host' }
 ];
 
 const Alerts = () => {
@@ -75,6 +40,8 @@ const Alerts = () => {
   const [highlightedId, setHighlightedId] = useState(null);
   const [alertData, setAlertData] = useState(INITIAL_ALERTS);
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedId, setExpandedId] = useState(null);
+  const [showAllCards, setShowAllCards] = useState(false);
   const realtimeAlerts = useRealtimeAlerts();
 
   // Fetch persisted alerts on initial mount
@@ -100,7 +67,12 @@ const Alerts = () => {
               threat: { level: (item.risk_level || 'LOW').toUpperCase(), color: '#00ffcc' },
               prediction: item.prediction_result || { level: 'NORMAL', message: 'Evaluation complete' }
             }));
-            setAlertData(mapped);
+            // Merge with initial sample data to preserve full 25 count baseline
+            setAlertData(prev => {
+              const ids = new Set(mapped.map(m => m.id));
+              const rest = prev.filter(p => !ids.has(p.id));
+              return [...mapped, ...rest];
+            });
           }
         }
       } catch (err) {
@@ -134,7 +106,7 @@ const Alerts = () => {
 
         setAlertData(prev => {
           if (prev.some(a => a.id === normalized.id)) return prev;
-          return [normalized, ...prev.slice(0, 49)];
+          return [normalized, ...prev];
         });
 
         setHighlightedId(normalized.id);
@@ -165,6 +137,10 @@ const Alerts = () => {
     toast.success('Alert marked as resolved');
   };
 
+  const toggleCardExpand = (id) => {
+    setExpandedId(prev => (prev === id ? null : id));
+  };
+
   const filteredAlerts = useMemo(() => {
     return alertData.filter(alert => {
       const matchesSeverity = selectedSeverity === 'all' || alert.severity === selectedSeverity;
@@ -175,6 +151,11 @@ const Alerts = () => {
       return matchesSeverity && matchesSearch;
     });
   }, [alertData, selectedSeverity, searchTerm]);
+
+  // Display top 9 initially unless user toggles Show All
+  const displayedAlerts = useMemo(() => {
+    return showAllCards ? filteredAlerts : filteredAlerts.slice(0, 9);
+  }, [filteredAlerts, showAllCards]);
 
   const getSeverityColor = (severity) => {
     switch (String(severity).toLowerCase()) {
@@ -197,26 +178,31 @@ const Alerts = () => {
     }
   };
 
+  const totalTracked = alertData.length;
+  const highSeverityCount = alertData.filter(a => a.severity === 'high' || a.severity === 'critical').length;
+  const activeThreatsCount = alertData.filter(a => a.status === 'active').length;
+
   return (
-    <div className="alerts-page fade-in p-6">
-      <div className="page-header mb-6">
-        <h1 className="page-title text-3xl font-bold text-cyan-400">Security Alerts</h1>
-        <p className="page-subtitle text-gray-400">Real-time threat detection and AI-powered incident intelligence</p>
+    <div className="alerts-container">
+      <div className="alerts-header">
+        <h1 className="alerts-title">Security Alerts Center</h1>
+        <p className="alerts-sub">Real-time threat detection telemetry, AI incident response, and active firewall policies</p>
       </div>
 
-      {/* Threat Intelligence & Incident Response Section */}
-      <div className="intelligence-section grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      {/* Row 1: Threat Intelligence & Incident Response in SAME ROW */}
+      <div className="alerts-top-row">
         <ThreatIntelligence alerts={filteredAlerts} />
         <IncidentPanel alert={filteredAlerts[0]} />
       </div>
 
-      {/* Controls & Search */}
-      <div className="alerts-controls flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="severity-filter flex gap-2">
+      {/* Row 2: Single Compact Control, Search & KPI Bar */}
+      <div className="alerts-compact-bar">
+        {/* Severity Filters */}
+        <div className="alerts-filters">
           {['all', 'high', 'medium', 'low'].map(sev => (
             <button 
               key={sev}
-              className={`filter-btn px-4 py-2 rounded-lg font-medium transition-all ${selectedSeverity === sev ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/30' : 'bg-slate-800 text-gray-300 hover:bg-slate-700'}`}
+              className={`filter-btn ${selectedSeverity === sev ? 'active' : ''}`}
               onClick={() => setSelectedSeverity(sev)}
             >
               {sev === 'all' ? 'All Alerts' : sev.charAt(0).toUpperCase() + sev.slice(1)}
@@ -224,110 +210,135 @@ const Alerts = () => {
           ))}
         </div>
 
-        <div className="search-box">
+        {/* Search Field */}
+        <div className="alerts-search">
           <input
             type="text"
             placeholder="Search alerts, IPs, attack types..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 w-64 md:w-80"
+            className="search-input"
           />
+        </div>
+
+        {/* Compact KPI Stats */}
+        <div className="alerts-kpi-bar">
+          <div className="kpi-pill">
+            <span className="kpi-num text-cyan">{totalTracked}</span>
+            <span className="kpi-lbl">Total Alerts Tracked</span>
+          </div>
+          <div className="kpi-pill">
+            <span className="kpi-num text-red">{highSeverityCount}</span>
+            <span className="kpi-lbl">High / Critical</span>
+          </div>
+          <div className="kpi-pill">
+            <span className="kpi-num text-yellow">{activeThreatsCount}</span>
+            <span className="kpi-lbl">Active Threats</span>
+          </div>
         </div>
       </div>
 
-      {/* Summary KPI Cards */}
-      <div className="alerts-stats grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="stat-card bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
-          <div className="stat-content">
-            <div className="stat-value text-3xl font-bold text-cyan-400">{alertData.length}</div>
-            <div className="stat-label text-sm text-gray-400">Total Alerts Tracked</div>
-          </div>
-        </Card>
-        <Card className="stat-card bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
-          <div className="stat-content">
-            <div className="stat-value text-3xl font-bold text-red-400">{alertData.filter(a => a.severity === 'high' || a.severity === 'critical').length}</div>
-            <div className="stat-label text-sm text-gray-400">High / Critical Severity</div>
-          </div>
-        </Card>
-        <Card className="stat-card bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
-          <div className="stat-content">
-            <div className="stat-value text-3xl font-bold text-yellow-400">{alertData.filter(a => a.status === 'active').length}</div>
-            <div className="stat-label text-sm text-gray-400">Active Threats</div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Alerts Stream List */}
-      <div className="alerts-list space-y-4">
-        {filteredAlerts.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 bg-slate-900/40 rounded-xl border border-slate-800">
-            No alerts found matching the selected filter criteria.
+      {/* Row 3: Alert Cards Grid (3 per row, Minimal data default, Click to Expand) */}
+      <div className="alerts-grid-3">
+        {displayedAlerts.length === 0 ? (
+          <div className="alerts-empty-box">
+            No security alerts match the selected filter criteria.
           </div>
         ) : (
-          filteredAlerts.map((alert) => {
+          displayedAlerts.map((alert) => {
+            const isExpanded = expandedId === alert.id;
             const isHigh = alert.severity === 'high' || alert.severity === 'critical';
             const borderColor = isHigh ? '#ff3366' : alert.severity === 'medium' ? '#ffaa00' : '#00ffcc';
-            
+
             return (
-              <Card 
-                key={alert.id} 
-                className={`alert-card bg-slate-900/90 border border-slate-800 rounded-xl p-5 transition-all duration-300 hover:shadow-lg ${alert.id === highlightedId ? "ring-2 ring-cyan-400 shadow-cyan-500/40" : ""}`}
+              <div 
+                key={alert.id}
+                className={`alert-card-item ${alert.id === highlightedId ? "highlight-ring" : ""}`}
                 style={{ borderLeft: `4px solid ${borderColor}` }}
+                onClick={() => toggleCardExpand(alert.id)}
               >
-                <div className="alert-header flex flex-wrap justify-between items-start gap-4 mb-3">
-                  <div className="alert-title-section">
-                    <h3 className="alert-title text-lg font-bold text-white mb-1">{alert.threatType}</h3>
-                    <div className="alert-meta text-xs text-gray-400 space-x-3">
-                      <span>⏱️ {alert.time}</span>
-                      <span>🌐 Source: <strong className="text-cyan-300">{alert.sourceIP}</strong></span>
-                      <span>🎯 Target: <strong className="text-gray-300">{alert.destinationIP}</strong></span>
-                      <span>📡 Protocol: <strong className="text-yellow-300">{alert.protocol}</strong></span>
+                {/* Minimal Card Header (Always Visible) */}
+                <div className="alert-card-minimal">
+                  <div className="alert-card-top">
+                    <h3 className="alert-card-title">{alert.threatType}</h3>
+                    <div className="flex gap-1">
+                      <span 
+                        className="badge-pill"
+                        style={{ backgroundColor: `${getSeverityColor(alert.severity)}22`, color: getSeverityColor(alert.severity), border: `1px solid ${getSeverityColor(alert.severity)}` }}
+                      >
+                        {alert.severity}
+                      </span>
                     </div>
                   </div>
-                  <div className="alert-badges flex items-center gap-2">
-                    <span 
-                      className="px-3 py-1 text-xs font-bold rounded-full uppercase"
-                      style={{ backgroundColor: `${getSeverityColor(alert.severity)}22`, color: getSeverityColor(alert.severity), border: `1px solid ${getSeverityColor(alert.severity)}` }}
-                    >
-                      {alert.severity}
-                    </span>
-                    <span 
-                      className="px-3 py-1 text-xs font-bold rounded-full uppercase"
-                      style={{ backgroundColor: `${getStatusColor(alert.status)}22`, color: getStatusColor(alert.status), border: `1px solid ${getStatusColor(alert.status)}` }}
-                    >
-                      {alert.status}
-                    </span>
+
+                  <div className="alert-card-sub">
+                    <span>Source: <strong style={{ color: '#38bdf8' }}>{alert.sourceIP}</strong></span>
+                    <span>{alert.time}</span>
+                  </div>
+
+                  <div className="alert-card-expand-toggle">
+                    <span>Status: <strong style={{ color: getStatusColor(alert.status) }}>{alert.status}</strong></span>
+                    <span className="toggle-btn">{isExpanded ? 'Collapse ▴' : 'Click to Expand ▾'}</span>
                   </div>
                 </div>
 
-                <div className="alert-description text-sm text-gray-300 mb-4 bg-slate-950/60 p-3 rounded-lg border border-slate-800/80">
-                  {alert.description}
-                </div>
+                {/* Expanded Details Section (Only visible on Click) */}
+                {isExpanded && (
+                  <div className="alert-card-expanded" onClick={(e) => e.stopPropagation()}>
+                    <div className="alert-desc-box">
+                      {alert.description}
+                    </div>
 
-                <div className="alert-actions flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/60">
-                  <div className="text-xs text-cyan-400/80">
-                    🤖 AI Confidence: <strong>96.4%</strong> • CICIDS2017 Verified
+                    <div className="alert-detail-rows">
+                      <div className="alert-detail-row">
+                        <span>Target IP:</span>
+                        <strong>{alert.destinationIP}</strong>
+                      </div>
+                      <div className="alert-detail-row">
+                        <span>Protocol:</span>
+                        <strong style={{ color: '#fbbf24' }}>{alert.protocol}</strong>
+                      </div>
+                      <div className="alert-detail-row">
+                        <span>AI Confidence:</span>
+                        <strong style={{ color: '#34d399' }}>96.4% Verified</strong>
+                      </div>
+                    </div>
+
+                    <div className="alert-card-actions">
+                      <button 
+                        onClick={() => handleBlockIP(alert.sourceIP)}
+                        className="btn-block-ip"
+                      >
+                        Block IP
+                      </button>
+                      <button 
+                        onClick={() => handleResolve(alert.id)}
+                        className="btn-resolve"
+                      >
+                        Resolve
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleBlockIP(alert.sourceIP)}
-                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500 hover:text-white transition-colors"
-                    >
-                      Block IP
-                    </button>
-                    <button 
-                      onClick={() => handleResolve(alert.id)}
-                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500 text-black font-bold hover:bg-cyan-400 transition-colors"
-                    >
-                      Resolve
-                    </button>
-                  </div>
-                </div>
-              </Card>
+                )}
+              </div>
             );
           })
         )}
       </div>
+
+      {/* Show All / Pagination Bar (Top 9 visible initially) */}
+      {filteredAlerts.length > 9 && (
+        <div className="alerts-pagination-bar">
+          <button 
+            className="btn-show-all"
+            onClick={() => setShowAllCards(prev => !prev)}
+          >
+            {showAllCards 
+              ? 'Showing All Alerts • Show Top 9' 
+              : `View All ${filteredAlerts.length} Alerts (${filteredAlerts.length - 9} More) ↓`}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

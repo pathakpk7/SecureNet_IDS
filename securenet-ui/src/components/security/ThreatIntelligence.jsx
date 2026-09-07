@@ -1,7 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../ui/Card';
 
 export default function ThreatIntelligence({ alerts = [] }) {
+  const navigate = useNavigate();
   const safeAlerts = Array.isArray(alerts) ? alerts : [];
   const topThreat = safeAlerts[0] || {
     message: 'Active network traffic within normal thresholds',
@@ -12,8 +14,15 @@ export default function ThreatIntelligence({ alerts = [] }) {
   const level = topThreat?.threat?.level || 'LOW';
 
   return (
-    <Card className="intel-card">
-      <h3>Threat Intelligence</h3>
+    <Card 
+      className="intel-card db-card-clickable" 
+      onClick={() => navigate('/attack-analysis')}
+      title="Click to open Attack Analysis"
+    >
+      <div className="db-card-header">
+        <h3>Threat Intelligence</h3>
+        <span className="db-card-link-badge">Attack Analysis →</span>
+      </div>
 
       <p><b>Top Threat:</b> {topThreat?.threatType || topThreat?.attack_type || topThreat?.message || 'No active threats'}</p>
       <p><b>Risk Level:</b> <span className={`badge badge-${level.toLowerCase()}`}>{level}</span></p>

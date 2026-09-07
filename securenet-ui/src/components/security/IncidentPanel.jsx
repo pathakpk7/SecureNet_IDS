@@ -1,8 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../ui/Card';
+import toast from 'react-hot-toast';
 import { getResponseAction, getRecommendedActions } from '../../services/incidentEngine';
 
 export default function IncidentPanel({ alert }) {
+  const navigate = useNavigate();
   const safeAlert = alert || {
     message: "Network traffic monitoring active",
     threat: { level: "LOW" },
@@ -18,11 +21,14 @@ export default function IncidentPanel({ alert }) {
 
   return (
     <Card className="incident-card">
-      <h3>Incident Response</h3>
+      <div className="db-card-header">
+        <h3>Incident Response</h3>
+        <span className="db-card-link-badge">Auto Response Active</span>
+      </div>
       
       <div className="incident-action">
-        <p><b>Recommended Action:</b> <span className="text-cyan-400">{action}</span></p>
-        <p><b>Priority:</b> <span className="text-yellow-400">{recommendation.priority || 'NORMAL'}</span></p>
+        <p><b>Recommended Action:</b> <span className="text-cyan">{action}</span></p>
+        <p><b>Priority:</b> <span className="text-yellow">{recommendation.priority || 'NORMAL'}</span></p>
         <p><b>Description:</b> {recommendation.description || 'System state normal'}</p>
       </div>
 
@@ -36,9 +42,24 @@ export default function IncidentPanel({ alert }) {
       </div>
 
       <div className="incident-actions">
-        <button className="btn btn-primary btn-sm">Execute Action</button>
-        <button className="btn btn-outline btn-sm">Schedule for Later</button>
-        <button className="btn btn-outline btn-sm">View Details</button>
+        <button 
+          onClick={() => toast.success(`Executed response action: ${action}`)}
+          className="btn btn-primary btn-sm"
+        >
+          Execute Action
+        </button>
+        <button 
+          onClick={() => toast.info('Response action scheduled in queue')}
+          className="btn btn-outline btn-sm"
+        >
+          Schedule for Later
+        </button>
+        <button 
+          onClick={() => navigate('/alerts')}
+          className="btn btn-outline btn-sm"
+        >
+          View Details →
+        </button>
       </div>
     </Card>
   );

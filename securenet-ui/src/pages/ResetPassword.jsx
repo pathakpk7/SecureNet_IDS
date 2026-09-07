@@ -143,7 +143,7 @@ const ResetPassword = () => {
                 className="password-toggle-btn"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? '👁️' : '👁️‍🗨️'}
+                {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
           </div>
@@ -167,7 +167,7 @@ const ResetPassword = () => {
                 className="password-toggle-btn"
                 aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
               >
-                {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                {showConfirmPassword ? 'Hide' : 'Show'}
               </button>
             </div>
           </div>
