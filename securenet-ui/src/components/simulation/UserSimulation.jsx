@@ -80,32 +80,41 @@ const UserSimulation = () => {
     }, 3000);
   };
 
-  const getStatusColor = (status) => {
+  const getStatusBadgeStyle = (status) => {
     switch(status) {
-      case 'available': return '#00ff00';
-      case 'in-progress': return '#ffaa00';
-      case 'completed': return '#00f5ff';
-      default: return '#888';
+      case 'available': 
+        return { background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#10b981' };
+      case 'in-progress': 
+        return { background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.4)', color: '#fbbf24' };
+      case 'completed': 
+        return { background: 'rgba(0, 245, 255, 0.15)', border: '1px solid rgba(0, 245, 255, 0.4)', color: '#00f5ff' };
+      default: 
+        return { background: 'rgba(148, 163, 184, 0.15)', border: '1px solid rgba(148, 163, 184, 0.4)', color: '#94a3b8' };
     }
   };
 
-  const getDifficultyColor = (difficulty) => {
+  const getDifficultyBadgeStyle = (difficulty) => {
     switch(difficulty) {
-      case 'Easy': return '#00ffcc';
-      case 'Medium': return '#ffaa00';
-      case 'Hard': return '#ff3366';
-      default: return '#888';
+      case 'Easy': 
+        return { background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.4)', color: '#60a5fa' };
+      case 'Medium': 
+        return { background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.4)', color: '#fbbf24' };
+      case 'Hard': 
+        return { background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#ef4444' };
+      default: 
+        return { background: 'rgba(148, 163, 184, 0.15)', border: '1px solid rgba(148, 163, 184, 0.4)', color: '#94a3b8' };
     }
   };
 
   return (
     <div className="user-simulation-page fade-in">
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '24px' }}>
         <h1 className="page-title">Security Training Simulations</h1>
         <p className="page-subtitle">Improve your security awareness with interactive scenarios</p>
       </div>
 
-      <div className="training-stats">
+      {/* ROW 1: 4 Available Training, 1 Completed, 85% Average Score in ONE ROW */}
+      <div className="training-stats-row">
         <Card className="stat-card">
           <div className="stat-content">
             <div className="stat-value">{userSimulations.length}</div>
@@ -128,65 +137,127 @@ const UserSimulation = () => {
         </Card>
       </div>
 
-      <div className="simulations-grid">
+      {/* ROW 2: Training Simulations in ONE CARD (2 Rows x Multiple Columns Grid) */}
+      <div style={{ marginBottom: '24px' }}>
         <Card className="simulations-card full-width">
-          <h3 className="card-title">Training Simulations</h3>
-          <div className="simulations-list">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 className="card-title" style={{ margin: 0 }}>Training Simulations</h3>
+            <span className="user-role-badge">INTERACTIVE SCENARIOS</span>
+          </div>
+
+          <div className="simulations-grid-2x2">
             {userSimulations.map(simulation => (
-              <div key={simulation.id} className="simulation-item">
+              <div key={simulation.id} className="simulation-item-card">
                 <div className="simulation-info">
-                  <div className="simulation-header">
-                    <h4 className="simulation-name">{simulation.name}</h4>
-                    <div className="simulation-badges">
+                  <div className="simulation-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <h4 className="simulation-name" style={{ margin: 0, fontSize: '15px', color: '#fff', fontWeight: '700' }}>{simulation.name}</h4>
+                    <div className="simulation-badges" style={{ display: 'flex', gap: '6px' }}>
                       <span 
                         className="status-badge"
-                        style={{ backgroundColor: getStatusColor(simulation.status) }}
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          letterSpacing: '0.5px',
+                          ...getStatusBadgeStyle(simulation.status)
+                        }}
                       >
                         {simulation.status === 'in-progress' ? 'IN PROGRESS' : 
                          simulation.status === 'completed' ? 'COMPLETED' : 'AVAILABLE'}
                       </span>
                       <span 
                         className="difficulty-badge"
-                        style={{ backgroundColor: getDifficultyColor(simulation.difficulty) }}
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          letterSpacing: '0.5px',
+                          ...getDifficultyBadgeStyle(simulation.difficulty)
+                        }}
                       >
-                        {simulation.difficulty}
+                        {simulation.difficulty.toUpperCase()}
                       </span>
                     </div>
                   </div>
-                  <p className="simulation-description">{simulation.description}</p>
-                  <div className="simulation-meta">
-                    <span className="simulation-type">{simulation.type}</span>
-                    <span className="simulation-duration">Duration: {simulation.duration}</span>
+                  <p className="simulation-description" style={{ fontSize: '12px', color: '#94a3b8', margin: '6px 0 12px 0', lineHeight: '1.4' }}>
+                    {simulation.description}
+                  </p>
+                  <div className="simulation-meta" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '8px', marginTop: '4px' }}>
+                    <span className="simulation-type" style={{ color: '#00f5ff', fontWeight: '700' }}>{simulation.type.toUpperCase()}</span>
+                    <span className="simulation-duration" style={{ color: '#cbd5e1' }}>Duration: {simulation.duration}</span>
                   </div>
                 </div>
-                <div className="simulation-actions">
+                <div className="simulation-actions" style={{ marginTop: '14px', display: 'flex', gap: '8px' }}>
                   {simulation.status === 'available' && (
                     <button 
-                      className="btn btn-primary"
+                      className="btn btn-primary btn-sm"
                       onClick={() => handleStartSimulation(simulation)}
+                      style={{
+                        background: 'rgba(0, 245, 255, 0.15)',
+                        border: '1px solid rgba(0, 245, 255, 0.4)',
+                        color: '#00f5ff',
+                        fontWeight: '700',
+                        fontSize: '12px',
+                        padding: '6px 14px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        width: '100%'
+                      }}
                     >
                       Start Training
                     </button>
                   )}
                   {simulation.status === 'in-progress' && (
-                    <button className="btn btn-warning" disabled>
+                    <button
+                      className="btn btn-warning btn-sm"
+                      disabled
+                      style={{
+                        background: 'rgba(245, 158, 11, 0.15)',
+                        border: '1px solid rgba(245, 158, 11, 0.4)',
+                        color: '#fbbf24',
+                        fontWeight: '700',
+                        fontSize: '12px',
+                        padding: '6px 14px',
+                        borderRadius: '6px',
+                        width: '100%'
+                      }}
+                    >
                       In Progress...
                     </button>
                   )}
                   {simulation.status === 'completed' && (
-                    <button className="btn btn-outline">
-                      Retake
+                    <button 
+                      className="btn btn-outline btn-sm"
+                      onClick={() => handleStartSimulation(simulation)}
+                      style={{
+                        background: 'rgba(30, 41, 59, 0.6)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: '#e2e8f0',
+                        fontWeight: '600',
+                        fontSize: '12px',
+                        padding: '6px 14px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        width: '100%'
+                      }}
+                    >
+                      Retake Simulation
                     </button>
                   )}
-                  <button className="btn btn-outline">Details</button>
                 </div>
               </div>
             ))}
           </div>
         </Card>
+      </div>
 
+      {/* ROW 3: Your Progress, Recent Results, Recommended Training in ONE ROW */}
+      <div className="training-bottom-row">
+        {/* Card 1: Your Progress */}
         <Card className="simulations-card">
-          <h3 className="card-title">Your Progress</h3>
+          <h3 className="card-title" style={{ marginBottom: '16px' }}>Your Progress</h3>
           <div className="progress-summary">
             <div className="progress-item">
               <div className="progress-label">Security Awareness</div>
@@ -212,57 +283,47 @@ const UserSimulation = () => {
           </div>
         </Card>
 
+        {/* Card 2: Recent Results */}
         <Card className="simulations-card">
-          <h3 className="card-title">Recent Results</h3>
+          <h3 className="card-title" style={{ marginBottom: '16px' }}>Recent Results</h3>
           <div className="results-list">
             {userResults.map(result => (
-              <div key={result.id} className="result-item">
-                <div className="result-header">
-                  <h4 className="result-name">{result.simulationName}</h4>
-                  <span className={`result-score ${result.score >= 80 ? 'high' : result.score >= 60 ? 'medium' : 'low'}`}>
+              <div key={result.id} className="result-item" style={{ padding: '12px', background: 'rgba(30, 41, 59, 0.4)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '8px' }}>
+                <div className="result-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4 className="result-name" style={{ margin: 0, fontSize: '13px', color: '#fff', fontWeight: '700' }}>{result.simulationName}</h4>
+                  <span className={`result-score ${result.score >= 80 ? 'high' : result.score >= 60 ? 'medium' : 'low'}`} style={{ fontWeight: '700', fontSize: '13px' }}>
                     {result.score}%
                   </span>
                 </div>
-                <div className="result-stats">
-                  <div className="stat">
-                    <span className="stat-label">Issues:</span>
-                    <span className="stat-value">{result.issuesFound}</span>
-                  </div>
-                  <div className="stat">
-                    <span className="stat-label">Recommendations:</span>
-                    <span className="stat-value">{result.recommendations}</span>
-                  </div>
-                </div>
-                <div className="result-time">
-                  {new Date(result.completedAt).toLocaleDateString()}
+                <div className="result-single-line-stats" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>
+                  <span>Issues: <strong style={{ color: '#ef4444' }}>{result.issuesFound}</strong></span>
+                  <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
+                  <span>Recommendations: <strong style={{ color: '#00f5ff' }}>{result.recommendations}</strong></span>
+                  <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
+                  <span style={{ color: '#cbd5e1' }}>{new Date(result.completedAt).toLocaleDateString()}</span>
                 </div>
               </div>
             ))}
           </div>
         </Card>
-      </div>
 
-      <div className="recommendations-section">
-        <Card className="recommendations-card">
-          <h3 className="card-title">Recommended Training</h3>
-          <div className="recommendation-list">
-            <div className="recommendation-item">
-              <div className="rec-icon">security</div>
+        {/* Card 3: Recommended Training */}
+        <Card className="simulations-card">
+          <h3 className="card-title" style={{ marginBottom: '16px' }}>Recommended Training</h3>
+          <div className="recommendation-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="recommendation-item" style={{ padding: '12px', background: 'rgba(30, 41, 59, 0.4)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div className="rec-content">
-                <h4>Advanced Phishing Detection</h4>
-                <p>Learn to identify sophisticated phishing attacks</p>
-                <div className="rec-meta">Duration: 10 minutes | Difficulty: Hard</div>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#fff' }}>Advanced Phishing Detection</h4>
+                <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>Learn to identify email threats</p>
+                <div className="rec-meta" style={{ fontSize: '10px', color: '#00f5ff', marginTop: '4px' }}>Duration: 10 min • Hard</div>
               </div>
-              <button className="btn btn-outline btn-sm">Enroll</button>
             </div>
-            <div className="recommendation-item">
-              <div className="rec-icon">devices</div>
+            <div className="recommendation-item" style={{ padding: '12px', background: 'rgba(30, 41, 59, 0.4)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div className="rec-content">
-                <h4>Mobile Security Essentials</h4>
-                <p>Secure your smartphone and tablet devices</p>
-                <div className="rec-meta">Duration: 8 minutes | Difficulty: Easy</div>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#fff' }}>Mobile Security Essentials</h4>
+                <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>Secure smartphones & tablets</p>
+                <div className="rec-meta" style={{ fontSize: '10px', color: '#00f5ff', marginTop: '4px' }}>Duration: 8 min • Easy</div>
               </div>
-              <button className="btn btn-outline btn-sm">Enroll</button>
             </div>
           </div>
         </Card>

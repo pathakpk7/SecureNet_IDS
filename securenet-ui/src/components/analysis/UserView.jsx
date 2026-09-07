@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../../components/ui/Card';
-import BarChart from '../../components/charts/BarChart';
-import PieChart from '../../components/charts/PieChart';
+import Card from '../ui/Card';
+import BarChart from '../Charts/BarChart';
+import PieChart from '../Charts/PieChart';
 import '../../styles/pages/analysis.css';
 
 const UserAttackAnalysis = () => {
@@ -12,11 +12,10 @@ const UserAttackAnalysis = () => {
   });
 
   const [personalAttackTypeData, setPersonalAttackTypeData] = useState({
-    labels: ['Phishing', 'Malware', 'Suspicious', 'Safe'],
+    labels: ['Phishing Attempt', 'Malware Payload', 'Suspicious Probe', 'Clean Traffic'],
     values: [2, 1, 3, 45]
   });
 
-  // Simulate personal data updates
   useEffect(() => {
     const interval = setInterval(() => {
       setPersonalAttackData(prev => ({
@@ -32,89 +31,110 @@ const UserAttackAnalysis = () => {
 
   return (
     <div className="attack-analysis-page fade-in">
-      <div className="page-header">
-        <h1 className="page-title">Personal Attack Analysis</h1>
-        <p className="page-subtitle">Analysis of attacks targeting your account and devices</p>
-      </div>
-
-      <div className="analysis-controls">
-        <div className="time-range-selector">
-          {timeRanges.map(range => (
-            <button
-              key={range}
-              className={`range-btn ${selectedTimeRange === range ? 'active' : ''}`}
-              onClick={() => setSelectedTimeRange(range)}
-            >
-              {range}
-            </button>
-          ))}
+      {/* Top Box: Header, Range Controls, and KPI Pills */}
+      <Card className="aa-header-kpi-card">
+        <div className="aa-header-content">
+          <div className="page-header-text">
+            <h1 className="page-title">Personal Attack Analysis</h1>
+            <p className="page-subtitle">Security threat breakdown targeting your account, active sessions, and personal devices</p>
+          </div>
+          <div className="aa-controls-group">
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginRight: '6px' }}>Range:</span>
+            {timeRanges.map(range => (
+              <button
+                key={range}
+                className={`range-btn ${selectedTimeRange === range ? 'active' : ''}`}
+                onClick={() => setSelectedTimeRange(range)}
+              >
+                {range.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="analysis-grid">
-        <Card className="analysis-card">
-          <h3 className="card-title">Personal Attack Timeline</h3>
-          <div className="chart-container">
-            <BarChart data={personalAttackData} />
+        <div className="aa-kpi-row">
+          <div className="aa-kpi-pill">
+            <span className="val text-cyan">26</span>
+            <span className="lbl">Threats Evaluated</span>
+          </div>
+          <div className="aa-kpi-pill">
+            <span className="val text-emerald">26</span>
+            <span className="lbl">Blocked Attempts</span>
+          </div>
+          <div className="aa-kpi-pill">
+            <span className="val text-emerald">99.2%</span>
+            <span className="lbl">Protection Score</span>
+          </div>
+          <div className="aa-kpi-pill">
+            <span className="val text-cyan">Low</span>
+            <span className="lbl">Risk Rating</span>
+          </div>
+        </div>
+      </Card>
+
+      {/* Row 2: CHARTS ROW */}
+      <div className="aa-charts-row">
+        <Card className="aa-chart-card">
+          <div className="aa-card-header">
+            <h3>Personal Threat Frequency</h3>
+            <span className="aa-badge">7-DAY TIMELINE</span>
+          </div>
+          <div style={{ height: '220px', position: 'relative' }}>
+            <BarChart data={personalAttackData} height="100%" />
           </div>
         </Card>
 
-        <Card className="analysis-card">
-          <h3 className="card-title">Attack Types Distribution</h3>
-          <div className="chart-container">
-            <PieChart data={personalAttackTypeData} />
+        <Card className="aa-chart-card">
+          <div className="aa-card-header">
+            <h3>Threat Category Breakdown</h3>
+            <span className="aa-badge">CATEGORIES</span>
           </div>
-        </Card>
-
-        <Card className="analysis-card">
-          <h3 className="card-title">Personal Statistics</h3>
-          <div className="stats-grid">
-            <div className="stat-item">
-              <div className="stat-value">26</div>
-              <div className="stat-label">Total Attacks</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">3</div>
-              <div className="stat-label">Blocked</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">92%</div>
-              <div className="stat-label">Protection Rate</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">Low</div>
-              <div className="stat-label">Risk Level</div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="analysis-card">
-          <h3 className="card-title">Recent Attack Attempts</h3>
-          <div className="attack-list">
-            <div className="attack-item">
-              <div className="attack-info">
-                <div className="attack-type">Phishing Email</div>
-                <div className="attack-time">2 hours ago</div>
-              </div>
-              <div className="attack-status blocked">Blocked</div>
-            </div>
-            <div className="attack-item">
-              <div className="attack-info">
-                <div className="attack-type">Suspicious Login</div>
-                <div className="attack-time">5 hours ago</div>
-              </div>
-              <div className="attack-status blocked">Blocked</div>
-            </div>
-            <div className="attack-item">
-              <div className="attack-info">
-                <div className="attack-type">Malware Attempt</div>
-                <div className="attack-time">1 day ago</div>
-              </div>
-              <div className="attack-status blocked">Blocked</div>
-            </div>
+          <div style={{ height: '220px', position: 'relative' }}>
+            <PieChart data={personalAttackTypeData} height="100%" />
           </div>
         </Card>
       </div>
+
+      {/* Row 3: RECENT THREATS TABLE */}
+      <Card className="aa-table-card">
+        <div className="aa-card-header">
+          <h3>Recent Intercepted Threats</h3>
+          <span className="aa-badge">SECURE</span>
+        </div>
+
+        <div className="aa-table-wrapper">
+          <table className="aa-table">
+            <thead>
+              <tr>
+                <th>Threat Vector</th>
+                <th>Time Intercepted</th>
+                <th>Target Session</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="font-bold text-white">Phishing Email Vector</td>
+                <td className="text-gray-400">2 hours ago</td>
+                <td className="text-gray-300">Email Gateway</td>
+                <td><span className="nm-status-badge btn-active-mon">Blocked</span></td>
+              </tr>
+              <tr>
+                <td className="font-bold text-white">Suspicious Login Attempt</td>
+                <td className="text-gray-400">5 hours ago</td>
+                <td className="text-gray-300">Web Portal</td>
+                <td><span className="nm-status-badge btn-active-mon">Blocked</span></td>
+              </tr>
+              <tr>
+                <td className="font-bold text-white">Malware Payload Script</td>
+                <td className="text-gray-400">1 day ago</td>
+                <td className="text-gray-300">Browser Endpoint</td>
+                <td><span className="nm-status-badge btn-active-mon">Blocked</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 };

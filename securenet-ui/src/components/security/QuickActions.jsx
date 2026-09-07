@@ -27,19 +27,19 @@ export default function QuickActions() {
       <h3>Quick Actions</h3>
       <div className="actions-grid">
         <button className="action-btn danger" onClick={handleBlockIP}>
-          🚫 Block IP
+          Block IP
         </button>
         <button className="action-btn warning" onClick={handleRunScan}>
-          🔍 Run Scan
+          Run Scan
         </button>
         <button className="action-btn info" onClick={handleSimulateAttack}>
-          ⚡ Simulate Attack
+          Simulate Attack
         </button>
         <button className="action-btn critical" onClick={handleIsolateSystem}>
-          🔒 Isolate System
+          Isolate System
         </button>
         <button className="action-btn success" onClick={handleRunDiagnostics}>
-          🩺 Run Diagnostics
+          Run Diagnostics
         </button>
       </div>
     </Card>

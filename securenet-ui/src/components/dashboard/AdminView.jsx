@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../components/ui/Card';
-import LineChart from '../components/charts/LineChart';
-import PieChart from '../components/charts/PieChart';
-import AnimatedCounter from '../components/ui/AnimatedCounter';
-import OrgDebug from '../components/debug/OrgDebug';
-import '../styles/pages/dashboard.css';
+import Card from '../ui/Card';
+import LineChart from '../Charts/LineChart';
+import PieChart from '../Charts/PieChart';
+import AnimatedCounter from '../ui/AnimatedCounter';
+import OrgDebug from '../debug/OrgDebug';
+import '../../styles/pages/dashboard.css';
 
 const AdminDashboard = () => {
   const [trafficData, setTrafficData] = useState({

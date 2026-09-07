@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../../components/ui/Card';
-import LineChart from '../components/charts/LineChart';
-import PieChart from '../../components/charts/PieChart';
-import AnimatedCounter from '../../components/ui/AnimatedCounter';
+import Card from '../ui/Card';
+import LineChart from '../Charts/LineChart';
+import PieChart from '../Charts/PieChart';
+import AnimatedCounter from '../ui/AnimatedCounter';
 import '../../styles/pages/dashboard.css';
 
 const UserDashboard = () => {

@@ -7,6 +7,7 @@ function Navbar({ toggleMenu, menuOpen }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState(null);
+  const [hoverMenu, setHoverMenu] = useState(null);
   const { user, logout } = useAuth();
   
   const navItems = [
@@ -50,43 +51,40 @@ function Navbar({ toggleMenu, menuOpen }) {
     { name: "Settings", path: "/settings" }
   ];
 
+  const closeMenu = () => {
+    setActiveMenu(null);
+    setHoverMenu(null);
+  };
+
   const toggleDropdown = (menu) => {
     setActiveMenu(prev => (prev === menu ? null : menu));
   };
 
   const handleLogout = async () => {
+    closeMenu();
     try {
       await logout();
       navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if there's an error, try to redirect to home
       navigate('/');
     }
   };
 
-  const handleRipple = (e) => {
-    const target = e.currentTarget;
-    const circle = document.createElement("span");
-
-    const diameter = Math.max(target.clientWidth, target.clientHeight);
-    const radius = diameter / 2;
-
-    circle.style.width = circle.style.height = `${diameter}px`;
-    circle.style.left = `${e.clientX - target.offsetLeft - radius}px`;
-    circle.style.top = `${e.clientY - target.offsetTop - radius}px`;
-    circle.classList.add("ripple");
-
-    const ripple = target.getElementsByClassName("ripple")[0];
-    if (ripple) ripple.remove();
-
-    target.appendChild(circle);
+  const isChildActive = (children) => {
+    if (!children) return false;
+    return children.some(child => location.pathname === child.path);
   };
+
+  // Close dropdown menu whenever location changes
+  useEffect(() => {
+    closeMenu();
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleClick = (e) => {
       if (!e.target.closest(".nav-item")) {
-        setActiveMenu(null);
+        closeMenu();
       }
     };
 
@@ -97,40 +95,60 @@ function Navbar({ toggleMenu, menuOpen }) {
   return (
     <div className="navbar">
       
-      <div className="logo">SecureNet IDS</div>
+      <div className="logo">
+        <Link to="/dashboard" onClick={closeMenu} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+          <img src="/logo.jpg" alt="SecureNet IDS Logo" className="topbar-logo-img" />
+        </Link>
+      </div>
 
       <div className="nav-links">
-        {navItems.map((item) => (
-          <div className={`nav-item ${activeMenu === item.name ? "active" : ""}`} key={item.name}>
-            
-            {item.children ? (
-              <>
-                <span onClick={(e) => {
-                  handleRipple(e);
-                  toggleDropdown(item.name);
-                }}>
+        {navItems.map((item) => {
+          const isOpen = (activeMenu === item.name || hoverMenu === item.name);
+          return (
+            <div 
+              className={`nav-item ${isOpen ? "menu-open" : ""}`} 
+              key={item.name}
+              onMouseEnter={() => item.children && setHoverMenu(item.name)}
+              onMouseLeave={() => setHoverMenu(null)}
+            >
+              {item.children ? (
+                <>
+                  <span 
+                    className={isChildActive(item.children) ? "active" : ""}
+                    onClick={() => toggleDropdown(item.name)}
+                  >
+                    {item.name}
+                    <span className={`arrow ${isOpen ? 'open' : ''}`}>▾</span>
+                  </span>
+
+                  {isOpen && (
+                    <div className="dropdown">
+                      {item.children.map((child) => (
+                        <Link 
+                          key={child.name} 
+                          to={child.path}
+                          className={location.pathname === child.path ? "active" : ""}
+                          onClick={closeMenu}
+                        >
+                          {child.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Link 
+                  to={item.path} 
+                  className={location.pathname === item.path ? "active" : ""} 
+                  onClick={closeMenu}
+                >
                   {item.name}
-                  {item.children && <span className="arrow">▾</span>}
-                </span>
+                </Link>
+              )}
 
-                {activeMenu === item.name && (
-                  <div className="dropdown">
-                    {item.children.map((child) => (
-                      <Link key={child.name} to={child.path}>
-                        {child.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              <Link to={item.path} className={location.pathname === item.path ? "active" : ""} onClick={handleRipple}>
-                {item.name}
-              </Link>
-            )}
-
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
 
       <div className="nav-right">

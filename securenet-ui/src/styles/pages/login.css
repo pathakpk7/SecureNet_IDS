@@ -654,3 +654,36 @@
     padding: 12px;
   }
 }
+
+.login-logo-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 0 15px rgba(0, 245, 255, 0.5);
+  margin-bottom: 12px;
+}
+
+.selection-footer {
+  text-align: center;
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 245, 255, 0.15);
+}
+
+.selection-footer p {
+  color: var(--text-secondary, #94a3b8);
+  font-size: 15px;
+}
+
+.selection-footer .auth-link {
+  color: #00f5ff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.selection-footer .auth-link:hover {
+  color: #38bdf8;
+  text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+}

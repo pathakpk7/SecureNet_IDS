@@ -1,6 +1,5 @@
 .ai-insights-page {
-  padding-top: 90px;   /* position header below navbar */
-  padding: var(--spacing-xl);
+  padding: 0;
   min-height: 100vh;
 }
 
@@ -921,3 +920,37 @@ body.user .help-options {
     gap: var(--spacing-xs);
   }
 }
+
+/* ==========================================================================
+   AI Insights Custom Layout (.ai-metrics-grid & .ai-models-recs-row)
+   ========================================================================== */
+
+.ai-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ai-models-recs-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+  .ai-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ai-models-recs-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .ai-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

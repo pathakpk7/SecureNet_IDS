@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../../components/ui/Card';
-import LineChart from '../../components/charts/LineChart';
-import PieChart from '../../components/charts/PieChart';
-import '../../styles/pages/analysis.css';
+import Card from '../ui/Card';
+import LineChart from '../Charts/LineChart';
+import PieChart from '../Charts/PieChart';
+import '../../styles/pages/ai.css';
 
 const UserAIInsights = () => {
   const [personalInsights, setPersonalInsights] = useState({

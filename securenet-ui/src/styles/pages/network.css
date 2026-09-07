@@ -1,6 +1,6 @@
 /* Network Monitor Page Styles */
 .network-monitor {
-  padding: var(--spacing-md);
+  padding: 0;
   min-height: 100vh;
 }
 
@@ -25,9 +25,9 @@
 /* Traffic Overview */
 .traffic-overview {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);   /* 🔥 2 cards */
+  grid-template-columns: repeat(2, 1fr);   /* 2 cards */
   gap: 20px;
-  align-items: start;   /* 🔥 prevents stretching */
+  align-items: start;   /* prevents stretching */
   margin-bottom: 20px;
 }
 
@@ -819,3 +819,482 @@ body.user .info-value.secure {
     font-size: var(--font-md);
   }
 }
+
+/* ==========================================================================
+   NEW REFACTORED NETWORK MONITORING UI (.nm-* CSS HIERARCHY)
+   ========================================================================== */
+
+.network-container {
+  padding: 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.network-header {
+  margin-bottom: 20px;
+}
+
+.network-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary, #f8fafc);
+  margin: 0 0 4px 0;
+}
+
+.network-sub {
+  font-size: 14px;
+  color: var(--text-secondary, #94a3b8);
+  margin: 0;
+}
+
+/* 1. SINGLE ROW COMPACT TOP BAR */
+.nm-top-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(0, 245, 255, 0.15);
+  border-radius: 12px;
+  padding: 12px 18px;
+  margin-bottom: 24px;
+}
+
+.nm-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.nm-toggle-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.nm-toggle-btn.active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.nm-toggle-btn.inactive {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.nm-time-selector {
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nm-time-selector .range-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #94a3b8);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nm-time-selector .range-btn:hover {
+  color: #ffffff;
+}
+
+.nm-time-selector .range-btn.active {
+  background: rgba(0, 245, 255, 0.2);
+  color: #00f5ff;
+}
+
+/* 6 KPI Pills in ONE ROW */
+.nm-kpi-row {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.nm-kpi-pill {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  text-align: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.nm-kpi-pill:hover {
+  border-color: rgba(0, 245, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.nm-kpi-pill .val {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.nm-kpi-pill .lbl {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin-top: 2px;
+}
+
+.text-cyan { color: #00f5ff; }
+.text-emerald { color: #10b981; }
+.text-red { color: #ef4444; }
+.text-yellow { color: #f59e0b; }
+
+/* 2. CHARTS ROW (Pie + Line in ONE ROW) */
+.nm-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.nm-chart-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.nm-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.nm-card-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.nm-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(0, 245, 255, 0.1);
+  color: #00f5ff;
+  letter-spacing: 0.5px;
+}
+
+.nm-badge.live {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.nm-pie-container, .nm-line-container {
+  flex: 1;
+  min-height: 220px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 3. ALL NETWORK IPS COLUMN TABLE VIEW */
+.nm-section {
+  margin-bottom: 24px;
+}
+
+.nm-ips-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.nm-ip-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nm-ip-table-header {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1.5fr;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nm-ip-table-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nm-ip-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1.5fr;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.nm-ip-row:hover {
+  background: rgba(0, 245, 255, 0.03);
+  border-color: rgba(0, 245, 255, 0.2);
+}
+
+.ip-cell {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.actions-cell {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.nm-status-badge, .nm-risk-badge {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.nm-btn-sm {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-active-mon {
+  background: rgba(0, 245, 255, 0.15);
+  color: #00f5ff;
+  border: 1px solid rgba(0, 245, 255, 0.3);
+}
+
+.btn-idle-mon {
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-block-action {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-block-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 4. BOTTOM ROW (Live Traffic Feed & Protocol Analysis) */
+.nm-bottom-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.nm-feed-card, .nm-protocol-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.nm-traffic-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.nm-stream-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.nm-stream-item.blocked {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.stream-flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.stream-flow .arrow {
+  color: #94a3b8;
+}
+
+.stream-details {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.proto-badge {
+  padding: 2px 6px;
+  background: rgba(0, 245, 255, 0.1);
+  color: #00f5ff;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.size-text, .time-text {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.status-pill {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-pill.allowed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.status-pill.blocked {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* COMPACT PROTOCOL ANALYSIS */
+.nm-protocol-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nm-proto-item {
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.proto-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.proto-bar-bg {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  margin: 6px 0;
+  overflow: hidden;
+}
+
+.proto-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00f5ff, #3b82f6);
+  border-radius: 3px;
+}
+
+.proto-sub {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.proto-risk-tag {
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 10px;
+}
+
+.proto-risk-tag.low { color: #10b981; }
+.proto-risk-tag.medium { color: #f59e0b; }
+.proto-risk-tag.high { color: #ef4444; }
+
+@media (max-width: 1200px) {
+  .nm-top-bar {
+    flex-wrap: wrap;
+  }
+  .nm-kpi-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .nm-charts-row, .nm-bottom-row {
+    grid-template-columns: 1fr;
+  }
+  .nm-kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .nm-ip-table-header, .nm-ip-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+

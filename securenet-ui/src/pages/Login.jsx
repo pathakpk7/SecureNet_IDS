@@ -261,6 +261,7 @@ const Login = () => {
       {!showLoginForm ? (
         <div className="login-selection-container">
           <div className="selection-header">
+            <img src="/logo.jpg" alt="SecureNet IDS Logo" className="login-logo-img" />
             <h1>SecureNet IDS</h1>
             <p>Choose your login type to access the platform</p>
           </div>
@@ -307,6 +308,13 @@ const Login = () => {
                 <button className="btn btn-primary">Login as User</button>
               </div>
             </div>
+          </div>
+
+          <div className="selection-footer">
+            <p>
+              Don't have an account?{' '}
+              <a href="/signup" className="auth-link">Create one</a>
+            </p>
           </div>
         </div>
       ) : (

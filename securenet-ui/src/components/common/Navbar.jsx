@@ -8,7 +8,7 @@ const Navbar = () => {
       <div className="navbar-container">
         <div className="navbar-logo">
           <Link to="/" className="logo-link">
-            SecureNet IDS
+            <img src="/logo.jpg" alt="SecureNet IDS Logo" className="navbar-logo-img" />
           </Link>
         </div>
         

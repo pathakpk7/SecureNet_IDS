@@ -1,595 +1,238 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import '../styles/pages/cyber-landing.css';
 
-gsap.registerPlugin(ScrollTrigger);
-
 const CyberLanding = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const canvasRef = useRef(null);
-  const nodesRef = useRef([]);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  // Network Visualization Engine
-  useEffect(() => {
-    const canvas = document.getElementById("network-canvas");
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext("2d");
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    
-    // Canvas performance optimizations
-    ctx.imageSmoothingEnabled = false;
-    canvas.style.willChange = 'transform';
-    canvas.style.transform = 'translateZ(0)';
-
-    const nodes = nodesRef.current;
-    let animationId = null;
-    let lastTime = 0;
-    const targetFPS = 30;
-    const frameInterval = 1000 / targetFPS;
-
-    // Initialize nodes with flow
-    for (let i = 0; i < 20; i++) { // Reduced from 40 to 20
-      const angle = (i / 20) * Math.PI * 2;
-      nodes.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        z: Math.random() * 1,
-        vx: Math.cos(angle) * 0.3, // Reduced speed
-        vy: Math.sin(angle) * 0.3,
-        type: Math.random() > 0.8 ? "threat" : "normal"
-      });
-    }
-
-    // Pre-sort nodes once, avoid sorting every frame
-    nodes.sort((a, b) => a.z - b.z);
-
-    function draw(currentTime) {
-      // FPS limiting
-      if (currentTime - lastTime < frameInterval) {
-        animationId = requestAnimationFrame(draw);
-        return;
-      }
-      lastTime = currentTime;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Skip sorting for better performance - depth not critical
-      // nodes.sort((a, b) => a.z - b.z);
-
-      nodes.forEach((node, i) => {
-        node.x += node.vx;
-        node.y += node.vy;
-
-        // Depth-based rendering
-        const scale = 0.5 + node.z * 0.5;
-        const alpha = 0.3 + node.z * 0.7;
-
-        // draw node - simplified without expensive shadow
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, 2 * scale, 0, Math.PI * 2);
-        ctx.fillStyle = node.type === "threat" ? "#ff3366" : "#00ffff";
-        ctx.globalAlpha = alpha;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-
-        // Limit connections to nearby nodes only for performance
-        const maxConnections = 3;
-        let connectionCount = 0;
-        for (let j = i + 1; j < nodes.length && connectionCount < maxConnections; j++) {
-          const dx = node.x - nodes[j].x;
-          const dy = node.y - nodes[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          
-          if (dist < 80) { // Reduced connection distance
-            const opacity = 1 - dist / 80;
-            ctx.strokeStyle = node.type === "threat" || nodes[j].type === "threat"
-              ? `rgba(255,50,80,${opacity})` 
-              : `rgba(0,255,255,${opacity})`;
-            ctx.beginPath();
-            ctx.moveTo(node.x, node.y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.stroke();
-            connectionCount++;
-          }
-        }
-
-        // boundary bounce
-        if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
-        if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
-      });
-
-      // Attack pulse effect
-      if (attackPulse > 0) {
-        nodes.forEach(n => {
-          n.vx += (Math.random() - 0.5) * 1; // Reduced intensity
-          n.vy += (Math.random() - 0.5) * 1;
-        });
-        attackPulse *= 0.95;
-      }
-
-      animationId = requestAnimationFrame(draw);
-    }
-
-    draw(0);
-
-    return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-    };
-  }, []);
-
-  // Network Reaction to Scroll
-  useEffect(() => {
-    ScrollTrigger.create({
-      trigger: ".scene-3",
-      start: "top center",
-      onEnter: () => {
-        nodes.forEach(n => {
-          n.vx *= 3;
-          n.vy *= 3;
-        });
-      },
-      onLeaveBack: () => {
-        nodes.forEach(n => {
-          n.vx *= 0.3;
-          n.vy *= 0.3;
-        });
-      }
-    });
-  }, []);
-
-  // Cyber Intelligence Systems
-  let attackPulse = 0;
-  let activeThreats = [];
-  let gctx = null;
-  let wctx = null;
-
-  // Geo Attack Map
-  useEffect(() => {
-    const geoCanvas = document.getElementById("geo-canvas");
-    if (!geoCanvas) return;
-    
-    const gctx = geoCanvas.getContext("2d");
-
-    geoCanvas.width = window.innerWidth;
-    geoCanvas.height = window.innerHeight;
-
-    // Pseudo world locations (simulate regions)
-    const locations = [
-      { x: 0.2, y: 0.3 }, // US
-      { x: 0.5, y: 0.4 }, // EU
-      { x: 0.7, y: 0.6 }, // Asia
-      { x: 0.6, y: 0.7 }  // India
-    ];
-
-    function drawGeo() {
-      gctx.clearRect(0, 0, geoCanvas.width, geoCanvas.height);
-
-      locations.forEach((loc) => {
-        const x = loc.x * geoCanvas.width;
-        const y = loc.y * geoCanvas.height;
-
-        gctx.beginPath();
-        gctx.arc(x, y, 4, 0, Math.PI * 2);
-        gctx.fillStyle = "#00ffff";
-        gctx.fill();
-      });
-
-      // Attack lines
-      for (let i = 0; i < locations.length; i++) {
-        const a = locations[i];
-        const b = locations[(i + 1) % locations.length];
-
-        gctx.strokeStyle = "rgba(255,50,80,0.3)";
-        gctx.beginPath();
-        gctx.moveTo(a.x * geoCanvas.width, a.y * geoCanvas.height);
-        gctx.lineTo(b.x * geoCanvas.width, b.y * geoCanvas.height);
-        gctx.stroke();
-      }
-
-      requestAnimationFrame(drawGeo);
-    }
-
-    drawGeo();
-  }, []);
-
-  // Real-Time Threat Highlighting
-  useEffect(() => {
-    const networkCanvas = document.getElementById("network-canvas");
-    if (!networkCanvas) return;
-    
-    const ctx = networkCanvas.getContext("2d");
-
-    function drawThreats() {
-      activeThreats.forEach((t, i) => {
-        ctx.beginPath();
-        ctx.arc(t.x, t.y, 6, 0, Math.PI * 2);
-        ctx.fillStyle = "red";
-        ctx.fill();
-
-        t.life -= 0.02;
-        if (t.life <= 0) activeThreats.splice(i, 1);
-      });
-    }
-
-    // Random threat spawning
-    function spawnThreat() {
-      const node = nodes[Math.floor(Math.random() * nodes.length)];
-      activeThreats.push({ ...node, life: 1 });
-    }
-
-    setInterval(() => {
-      if (Math.random() > 0.98) spawnThreat();
-      drawThreats();
-    }, 2000);
-
-  }, []);
-
-  // AI Prediction Wave
-  useEffect(() => {
-    const waveCanvas = document.getElementById("ai-wave");
-    if (!waveCanvas) return;
-    
-    const wctx = waveCanvas.getContext("2d");
-
-    waveCanvas.width = window.innerWidth;
-    waveCanvas.height = 200;
-
-    let time = 0;
-
-    function drawWave() {
-      wctx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
-
-      wctx.beginPath();
-
-      for (let x = 0; x < waveCanvas.width; x++) {
-        const y =
-          Math.sin(x * 0.01 + time) * 20 +
-          Math.sin(x * 0.02 + time * 0.5) * 10 +
-          100;
-
-        wctx.lineTo(x, y);
-      }
-
-      // Prediction spikes
-      if (Math.random() > 0.98) {
-        wctx.strokeStyle = "#ff3366";
-      } else {
-        wctx.strokeStyle = "#00ffff";
-      }
-
-      wctx.stroke();
-
-      time += 0.05;
-      requestAnimationFrame(drawWave);
-    }
-
-    drawWave();
-  }, []);
-
-  // Attack Pulse System
-  const triggerAttack = () => {
-    attackPulse = 1;
+  const handleLaunchDashboard = (e) => {
+    if (e) e.preventDefault();
+    navigate('/login');
   };
 
-  // Mouse Interaction - throttled for performance
-  useEffect(() => {
-    let throttleTimeout = null;
-    
-    const handleMouseMove = (e) => {
-      if (throttleTimeout) return;
-      
-      throttleTimeout = setTimeout(() => {
-        nodes.forEach(n => {
-          const dx = e.clientX - n.x;
-          const dy = e.clientY - n.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 100) { // Reduced interaction distance
-            n.vx += dx * 0.00005; // Reduced force
-            n.vy += dy * 0.00005;
-          }
-        });
-        throttleTimeout = null;
-      }, 50); // 50ms throttle
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      if (throttleTimeout) clearTimeout(throttleTimeout);
-    };
-  }, []);
-
-  // GSAP Scroll System - optimized for performance
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-
-      // PARALLAX MOTION WITH DEPTH - optimized
-      gsap.to(".layer-back", {
-        y: 200,
-        scale: 1.1,
-        scrollTrigger: {
-          scrub: 1, // Reduced from true to 1 for better performance
-          ease: "none"
-        }
-      });
-
-      gsap.to(".layer-mid", {
-        y: 100,
-        scale: 1.05,
-        scrollTrigger: {
-          scrub: 1,
-          ease: "none"
-        }
-      });
-
-      gsap.to(".layer-front", {
-        y: 30,
-        scale: 1.02,
-        scrollTrigger: {
-          scrub: 1,
-          ease: "none"
-        }
-      });
-
-      // CAMERA EFFECT - simplified
-      gsap.to(".cyber-container", {
-        rotateX: 2,
-        rotateY: 2,
-        scrollTrigger: {
-          scrub: 2, // Even slower updates for this effect
-          ease: "none"
-        }
-      });
-
-      // CORE TRANSFORMATION
-      gsap.to(".cyber-core", {
-        scale: 2.2,
-        rotation: 360,
-        scrollTrigger: {
-          trigger: ".scene-1",
-          start: "top top",
-          end: "bottom top",
-          scrub: true
-        }
-      });
-
-      // SCENE REVEAL
-      gsap.utils.toArray(".scene").forEach((scene) => {
-        gsap.from(scene, {
-          opacity: 0,
-          y: 120,
-          scrollTrigger: {
-            trigger: scene,
-            start: "top 85%",
-            end: "top 30%",
-            scrub: true
-          }
-        });
-      });
-
-      // TIMELINE ANIMATION
-      gsap.from(".timeline-item", {
-        x: -120,
-        opacity: 0,
-        stagger: 0.3,
-        scrollTrigger: {
-          trigger: ".scene-5",
-          start: "top center"
-        }
-      });
-
-      // Attack Pulse Trigger
-      ScrollTrigger.create({
-        trigger: ".scene-3",
-        start: "top center",
-        onEnter: () => triggerAttack()
-      });
-
-    // Threat Intensity Triggers
-    ScrollTrigger.create({
-      trigger: ".scene-3",
-      start: "top center",
-      onEnter: () => {
-        activeThreats.length = 0;
-        for (let i = 0; i < 10; i++) spawnThreat();
-      },
-      onLeaveBack: () => {
-        activeThreats = [];
-      }
-    });
-  });
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <div className="cyber-container">
-      {/* Parallax Layers */}
-      <div className="parallax-layer layer-back"></div>
-      <div className="parallax-layer layer-mid"></div>
-      <div className="parallax-layer layer-front"></div>
-      
-      <div className="cyber-core"></div>
-      <canvas id="network-canvas"></canvas>
-      <canvas id="geo-canvas"></canvas>
-      <canvas id="ai-wave"></canvas>
-
-      {/* Scene 1 - Hero */}
-      <section className="scene scene-1">
-        <div className="hero-content">
-          <div className="hero-text">
-            <h1 className="hero-title">
-              <span className="glitch">SecureNet</span>
-              <span className="hero-subtitle">IDS</span>
-            </h1>
-            <p className="hero-description">
-              Next-Generation Threat Detection & Response
-            </p>
-          </div>
-          <div className="hero-cta">
-            <Link to="/login" className="cta-button glass">
-              Launch Dashboard
-            </Link>
-            <Link to="/signup" className="cta-button secondary">
-              Get Started
-            </Link>
-          </div>
+    <div className="cl-page">
+      {/* Top Header / Navigation */}
+      <nav className="cl-nav">
+        <div className="cl-brand">
+          <Link to="/dashboard" onClick={handleLaunchDashboard} style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/logo.jpg" alt="SecureNet IDS Logo" className="cl-logo-img" />
+          </Link>
         </div>
-        
-        {/* Animated background */}
-        <div className="hero-grid" />
-        <div className="hero-pulse" />
-      </section>
 
-      {/* Scene 2 - Problem */}
-      <section className="scene scene-2">
-        <div className="container">
-          <h2 className="section-title">The Cyber Threat Landscape</h2>
-          <div className="threat-list">
-            <div className="threat-item">
-              <span className="threat-icon">🔥</span>
-              <h3>Rising Attacks</h3>
-              <p>Cyber attacks increase by 38% annually. Traditional security systems can't keep pace.</p>
-            </div>
-            <div className="threat-item">
-              <span className="threat-icon">⚡</span>
-              <h3>Zero-Day Exploits</h3>
-              <p>Unknown vulnerabilities bypass conventional defenses in seconds.</p>
-            </div>
-            <div className="threat-item">
-              <span className="threat-icon">🎯</span>
-              <h3>Advanced Threats</h3>
-              <p>AI-powered attacks adapt and evolve faster than human response.</p>
-            </div>
-          </div>
+        <div className="cl-nav-actions">
+          <Link to="/login" className="cl-btn-text">
+            Sign In
+          </Link>
+          <button onClick={handleLaunchDashboard} className="cl-btn-primary" style={{ cursor: 'pointer', border: 'none' }}>
+            Launch Dashboard →
+          </button>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="cl-section cl-hero">
+        <div className="cl-pill">
+          <div className="cl-dot"></div>
+          ENTERPRISE NETWORK DEFENSE
+        </div>
+
+        <h1 className="cl-hero-title">
+          Intelligent Intrusion Detection & Automated Threat Mitigation
+        </h1>
+
+        <p className="cl-hero-sub">
+          Continuous packet stream inspection, machine learning anomaly classification, and dynamic IP enforcement engineered for high-throughput Security Operations Centers.
+        </p>
+
+        <div className="cl-hero-cta">
+          <button onClick={handleLaunchDashboard} className="cl-btn-primary" style={{ cursor: 'pointer', border: 'none' }}>
+            Open SOC Dashboard
+          </button>
+          <Link to="/signup" className="cl-btn-secondary">
+            Register Organization Account
+          </Link>
         </div>
       </section>
 
-      {/* Scene 3 - Activation */}
-      <section className="scene scene-3">
-        <div className="container">
-          <h2 className="section-title">Intelligent Defense Activation</h2>
-          <div className="activation-steps">
-            <div className="step">
-              <h3>01 Detect</h3>
-              <p>AI-powered threat identification in milliseconds</p>
-            </div>
-            <div className="step">
-              <h3>02 Analyze</h3>
-              <p>Predictive threat assessment and risk scoring</p>
-            </div>
-            <div className="step">
-              <h3>03 Respond</h3>
-              <p>Automated incident response and neutralization</p>
-            </div>
+      {/* Key System Metrics */}
+      <section id="metrics" className="cl-section">
+        <div className="cl-grid-4-metrics">
+          <div className="cl-metric-card">
+            <span className="cl-metric-value">99.4%</span>
+            <span className="cl-metric-label">Detection Accuracy</span>
+          </div>
+          <div className="cl-metric-card">
+            <span className="cl-metric-value">&lt; 1.2 ms</span>
+            <span className="cl-metric-label">Feature Vector Latency</span>
+          </div>
+          <div className="cl-metric-card">
+            <span className="cl-metric-value">41</span>
+            <span className="cl-metric-label">Extracted Packet Features</span>
+          </div>
+          <div className="cl-metric-card">
+            <span className="cl-metric-value">Real-Time</span>
+            <span className="cl-metric-label">WebSocket Telemetry</span>
           </div>
         </div>
       </section>
 
-      {/* Scene 4 - Intelligence */}
-      <section className="scene scene-4">
-        <div className="container">
-          <h2 className="section-title">Threat Intelligence Engine</h2>
-          <div className="intel-showcase">
-            <div className="intel-feature">
-              <span className="intel-icon">🧠</span>
-              <h3>AI Analysis</h3>
-              <p>94.7% Accuracy • 1.2s Response</p>
+      {/* Core Processing Pipeline Section */}
+      <section id="pipeline" className="cl-section">
+        <div className="cl-section-header">
+          <h2>Core Processing Pipeline</h2>
+          <p>End-to-end technical workflow from wire-level packet capture to automated mitigation.</p>
+        </div>
+
+        <div className="cl-story-timeline">
+          {/* Step 01 */}
+          <div className="cl-story-card">
+            <div className="cl-act-badge">STEP 01</div>
+            <div className="cl-story-info">
+              <h3>Packet Capture & Wire Filtering</h3>
+              <p>
+                PyShark and Scapy socket engines capture incoming IPv4, IPv6, TCP, and UDP frames continuously with zero-copy buffer architecture.
+              </p>
             </div>
-            <div className="intel-feature">
-              <span className="intel-icon">🔮</span>
-              <h3>Prediction</h3>
-              <p>85% Threat Forecast • 24/7 Monitoring</p>
+            <div className="cl-story-spec">
+              <div className="cl-spec-row">
+                <span className="cl-spec-label">Engine</span>
+                <span className="cl-spec-val">PyShark / Scapy</span>
+              </div>
+              <div className="cl-spec-row">
+                <span className="cl-spec-label">Buffer Strategy</span>
+                <span className="cl-spec-val">Zero-Copy Socket Ring</span>
+              </div>
+              <div className="cl-spec-row">
+                <span className="cl-spec-label">Protocols</span>
+                <span className="cl-spec-val">TCP / UDP / ICMP / IPv4</span>
+              </div>
             </div>
-            <div className="intel-feature">
-              <span className="intel-icon">🛡️</span>
-              <h3>Protection</h3>
-              <p>99.9% Uptime • 156 Threats Blocked</p>
+          </div>
+
+          {/* Step 02 */}
+          <div className="cl-story-card">
+            <div className="cl-act-badge">STEP 02</div>
+            <div className="cl-story-info">
+              <h3>Feature Vector Normalization</h3>
+              <p>
+                Calculates flow metrics including SYN/ACK ratios, payload entropy, port frequencies, and window sizes into standardized numerical vectors.
+              </p>
+            </div>
+            <div className="cl-story-spec">
+              <div className="cl-spec-row">
+                <span className="cl-spec-label">Dimensions</span>
+                <span className="cl-spec-val">41 Feature Fields</span>
+              </div>
+              <div className="cl-spec-row">
+                <span className="cl-spec-label">Transformer</span>
+                <span className="cl-spec-val">StandardScaler Pipeline</span>
+              </div>
+              <div className="cl-spec-row">
+                <span className="cl-spec-label">Latency</span>
+                <span className="cl-spec-val">Sub-Millisecond</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 03 */}
+          <div className="cl-story-card">
+            <div className="cl-act-badge">STEP 03</div>
+            <div className="cl-story-info">
+              <h3>RandomForest Anomaly Classification</h3>
+              <p>
+                Evaluates incoming vector arrays using trained RandomForest models to categorize traffic into Normal behavior or malicious attack classes.
+              </p>
+            </div>
+            <div className="cl-story-spec">
+              <div className="cl-spec-row">
+                <span className="cl-spec-label">Model Type</span>
+                <span className="cl-spec-val">RandomForest Classifier</span>
+              </div>
+              <div className="cl-spec-row">
+                <span className="cl-spec-label">Benchmark Data</span>
+                <span className="cl-spec-val">NSL-KDD / CICIDS Dataset</span>
+              </div>
+              <div className="cl-spec-row">
+                <span className="cl-spec-label">Classification</span>
+                <span className="cl-spec-val">DoS / Probe / R2L / U2R</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 04 */}
+          <div className="cl-story-card">
+            <div className="cl-act-badge">STEP 04</div>
+            <div className="cl-story-info">
+              <h3>Threat Intelligence & Dynamic Blocking</h3>
+              <p>
+                Malicious source IPs are cross-checked via VirusTotal and AbuseIPDB API integrations, broadcast to the dashboard, and added to the IP blacklist.
+              </p>
+            </div>
+            <div className="cl-story-spec">
+              <div className="cl-spec-row">
+                <span className="cl-spec-label">Intel Providers</span>
+                <span className="cl-spec-val">VirusTotal / AbuseIPDB</span>
+              </div>
+              <div className="cl-spec-row">
+                <span className="cl-spec-label">Alert Streaming</span>
+                <span className="cl-spec-val">FastAPI WebSocket</span>
+              </div>
+              <div className="cl-spec-row">
+                <span className="cl-spec-label">Enforcement</span>
+                <span className="cl-spec-val">Dynamic IP Blacklist</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Scene 5 - Response */}
-      <section className="scene scene-5">
-        <div className="container">
-          <h2 className="section-title">Incident Response Timeline</h2>
-          <div className="timeline">
-            <div className="timeline-item">
-              <div className="timeline-time">[12:01:45]</div>
-              <div className="timeline-event">
-                <span className="event-type">DETECT</span>
-                <span className="event-description">Suspicious activity detected</span>
-              </div>
-              <div className="timeline-indicator pulse" />
-            </div>
-            <div className="timeline-item">
-              <div className="timeline-time">[12:01:47]</div>
-              <div className="timeline-event">
-                <span className="event-type">ANALYZE</span>
-                <span className="event-description">AI threat assessment in progress</span>
-              </div>
-              <div className="timeline-indicator" />
-            </div>
-            <div className="timeline-item">
-              <div className="timeline-time">[12:01:52]</div>
-              <div className="timeline-event">
-                <span className="event-type">RESPOND</span>
-                <span className="event-description">Automated response activated</span>
-              </div>
-              <div className="timeline-indicator success" />
-            </div>
+      {/* Enterprise Capabilities Section */}
+      <section id="capabilities" className="cl-section">
+        <div className="cl-section-header">
+          <h2>Enterprise Security Capabilities</h2>
+          <p>Designed for SOC engineers requiring real-time visibility, automated policy enforcement, and audit-ready reporting.</p>
+        </div>
+
+        <div className="cl-grid-3">
+          <div className="cl-feature-box">
+            <h4>Live Packet Stream Inspection</h4>
+            <p>Continuously monitor live network interface traffic with real-time socket updates and flow rate tracking.</p>
+          </div>
+
+          <div className="cl-feature-box">
+            <h4>Multi-Tenant RBAC Security</h4>
+            <p>Strictly isolate organization telemetry, user roles, and administrative permissions across multi-tenant environments.</p>
+          </div>
+
+          <div className="cl-feature-box">
+            <h4>Reputation Score Validation</h4>
+            <p>Query third-party threat feeds including VirusTotal and AbuseIPDB to confirm threat score confidence.</p>
+          </div>
+
+          <div className="cl-feature-box">
+            <h4>Dynamic IP Blacklist Registry</h4>
+            <p>Maintain an active firewall blacklist registry with policy expiration management and instant revocation.</p>
+          </div>
+
+          <div className="cl-feature-box">
+            <h4>Immutable Audit Tracking</h4>
+            <p>Record operator actions, configuration shifts, and automated mitigation events in secure audit logs.</p>
+          </div>
+
+          <div className="cl-feature-box">
+            <h4>Automated Telemetry Exports</h4>
+            <p>Generate formatted PDF compliance summaries, raw CSV packet logs, and JSON feeds for external SIEM engines.</p>
           </div>
         </div>
       </section>
 
-      {/* Scene 6 - CTA */}
-      <section className="scene scene-6">
-        <div className="container">
-          <div className="cta-content">
-            <h2 className="cta-title">Enter SecureNet Intelligence System</h2>
-            <p className="cta-description">
-              Join thousands of organizations protected by SecureNet IDS
-            </p>
-            <div className="cta-buttons">
-              <Link to="/login" className="cta-button primary glow">
-                Access Dashboard
-              </Link>
-              <Link to="/signup" className="cta-button secondary glass">
-                Start Free Trial
-              </Link>
-            </div>
-            <div className="cta-stats">
-              <div className="stat-item">
-                <span className="stat-number">10,000+</span>
-                <span className="stat-text">Threats Blocked Daily</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">99.9%</span>
-                <span className="stat-text">System Uptime</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">24/7</span>
-                <span className="stat-text">Monitoring</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Minimal floating elements */}
-      <div className="floating-elements">
-        <div className="float-element" style={{ left: '15%', top: '25%' }}></div>
-        <div className="float-element" style={{ left: '75%', top: '70%' }}></div>
-      </div>
+      {/* Footer */}
+      <footer className="cl-footer">
+        SecureNet IDS • Enterprise AI-Powered Intrusion Detection System
+      </footer>
     </div>
   );
 };

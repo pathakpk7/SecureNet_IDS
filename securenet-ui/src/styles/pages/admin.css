@@ -1,5 +1,5 @@
 .admin-panel-page {
-  padding: var(--spacing-xl);
+  padding: 0;
   min-height: 100vh;
 }
 

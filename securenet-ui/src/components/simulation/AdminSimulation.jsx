@@ -89,21 +89,29 @@ const AdminSimulation = () => {
     }, 5000);
   };
 
-  const getStatusColor = (status) => {
+  const getStatusBadgeStyle = (status) => {
     switch(status) {
-      case 'ready': return '#00ff00';
-      case 'running': return '#ffaa00';
-      case 'completed': return '#00f5ff';
-      default: return '#888';
+      case 'ready': 
+        return { background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#10b981' };
+      case 'running': 
+        return { background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.4)', color: '#fbbf24' };
+      case 'completed': 
+        return { background: 'rgba(0, 245, 255, 0.15)', border: '1px solid rgba(0, 245, 255, 0.4)', color: '#00f5ff' };
+      default: 
+        return { background: 'rgba(148, 163, 184, 0.15)', border: '1px solid rgba(148, 163, 184, 0.4)', color: '#94a3b8' };
     }
   };
 
-  const getImpactColor = (impact) => {
+  const getImpactBadgeStyle = (impact) => {
     switch(impact) {
-      case 'Low': return '#00ffcc';
-      case 'Medium': return '#ffaa00';
-      case 'High': return '#ff3366';
-      default: return '#888';
+      case 'Low': 
+        return { background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.4)', color: '#60a5fa' };
+      case 'Medium': 
+        return { background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.4)', color: '#fbbf24' };
+      case 'High': 
+        return { background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#ef4444' };
+      default: 
+        return { background: 'rgba(148, 163, 184, 0.15)', border: '1px solid rgba(148, 163, 184, 0.4)', color: '#94a3b8' };
     }
   };
 
@@ -160,13 +168,27 @@ const AdminSimulation = () => {
                     <div className="simulation-badges">
                       <span 
                         className="status-badge"
-                        style={{ backgroundColor: getStatusColor(simulation.status) }}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          letterSpacing: '0.5px',
+                          ...getStatusBadgeStyle(simulation.status)
+                        }}
                       >
                         {simulation.status.toUpperCase()}
                       </span>
                       <span 
                         className="impact-badge"
-                        style={{ backgroundColor: getImpactColor(simulation.impact) }}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          letterSpacing: '0.5px',
+                          ...getImpactBadgeStyle(simulation.impact)
+                        }}
                       >
                         {simulation.impact} IMPACT
                       </span>

@@ -2,12 +2,16 @@
   width: 100%;
   min-height: 100vh;
   background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
 }
 
 .content {
   width: 100%;
-  padding: 30px;
-  margin-top: 70px;   /* push content below navbar (navbar is now 60px tall) */
+  padding: 48px 30px 48px;
+  margin-top: 0;
+  box-sizing: border-box;
+  flex: 1;
 }
 
 .dashboard {

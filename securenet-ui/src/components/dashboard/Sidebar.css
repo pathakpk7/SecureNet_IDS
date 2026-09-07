@@ -30,6 +30,14 @@
   text-shadow: 0 0 10px var(--accent-soft);
 }
 
+.sidebar-logo-img {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.4);
+}
+
 .logo-text {
   font-size: var(--font-lg);
   font-weight: 700;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../ui/Card';
 import LineChart from '../Charts/LineChart';
+import PieChart from '../Charts/PieChart';
 import '../../styles/pages/network.css';
 
 const AdminNetworkMonitor = () => {
@@ -54,7 +55,7 @@ const AdminNetworkMonitor = () => {
         }
       }));
 
-      // Update live traffic
+      // Update live traffic stream
       if (Math.random() > 0.6) {
         const newTraffic = {
           id: Date.now(),
@@ -65,7 +66,7 @@ const AdminNetworkMonitor = () => {
           time: 'Just now',
           status: Math.random() > 0.8 ? 'blocked' : 'allowed'
         };
-        setLiveTraffic(prev => [newTraffic, ...prev.slice(0, 9)]);
+        setLiveTraffic(prev => [newTraffic, ...prev.slice(0, 7)]);
       }
     }, 2000);
 
@@ -77,16 +78,16 @@ const AdminNetworkMonitor = () => {
     activeConnections: 2147,
     blockedConnections: 892,
     suspiciousIPs: 23,
-    dataTransferred: '1.8TB',
-    peakBandwidth: '2.4Gbps'
+    peakBandwidth: '2.4Gbps',
+    dataTransferred: '1.8TB'
   };
 
   const protocols = [
-    { name: 'HTTP/HTTPS', traffic: '45%', connections: 1247, risk: 'low' },
-    { name: 'SSH', traffic: '25%', connections: 523, risk: 'medium' },
-    { name: 'FTP', traffic: '15%', connections: 156, risk: 'high' },
-    { name: 'DNS', traffic: '10%', connections: 892, risk: 'low' },
-    { name: 'Other', traffic: '5%', connections: 234, risk: 'unknown' }
+    { name: 'HTTP / HTTPS', traffic: '45%', connections: 1247, risk: 'low' },
+    { name: 'SSH Protocol', traffic: '25%', connections: 523, risk: 'medium' },
+    { name: 'FTP Traffic', traffic: '15%', connections: 156, risk: 'high' },
+    { name: 'DNS Queries', traffic: '10%', connections: 892, risk: 'low' },
+    { name: 'Other Ports', traffic: '5%', connections: 234, risk: 'low' }
   ];
 
   const handleBlockIP = (ip) => {
@@ -95,7 +96,6 @@ const AdminNetworkMonitor = () => {
         item.ip === ip ? { ...item, status: 'blocked', monitoring: false } : item
       )
     );
-    console.log(`Blocked IP: ${ip}`);
   };
 
   const handleToggleMonitor = (ip) => {
@@ -104,209 +104,243 @@ const AdminNetworkMonitor = () => {
         item.ip === ip ? { ...item, monitoring: !item.monitoring } : item
       )
     );
-    console.log(`Toggled monitoring for IP: ${ip}`);
   };
 
   const handleGlobalMonitorToggle = () => {
     setMonitoringEnabled(prev => !prev);
-    console.log(`Global monitoring ${!monitoringEnabled ? 'enabled' : 'disabled'}`);
+  };
+
+  const getRiskBadgeColor = (risk) => {
+    switch (String(risk).toLowerCase()) {
+      case 'critical': return '#ff3366';
+      case 'high': return '#f87171';
+      case 'medium': return '#fbbf24';
+      case 'low': return '#34d399';
+      default: return '#38bdf8';
+    }
+  };
+
+  const getStatusBadgeColor = (status) => {
+    switch (String(status).toLowerCase()) {
+      case 'active': return '#34d399';
+      case 'monitoring': return '#38bdf8';
+      case 'suspicious': return '#fbbf24';
+      case 'blocked': return '#f87171';
+      default: return '#94a3b8';
+    }
   };
 
   return (
-    <div className="network-monitor-page admin-network-monitor fade-in">
-      <div className="page-header">
-        <h1 className="page-title">Admin Network Monitor</h1>
-        <p className="page-subtitle">Full network visibility and control</p>
-        <button 
-          className={`monitor-toggle-btn ${monitoringEnabled ? 'enabled' : 'disabled'}`}
-          onClick={handleGlobalMonitorToggle}
-        >
-          {monitoringEnabled ? 'Monitoring ON' : 'Monitoring OFF'}
-        </button>
+    <div className="network-container">
+      {/* Header & Subtitle */}
+      <div className="network-header">
+        <h1 className="network-title">Network Monitor & Visibility</h1>
+        <p className="network-sub">Full network visibility and control</p>
       </div>
 
-      <div className="time-range-selector">
-        <button 
-          className={`range-btn ${selectedTimeRange === '1h' ? 'active' : ''}`}
-          onClick={() => setSelectedTimeRange('1h')}
-        >
-          1 Hour
-        </button>
-        <button 
-          className={`range-btn ${selectedTimeRange === '24h' ? 'active' : ''}`}
-          onClick={() => setSelectedTimeRange('24h')}
-        >
-          24 Hours
-        </button>
-        <button 
-          className={`range-btn ${selectedTimeRange === '7d' ? 'active' : ''}`}
-          onClick={() => setSelectedTimeRange('7d')}
-        >
-          7 Days
-        </button>
-        <button 
-          className={`range-btn ${selectedTimeRange === '30d' ? 'active' : ''}`}
-          onClick={() => setSelectedTimeRange('30d')}
-        >
-          30 Days
-        </button>
+      {/* Row 1: SINGLE COMPACT TOP BAR (Controls + 6 KPI Stats) */}
+      <div className="nm-top-bar">
+        <div className="nm-controls-group">
+          <button 
+            className={`nm-toggle-btn ${monitoringEnabled ? 'active' : 'inactive'}`}
+            onClick={handleGlobalMonitorToggle}
+          >
+            {monitoringEnabled ? 'Monitoring ON' : 'Monitoring OFF'}
+          </button>
+
+          <div className="nm-time-selector">
+            {['1h', '24h', '7d', '30d'].map(range => (
+              <button
+                key={range}
+                className={`range-btn ${selectedTimeRange === range ? 'active' : ''}`}
+                onClick={() => setSelectedTimeRange(range)}
+              >
+                {range === '1h' ? '1 Hour' : range === '24h' ? '24 Hours' : range === '7d' ? '7 Days' : '30 Days'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 6 KPI Stats Pills in ONE ROW */}
+        <div className="nm-kpi-row">
+          <div className="nm-kpi-pill">
+            <span className="val text-cyan">{globalTrafficStats.totalTraffic}</span>
+            <span className="lbl">Total Traffic</span>
+          </div>
+          <div className="nm-kpi-pill">
+            <span className="val text-emerald">{globalTrafficStats.activeConnections}</span>
+            <span className="lbl">Active Connections</span>
+          </div>
+          <div className="nm-kpi-pill">
+            <span className="val text-red">{globalTrafficStats.blockedConnections}</span>
+            <span className="lbl">Blocked Connections</span>
+          </div>
+          <div className="nm-kpi-pill">
+            <span className="val text-yellow">{globalTrafficStats.suspiciousIPs}</span>
+            <span className="lbl">Suspicious IPs</span>
+          </div>
+          <div className="nm-kpi-pill">
+            <span className="val text-cyan">{globalTrafficStats.peakBandwidth}</span>
+            <span className="lbl">Peak Bandwidth</span>
+          </div>
+          <div className="nm-kpi-pill">
+            <span className="val text-emerald">{globalTrafficStats.dataTransferred}</span>
+            <span className="lbl">Data Transferred</span>
+          </div>
+        </div>
       </div>
 
-      {/* Global Stats */}
-      <div className="global-stats-grid">
-        <Card className="stat-card">
-          <div className="stat-content">
-            <span className="stat-value">{globalTrafficStats.totalTraffic}</span>
-            <span className="stat-label">Total Traffic</span>
+      {/* Row 2: Full Network Traffic Analysis (2 GRAPHS IN ONE ROW: PieChart + LineChart) */}
+      <div className="nm-charts-row">
+        <Card className="nm-chart-card">
+          <div className="nm-card-header">
+            <h3>Threat Distribution Analysis</h3>
+            <span className="nm-badge">Threat Categories</span>
+          </div>
+          <div className="nm-pie-container">
+            <PieChart height={240} />
           </div>
         </Card>
-        <Card className="stat-card">
-          <div className="stat-content">
-            <span className="stat-value">{globalTrafficStats.activeConnections}</span>
-            <span className="stat-label">Active Connections</span>
-          </div>
-        </Card>
-        <Card className="stat-card">
-          <div className="stat-content">
-            <span className="stat-value">{globalTrafficStats.blockedConnections}</span>
-            <span className="stat-label">Blocked Connections</span>
-          </div>
-        </Card>
-        <Card className="stat-card">
-          <div className="stat-content">
-            <span className="stat-value">{globalTrafficStats.suspiciousIPs}</span>
-            <span className="stat-label">Suspicious IPs</span>
-          </div>
-        </Card>
-        <Card className="stat-card">
-          <div className="stat-content">
-            <span className="stat-value">{globalTrafficStats.peakBandwidth}</span>
-            <span className="stat-label">Peak Bandwidth</span>
-          </div>
-        </Card>
-        <Card className="stat-card">
-          <div className="stat-content">
-            <span className="stat-value">{globalTrafficStats.dataTransferred}</span>
-            <span className="stat-label">Data Transferred</span>
-          </div>
-        </Card>
-      </div>
 
-      {/* Full Network Graph */}
-      <div className="full-network-graph">
-        <Card className="network-graph-card">
-          <div className="graph-header">
+        <Card className="nm-chart-card">
+          <div className="nm-card-header">
             <h3>Full Network Traffic Analysis</h3>
-            <span className="live-indicator">LIVE</span>
+            <span className="nm-badge live">LIVE STREAM</span>
           </div>
-          <div className="dual-charts">
-            <div className="chart-section">
-              <LineChart 
-                data={trafficData.incoming}
-                title="Incoming Traffic (Mbps)"
-                height={200}
-                realTime={true}
-              />
-            </div>
-            <div className="chart-section">
-              <LineChart 
-                data={trafficData.outgoing}
-                title="Outgoing Traffic (Mbps)"
-                height={200}
-                realTime={true}
-              />
-            </div>
+          <div className="nm-line-container">
+            <LineChart 
+              data={trafficData}
+              title="Incoming vs Outgoing Bandwidth Flow (Mbps)"
+              height={240}
+              realTime={true}
+            />
           </div>
         </Card>
       </div>
 
-      {/* All IPs Section */}
-      <div className="all-ips-section">
-        <Card className="all-ips-card">
-          <div className="card-header">
+      {/* Row 3: All Network IPs (Structured Column Table View) */}
+      <div className="nm-section">
+        <Card className="nm-ips-card">
+          <div className="nm-card-header">
             <h3>All Network IPs</h3>
-            <span className="ip-count">{allIPs.length} IPs</span>
+            <span className="nm-badge">{allIPs.length} IPs Registered</span>
           </div>
-          <div className="ips-grid">
-            {allIPs.map((ipData, index) => (
-              <div key={index} className={`ip-card ${ipData.status} ${ipData.risk}`}>
-                <div className="ip-header">
-                  <span className="ip-address">{ipData.ip}</span>
-                  <span className={`ip-status ${ipData.status}`}>{ipData.status}</span>
+
+          <div className="nm-ip-table">
+            {/* Table Header */}
+            <div className="nm-ip-table-header">
+              <span>IP Address</span>
+              <span>Status</span>
+              <span>Traffic Volume</span>
+              <span>Zone</span>
+              <span>Risk Level</span>
+              <span className="text-right">Actions</span>
+            </div>
+
+            {/* Table Rows */}
+            <div className="nm-ip-table-body">
+              {allIPs.map((ipData, index) => (
+                <div key={index} className="nm-ip-row">
+                  <div className="ip-cell font-mono text-cyan font-bold">{ipData.ip}</div>
+                  <div className="ip-cell">
+                    <span 
+                      className="nm-status-badge"
+                      style={{ 
+                        backgroundColor: `${getStatusBadgeColor(ipData.status)}18`, 
+                        color: getStatusBadgeColor(ipData.status),
+                        border: `1px solid ${getStatusBadgeColor(ipData.status)}40` 
+                      }}
+                    >
+                      {ipData.status}
+                    </span>
+                  </div>
+                  <div className="ip-cell font-semibold text-gray-200">{ipData.traffic}</div>
+                  <div className="ip-cell text-gray-400">{ipData.location}</div>
+                  <div className="ip-cell">
+                    <span 
+                      className="nm-risk-badge"
+                      style={{ 
+                        backgroundColor: `${getRiskBadgeColor(ipData.risk)}18`, 
+                        color: getRiskBadgeColor(ipData.risk),
+                        border: `1px solid ${getRiskBadgeColor(ipData.risk)}40` 
+                      }}
+                    >
+                      {ipData.risk}
+                    </span>
+                  </div>
+                  <div className="ip-cell actions-cell text-right">
+                    <button 
+                      className={`nm-btn-sm ${ipData.monitoring ? 'btn-active-mon' : 'btn-idle-mon'}`}
+                      onClick={() => handleToggleMonitor(ipData.ip)}
+                    >
+                      {ipData.monitoring ? 'Monitoring' : 'Monitor'}
+                    </button>
+                    <button 
+                      className="nm-btn-sm btn-block-action"
+                      onClick={() => handleBlockIP(ipData.ip)}
+                      disabled={ipData.status === 'blocked'}
+                    >
+                      {ipData.status === 'blocked' ? 'Blocked' : 'Block'}
+                    </button>
+                  </div>
                 </div>
-                <div className="ip-details">
-                  <span className="ip-traffic">{ipData.traffic}</span>
-                  <span className="ip-location">{ipData.location}</span>
-                  <span className={`ip-risk ${ipData.risk}`}>{ipData.risk}</span>
-                </div>
-                <div className="ip-controls">
-                  <button 
-                    className={`control-btn monitor-btn ${ipData.monitoring ? 'active' : ''}`}
-                    onClick={() => handleToggleMonitor(ipData.ip)}
-                  >
-                    {ipData.monitoring ? 'Monitoring' : 'Monitor'}
-                  </button>
-                  <button 
-                    className="control-btn block-btn"
-                    onClick={() => handleBlockIP(ipData.ip)}
-                    disabled={ipData.status === 'blocked'}
-                  >
-                    {ipData.status === 'blocked' ? 'Blocked' : 'Block'}
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </Card>
       </div>
 
-      {/* Live Traffic Feed */}
-      <div className="live-traffic-section">
-        <Card className="live-traffic-card">
-          <div className="card-header">
+      {/* Row 4: Live Tracking Feed & Smaller Protocol Analysis */}
+      <div className="nm-bottom-row">
+        {/* Visually Crisp Live Tracking Feed */}
+        <Card className="nm-feed-card">
+          <div className="nm-card-header">
             <h3>Live Traffic Feed</h3>
-            <span className="live-indicator">LIVE</span>
+            <span className="nm-badge live">REAL-TIME STREAM</span>
           </div>
-          <div className="traffic-feed">
+
+          <div className="nm-traffic-stream">
             {liveTraffic.map((traffic) => (
-              <div key={traffic.id} className={`traffic-item ${traffic.status}`}>
-                <div className="traffic-flow">
-                  <span className="traffic-source">{traffic.source}</span>
-                  <span className="traffic-arrow">{'->'}</span>
-                  <span className="traffic-dest">{traffic.dest}</span>
+              <div key={traffic.id} className={`nm-stream-item ${traffic.status}`}>
+                <div className="stream-flow">
+                  <span className="src font-mono">{traffic.source}</span>
+                  <span className="arrow">→</span>
+                  <span className="dst font-mono">{traffic.dest}</span>
                 </div>
-                <div className="traffic-details">
-                  <span className="traffic-protocol">{traffic.protocol}</span>
-                  <span className="traffic-size">{traffic.size}</span>
-                  <span className="traffic-time">{traffic.time}</span>
-                  <span className={`traffic-status ${traffic.status}`}>{traffic.status}</span>
+                <div className="stream-details">
+                  <span className="proto-badge">{traffic.protocol}</span>
+                  <span className="size-text">{traffic.size}</span>
+                  <span className="time-text">{traffic.time}</span>
+                  <span className={`status-pill ${traffic.status}`}>{traffic.status}</span>
                 </div>
               </div>
             ))}
           </div>
         </Card>
-      </div>
 
-      {/* Protocol Analysis */}
-      <div className="protocol-analysis">
-        <Card className="protocols-card">
-          <h3>Protocol Analysis</h3>
-          <div className="protocol-grid">
+        {/* Compact Protocol Analysis Card */}
+        <Card className="nm-protocol-card">
+          <div className="nm-card-header">
+            <h3>Protocol Analysis</h3>
+            <span className="nm-badge">5 Protocols</span>
+          </div>
+
+          <div className="nm-protocol-list">
             {protocols.map((protocol, index) => (
-              <div key={index} className={`protocol-item ${protocol.risk}`}>
-                <div className="protocol-header">
-                  <span className="protocol-name">{protocol.name}</span>
-                  <span className="protocol-traffic">{protocol.traffic}</span>
+              <div key={index} className="nm-proto-item">
+                <div className="proto-meta">
+                  <span className="proto-name">{protocol.name}</span>
+                  <span className="proto-pct">{protocol.traffic}</span>
                 </div>
-                <div className="protocol-details">
-                  <span className="protocol-connections">{protocol.connections} connections</span>
-                  <span className={`protocol-risk ${protocol.risk}`}>{protocol.risk} risk</span>
-                </div>
-                <div className="protocol-bar">
+                <div className="proto-bar-bg">
                   <div 
-                    className="protocol-fill" 
+                    className="proto-bar-fill" 
                     style={{ width: protocol.traffic }}
                   ></div>
+                </div>
+                <div className="proto-sub">
+                  <span>{protocol.connections} connections</span>
+                  <span className={`proto-risk-tag ${protocol.risk}`}>{protocol.risk} risk</span>
                 </div>
               </div>
             ))}

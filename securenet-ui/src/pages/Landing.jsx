@@ -1,8 +1,17 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import MainLayout from '../layouts/MainLayout';
 import '../styles/pages/landing.css';
 
 const Landing = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate('/login');
+  };
+
   return (
     <MainLayout>
       <div className="landing">
@@ -18,7 +27,7 @@ const Landing = () => {
                 Real-time threat detection, AI-driven insights, and network security monitoring.
               </p>
               <div className="hero-buttons">
-                <button className="btn btn-primary glow-hover">Get Started</button>
+                <button onClick={handleGetStarted} className="btn btn-primary glow-hover">Get Started</button>
                 <button className="btn btn-outline">Learn More</button>
               </div>
             </div>
@@ -59,22 +68,22 @@ const Landing = () => {
             <h2 className="section-title fade-in">Advanced Features</h2>
             <div className="features-grid">
               <div className="feature-card glass fade-in stagger-1">
-                <div className="feature-icon">🔍</div>
+                <div className="feature-icon">[INSPECT]</div>
                 <h3>Real-Time Monitoring</h3>
                 <p>Monitor network traffic and detect threats in real-time with advanced pattern recognition.</p>
               </div>
               <div className="feature-card glass fade-in stagger-2">
-                <div className="feature-icon">🤖</div>
+                <div className="feature-icon">[AI]</div>
                 <h3>AI Threat Detection</h3>
                 <p>Machine learning algorithms identify sophisticated attack patterns before they cause damage.</p>
               </div>
               <div className="feature-card glass fade-in stagger-3">
-                <div className="feature-icon">📊</div>
+                <div className="feature-icon">[ANALYTICS]</div>
                 <h3>Network Traffic Analysis</h3>
                 <p>Comprehensive analysis of all network traffic with detailed reporting and insights.</p>
               </div>
               <div className="feature-card glass fade-in stagger-4">
-                <div className="feature-icon">👥</div>
+                <div className="feature-icon">[SOC]</div>
                 <h3>Multi-User Admin System</h3>
                 <p>Secure role-based access control for teams and organizations of any size.</p>
               </div>
