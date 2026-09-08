@@ -10,6 +10,10 @@ function Navbar({ toggleMenu, menuOpen }) {
   const [hoverMenu, setHoverMenu] = useState(null);
   const { user, logout } = useAuth();
   
+  // Safely resolve the current user (especially for demo accounts)
+  const currentUser = user || (localStorage.getItem('demoUser') ? JSON.parse(localStorage.getItem('demoUser')) : null);
+  const currentRole = (currentUser?.role || currentUser?.user_metadata?.role || 'user').toUpperCase();
+
   const navItems = [
     { name: "Dashboard", path: "/dashboard" },
     { name: "Alerts", path: "/alerts" },
@@ -33,9 +37,9 @@ function Navbar({ toggleMenu, menuOpen }) {
     },
 
     {
-      name: "Admin",
+      name: currentRole,
       children: [
-        ...(user?.role === 'admin' ? [{ name: "Admin Panel", path: "/admin-panel" }] : []),
+        ...(currentRole === 'ADMIN' ? [{ name: "Admin Panel", path: "/admin-panel" }] : []),
         { name: "User Profile", path: "/user-profile" }
       ]
     },
@@ -153,9 +157,9 @@ function Navbar({ toggleMenu, menuOpen }) {
 
       <div className="nav-right">
         <div className="user-info">
-          <div className="user-name">{user?.user_metadata?.name || user?.email || 'User'}</div>
-          <div className={`user-role ${user?.user_metadata?.role || 'user'}`}>
-            {user?.user_metadata?.role || 'user'}
+          <div className="user-name">{user?.name || user?.user_metadata?.name || 'Authorized User'}</div>
+          <div className={`user-role ${user?.role || user?.user_metadata?.role || 'user'}`}>
+            {(user?.role || user?.user_metadata?.role || 'USER').toUpperCase()}
           </div>
         </div>
       </div>

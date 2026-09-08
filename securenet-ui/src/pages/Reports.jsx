@@ -15,56 +15,7 @@ const Reports = () => {
   const [loading, setLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const [reportHistory, setReportHistory] = useState([
-    {
-      id: 'rep-01',
-      title: 'Executive Security Threat Briefing',
-      report_type: 'executive_summary',
-      format: 'pdf',
-      created_at: new Date(Date.now() - 3600000).toISOString(),
-      size: '6.8 KB'
-    },
-    {
-      id: 'rep-02',
-      title: 'Monthly Incident Audit Log Export',
-      report_type: 'incident_summary',
-      format: 'csv',
-      created_at: new Date(Date.now() - 86400000).toISOString(),
-      size: '24.5 KB'
-    },
-    {
-      id: 'rep-03',
-      title: 'Network Traffic & Throughput Analysis',
-      report_type: 'network_performance',
-      format: 'pdf',
-      created_at: new Date(Date.now() - 172800000).toISOString(),
-      size: '18.2 KB'
-    },
-    {
-      id: 'rep-04',
-      title: 'SOC Compliance Audit & User Activity',
-      report_type: 'compliance_audit',
-      format: 'json',
-      created_at: new Date(Date.now() - 259200000).toISOString(),
-      size: '42.1 KB'
-    },
-    {
-      id: 'rep-05',
-      title: 'DDoS & Threat Intelligence Digest',
-      report_type: 'threat_analysis',
-      format: 'pdf',
-      created_at: new Date(Date.now() - 432000000).toISOString(),
-      size: '12.4 KB'
-    },
-    {
-      id: 'rep-06',
-      title: 'Weekly Intrusion Telemetry Dump',
-      report_type: 'incident_summary',
-      format: 'csv',
-      created_at: new Date(Date.now() - 604800000).toISOString(),
-      size: '115.8 KB'
-    }
-  ]);
+  const [reportHistory, setReportHistory] = useState([]);
 
   const generateReport = async () => {
     setLoading(true);
@@ -149,6 +100,38 @@ const Reports = () => {
       }
     } catch (error) {
       toast.error('Error connecting to audit logs endpoint');
+    }
+  };
+
+  const handleArchiveData = async () => {
+    if (!window.confirm("Are you sure you want to archive all current data and reset the dashboard? A summary will be kept in audit logs.")) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/admin/archive', { method: 'POST' });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        toast.success(data.message || 'Weekly data archived successfully!');
+        setReportHistory(prev => [
+          {
+            id: `arch-${Date.now()}`,
+            title: 'Weekly System Archive & Reset',
+            report_type: 'weekly_archive',
+            format: 'system',
+            created_at: new Date().toISOString(),
+            size: 'System Reset'
+          },
+          ...prev
+        ]);
+        // Also force a reload to clear all active context if they visit the dashboard
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        toast.error(data.error || 'Failed to archive data');
+      }
+    } catch (error) {
+      toast.error('Error connecting to archive service');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -281,6 +264,26 @@ const Reports = () => {
                 <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Export admin and user operational actions for compliance audits</div>
               </div>
               <span className="aa-badge" style={{ borderColor: 'rgba(16,185,129,0.3)', color: '#10b981', background: 'rgba(16,185,129,0.1)' }}>AUDIT TRAIL</span>
+            </button>
+          </div>
+
+          <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#fff' }}>Weekly Data Maintenance</h4>
+            <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#94a3b8' }}>
+              Archive the previous session's data (alerts, logs, stats) and log it for compliance. This will completely clear the active dashboard for a fresh start.
+            </p>
+            <button
+              onClick={handleArchiveData}
+              disabled={loading}
+              className="aa-playbook-btn"
+              style={{
+                width: '100%',
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#f87171',
+              }}
+            >
+              {loading ? 'Archiving...' : 'Archive Weekly Data & Refresh Dashboard'}
             </button>
           </div>
         </Card>

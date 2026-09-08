@@ -1,38 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Edit3, Key, Download, HelpCircle, X } from 'lucide-react';
+import { Edit3, Key, Download, HelpCircle, X, Lock, Shield, Activity, Clock, Zap, Server } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import '../../styles/pages/profile.css';
 
 const UserOnlyProfile = () => {
   const [userData, setUserData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@company.com',
+    name: '',
+    email: '',
     role: 'user',
-    department: 'Engineering',
-    joinedDate: '2023-06-20',
-    lastLogin: '2024-04-18T08:45:00Z',
-    securityScore: 85,
+    department: '',
+    joinedDate: '',
+    lastLogin: '',
+    securityScore: 0,
   });
 
   const [editFormData, setEditFormData] = useState({
-    name: userData.name,
-    email: userData.email,
-    department: userData.department
+    name: '',
+    email: '',
+    department: ''
   });
 
   const [userStats, setUserStats] = useState({
     alertsReceived: 12,
-    threatsBlocked: 8,
-    loginAttempts: 156,
-    securityEvents: 3
+    threatsBlocked: 4,
+    loginAttempts: 45,
+    securityEvents: 2
   });
 
-  const [devices, setDevices] = useState([
-    { id: 'dev-1', name: 'Windows Laptop', info: 'Current device - Last active: Now', status: 'online', current: true },
-    { id: 'dev-2', name: 'iPhone 13 Pro', info: 'Last active: 2 hours ago', status: 'offline', current: false },
-    { id: 'dev-3', name: 'MacBook Workstation', info: 'Last active: 1 day ago', status: 'offline', current: false }
-  ]);
+  const [devices, setDevices] = useState([]);
 
   const [securitySettings, setSecuritySettings] = useState({
     is2FAEnabled: false,
@@ -46,12 +42,7 @@ const UserOnlyProfile = () => {
     anonymousStats: false
   });
 
-  const [recentActivity, setRecentActivity] = useState([
-    { id: 1, action: 'Login successful', timestamp: '2 hours ago', location: '192.168.1.100' },
-    { id: 2, action: 'Password updated', timestamp: '1 day ago', location: 'Company Office' },
-    { id: 3, action: 'New device connected', timestamp: '3 days ago', location: 'Mobile Phone' },
-    { id: 4, action: 'Security settings changed', timestamp: '1 week ago', location: 'Web Portal' }
-  ]);
+  const [recentActivity, setRecentActivity] = useState([]);
 
   // Modal State: null | 'editProfile' | 'manageDevices' | 'changePassword' | 'sessions' | 'getHelp'
   const [activeModal, setActiveModal] = useState(null);
@@ -60,16 +51,65 @@ const UserOnlyProfile = () => {
   const [passwordForm, setPasswordForm] = useState({ current: '', newPass: '', confirmPass: '' });
   const [supportForm, setSupportForm] = useState({ subject: '', priority: 'Medium', message: '' });
 
-  // Simulate real-time updates
+  // Fetch user profile from auth context / backend
   useEffect(() => {
-    const interval = setInterval(() => {
-      setUserStats(prev => ({
-        ...prev,
-        loginAttempts: prev.loginAttempts + (Math.random() > 0.9 ? 1 : 0)
-      }));
-    }, 15000);
+    // Load user data from localStorage (set during login)
+    const storedUser = localStorage.getItem('demoUser');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        const profile = {
+          name: parsed.user_metadata?.name || parsed.name || parsed.email?.split('@')[0] || 'System User',
+          email: parsed.email || 'user@securenet.com',
+          role: parsed.role || 'user',
+          department: parsed.organization?.name || parsed.department || 'General Network',
+          joinedDate: parsed.created_at || parsed.joinedDate || new Date().toISOString(),
+          lastLogin: parsed.last_login || new Date().toISOString(),
+          securityScore: parsed.securityScore || 100,
+        };
+        setUserData(profile);
+        setEditFormData({ name: profile.name, email: profile.email, department: profile.department });
+      } catch (e) {
+        console.error("Error parsing demoUser:", e);
+      }
+    }
 
-    return () => clearInterval(interval);
+    // Fetch stats from backend
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/stats');
+        if (res.ok) {
+          const json = await res.json();
+          const data = json.data || json;
+          setUserStats({
+            alertsReceived: data.alerts_generated || 0,
+            threatsBlocked: data.threat_intel_checks || 0,
+            loginAttempts: data.packets_processed || 0,
+            securityEvents: data.attacks_detected || 0
+          });
+        }
+      } catch (e) {}
+    };
+
+    // Fetch recent activity from logs
+    const fetchActivity = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/logs?limit=4');
+        if (res.ok) {
+          const json = await res.json();
+          const list = Array.isArray(json) ? json : (json.data || []);
+          setRecentActivity(list.map((log, i) => ({
+            id: log.id || i,
+            action: log.message || 'Activity logged',
+            timestamp: log.timestamp ? new Date(log.timestamp).toLocaleString() : 'Recent',
+            location: log.source || 'System'
+          })));
+        }
+      } catch (e) {}
+    };
+
+    fetchStats();
+    fetchActivity();
   }, []);
 
   // Handlers
@@ -183,237 +223,163 @@ const UserOnlyProfile = () => {
   };
 
   return (
-    <div className="user-profile-page fade-in">
-      <div className="page-header" style={{ marginBottom: '24px' }}>
-        <h1 className="page-title">User Profile</h1>
-        <p className="page-subtitle">Personal account settings and security information</p>
+    <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto', color: '#f8fafc' }}>
+      {/* HEADER */}
+      <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ padding: '16px', background: 'rgba(0, 245, 255, 0.1)', borderRadius: '12px', border: '1px solid rgba(0, 245, 255, 0.3)' }}>
+          <Shield size={32} color="#00f5ff" />
+        </div>
+        <div>
+          <h1 style={{ margin: '0 0 4px 0', fontSize: '28px', color: '#f8fafc', fontWeight: 'bold', textShadow: '0 0 10px rgba(0, 245, 255, 0.2)' }}>Operator Profile</h1>
+          <p style={{ margin: 0, color: '#94a3b8', fontSize: '14px' }}>Personal account settings and security telemetry</p>
+        </div>
       </div>
 
-      {/* ROW 1: Personal Information (Much smaller card in ONE ROW) */}
-      <div className="profile-row-top">
-        <Card className="profile-card compact-personal-card">
-          <div className="compact-personal-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h3 className="card-title" style={{ margin: 0 }}>Personal Information</h3>
-              <span className="user-role-badge">{userData.role.toUpperCase()}</span>
-            </div>
-            <button
-              onClick={() => {
-                setEditFormData({ name: userData.name, email: userData.email, department: userData.department });
-                setActiveModal('editProfile');
-              }}
-              className="btn btn-outline btn-sm"
-              style={{ fontSize: '11px', padding: '4px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}
-            >
-              <Edit3 size={12} /> Edit Profile
-            </button>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+        {/* PERSONAL INFO */}
+        <Card style={{ background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.6))', border: '1px solid rgba(0, 245, 255, 0.3)', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#00f5ff', boxShadow: '0 0 15px #00f5ff' }}></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ margin: 0, fontSize: '16px', color: '#00f5ff', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+              <Lock size={18} /> IDENTITY VAULT
+            </h3>
+            <span style={{ padding: '4px 10px', background: 'rgba(0, 245, 255, 0.15)', color: '#00f5ff', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px' }}>{userData.role.toUpperCase()}</span>
           </div>
-          <div className="compact-personal-grid">
-            <div className="compact-info-item">
-              <span className="compact-info-label">Name</span>
-              <span className="compact-info-value">{userData.name}</span>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+              <span style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Identity</span>
+              <span style={{ color: '#f8fafc', fontSize: '13px', fontWeight: '500' }}>{userData.name}</span>
             </div>
-            <div className="compact-info-item">
-              <span className="compact-info-label">Email</span>
-              <span className="compact-info-value">{userData.email}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+              <span style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Contact</span>
+              <span style={{ color: '#38bdf8', fontSize: '13px', fontWeight: '500' }}>{userData.email}</span>
             </div>
-            <div className="compact-info-item">
-              <span className="compact-info-label">Department</span>
-              <span className="compact-info-value">{userData.department}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+              <span style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Node</span>
+              <span style={{ color: '#f8fafc', fontSize: '13px', fontWeight: '500' }}>{userData.department}</span>
             </div>
-            <div className="compact-info-item">
-              <span className="compact-info-label">Member Since</span>
-              <span className="compact-info-value">{new Date(userData.joinedDate).toLocaleDateString()}</span>
-            </div>
-            <div className="compact-info-item">
-              <span className="compact-info-label">Security Score</span>
-              <span className={`compact-info-value security-score ${userData.securityScore >= 80 ? 'high' : userData.securityScore >= 60 ? 'medium' : 'low'}`}>
-                {userData.securityScore}%
-              </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '4px' }}>
+              <span style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Join Date</span>
+              <span style={{ color: '#10b981', fontSize: '13px', fontWeight: '500' }}>{new Date(userData.joinedDate).toLocaleDateString()}</span>
             </div>
           </div>
-        </Card>
-      </div>
-
-      {/* ROW 2: Security Statistics, Connected Devices, Security Settings, Privacy Preferences (4 CARDS IN ONE ROW) */}
-      <div className="profile-row-middle">
-        <Card className="profile-card">
-          <h3 className="card-title">Security Statistics</h3>
-          <div className="security-stats">
-            <div className="stat-item" onClick={() => toast.info(`Alerts Received: ${userStats.alertsReceived}`)} style={{ cursor: 'pointer' }}>
-              <div className="stat-value">{userStats.alertsReceived}</div>
-              <div className="stat-label">Alerts Received</div>
-            </div>
-            <div className="stat-item" onClick={() => toast.info(`Threats Blocked: ${userStats.threatsBlocked}`)} style={{ cursor: 'pointer' }}>
-              <div className="stat-value">{userStats.threatsBlocked}</div>
-              <div className="stat-label">Threats Blocked</div>
-            </div>
-            <div className="stat-item" onClick={() => toast.info(`Login Attempts: ${userStats.loginAttempts}`)} style={{ cursor: 'pointer' }}>
-              <div className="stat-value">{userStats.loginAttempts}</div>
-              <div className="stat-label">Login Attempts</div>
-            </div>
-            <div className="stat-item" onClick={() => toast.info(`Security Events: ${userStats.securityEvents}`)} style={{ cursor: 'pointer' }}>
-              <div className="stat-value">{userStats.securityEvents}</div>
-              <div className="stat-label">Security Events</div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="profile-card">
-          <h3 className="card-title">Connected Devices</h3>
-          <div className="devices-list">
-            {devices.slice(0, 2).map((dev) => (
-              <div key={dev.id} className={`device-item ${dev.current ? 'current' : ''}`}>
-                <div className="device-info">
-                  <h4>{dev.name}</h4>
-                  <p>{dev.info}</p>
-                </div>
-                <div className={`device-status ${dev.status}`}>{dev.status.toUpperCase()}</div>
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={() => setActiveModal('manageDevices')}
-            className="btn btn-outline btn-sm"
-            style={{ width: '100%', marginTop: '12px' }}
-          >
-            Manage Devices ({devices.length})
+          
+          <button onClick={() => { setEditFormData({ name: userData.name, email: userData.email, department: userData.department }); setActiveModal('editProfile'); }} className="btn btn-outline btn-sm" style={{ width: '100%', marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <Edit3 size={14} /> Edit Identity
           </button>
         </Card>
 
-        <Card className="profile-card">
-          <h3 className="card-title">Security Settings</h3>
-          <div className="security-settings">
-            <div className="setting-item">
-              <div className="setting-info">
-                <h4>Two-Factor Auth</h4>
-                <p>{securitySettings.is2FAEnabled ? 'Protected with 2FA' : 'Extra security layer'}</p>
-              </div>
-              <button
-                onClick={toggle2FA}
-                className={`btn btn-sm ${securitySettings.is2FAEnabled ? 'btn-danger' : 'btn-outline'}`}
-                style={{
-                  background: securitySettings.is2FAEnabled ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
-                  borderColor: securitySettings.is2FAEnabled ? '#ef4444' : 'rgba(0, 245, 255, 0.4)',
-                  color: securitySettings.is2FAEnabled ? '#ef4444' : '#00f5ff'
-                }}
-              >
-                {securitySettings.is2FAEnabled ? 'Disable' : 'Enable'}
-              </button>
+        {/* SECURITY STATS */}
+        <Card style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+            <Activity size={18} /> SECURITY METRICS
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>Alerts Rx</div>
+              <div style={{ color: '#f59e0b', fontSize: '24px', fontWeight: 'bold' }}>{userStats.alertsReceived}</div>
             </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <h4>Login Alerts</h4>
-                <p>Alerts for new sign-ins</p>
-              </div>
-              <button
-                onClick={toggleLoginAlerts}
-                className="setting-status enabled"
-                style={{
-                  cursor: 'pointer',
-                  border: 'none',
-                  background: securitySettings.isLoginAlertsEnabled ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)',
-                  color: securitySettings.isLoginAlertsEnabled ? '#10b981' : '#94a3b8'
-                }}
-              >
-                {securitySettings.isLoginAlertsEnabled ? 'ENABLED' : 'DISABLED'}
-              </button>
+            <div style={{ background: 'rgba(16,185,129,0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <div style={{ color: '#10b981', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>Threats Blk</div>
+              <div style={{ color: '#10b981', fontSize: '24px', fontWeight: 'bold', textShadow: '0 0 10px rgba(16,185,129,0.3)' }}>{userStats.threatsBlocked}</div>
             </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <h4>Sessions</h4>
-                <p>Control active sessions</p>
-              </div>
-              <button
-                onClick={() => setActiveModal('sessions')}
-                className="btn btn-sm btn-outline"
-              >
-                Manage
-              </button>
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>Logins</div>
+              <div style={{ color: '#38bdf8', fontSize: '24px', fontWeight: 'bold' }}>{userStats.loginAttempts}</div>
+            </div>
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>Trust Score</div>
+              <div style={{ color: userData.securityScore >= 80 ? '#10b981' : '#ef4444', fontSize: '24px', fontWeight: 'bold' }}>{userData.securityScore}%</div>
             </div>
           </div>
         </Card>
 
-        <Card className="profile-card">
-          <h3 className="card-title">Privacy Preferences</h3>
-          <div className="privacy-settings">
-            <div className="privacy-item">
-              <label className="privacy-label">
-                <input
-                  type="checkbox"
-                  checked={privacy.shareInsights}
-                  onChange={() => handlePrivacyChange('shareInsights')}
-                  style={{ width: '16px', height: '16px', accentColor: '#00f5ff' }}
-                />
-                <div>
-                  <div style={{ fontWeight: '600', color: '#fff', fontSize: '13px' }}>Share security insights</div>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Share threat findings with SOC team</div>
-                </div>
-              </label>
+        {/* SECURITY SETTINGS */}
+        <Card style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+            <Shield size={18} /> ACCOUNT SECURITY
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', borderLeft: `3px solid ${securitySettings.is2FAEnabled ? '#10b981' : '#94a3b8'}` }}>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#f8fafc' }}>Two-Factor Auth</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Extra security layer</div>
+              </div>
+              <button onClick={toggle2FA} style={{ fontSize: '10px', padding: '4px 10px', background: securitySettings.is2FAEnabled ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)', color: securitySettings.is2FAEnabled ? '#10b981' : '#f8fafc', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+                {securitySettings.is2FAEnabled ? 'ENABLED' : 'ENABLE'}
+              </button>
             </div>
-            <div className="privacy-item">
-              <label className="privacy-label">
-                <input
-                  type="checkbox"
-                  checked={privacy.receiveRecs}
-                  onChange={() => handlePrivacyChange('receiveRecs')}
-                  style={{ width: '16px', height: '16px', accentColor: '#00f5ff' }}
-                />
-                <div>
-                  <div style={{ fontWeight: '600', color: '#fff', fontSize: '13px' }}>Receive recommendations</div>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Get automated AI defense tips</div>
-                </div>
-              </label>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', borderLeft: `3px solid ${securitySettings.isLoginAlertsEnabled ? '#10b981' : '#94a3b8'}` }}>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#f8fafc' }}>Login Alerts</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Alerts for new sign-ins</div>
+              </div>
+              <button onClick={toggleLoginAlerts} style={{ fontSize: '10px', padding: '4px 10px', background: securitySettings.isLoginAlertsEnabled ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)', color: securitySettings.isLoginAlertsEnabled ? '#10b981' : '#f8fafc', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+                {securitySettings.isLoginAlertsEnabled ? 'ENABLED' : 'ENABLE'}
+              </button>
             </div>
-            <div className="privacy-item">
-              <label className="privacy-label">
-                <input
-                  type="checkbox"
-                  checked={privacy.anonymousStats}
-                  onChange={() => handlePrivacyChange('anonymousStats')}
-                  style={{ width: '16px', height: '16px', accentColor: '#00f5ff' }}
-                />
-                <div>
-                  <div style={{ fontWeight: '600', color: '#fff', fontSize: '13px' }}>Anonymous usage telemetry</div>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Help improve global detection engine</div>
-                </div>
-              </label>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', borderLeft: '3px solid #38bdf8' }}>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#f8fafc' }}>Active Sessions</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Control active sign-ins</div>
+              </div>
+              <button onClick={() => setActiveModal('sessions')} style={{ fontSize: '10px', padding: '4px 10px', background: 'rgba(56,189,248,0.1)', color: '#38bdf8', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+                MANAGE
+              </button>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* ROW 3: Recent Activity & Quick Actions (2 CARDS IN ONE ROW) */}
-      <div className="profile-row-bottom">
-        <Card className="profile-card">
-          <h3 className="card-title">Recent Activity</h3>
-          <div className="activity-timeline">
-            {recentActivity.map(activity => (
-              <div key={activity.id} className="activity-item">
-                <div className="activity-time">{activity.timestamp}</div>
-                <div className="activity-content">
-                  <span className="activity-action">{activity.action}</span>
-                  <span className="activity-location">from {activity.location}</span>
-                </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+        {/* RECENT ACTIVITY */}
+        <Card style={{ background: 'rgba(15, 23, 42, 0.6)' }}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+            <Clock size={18} color="#94a3b8" /> ACTIVITY LOG
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {recentActivity.length === 0 ? (
+              <div style={{ color: '#64748b', fontSize: '13px', fontStyle: 'italic', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center' }}>
+                No recent activity logs found.
               </div>
-            ))}
+            ) : (
+              recentActivity.map((activity, idx) => (
+                <div key={activity.id || idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', color: '#38bdf8' }}>
+                    <Activity size={16} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: '#f8fafc', fontSize: '13px', fontWeight: '500' }}>{activity.action}</div>
+                    <div style={{ color: '#64748b', fontSize: '11px', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {activity.timestamp} • {activity.location}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </Card>
 
-        <Card className="profile-card">
-          <h3 className="card-title">Quick Actions</h3>
-          <div className="quick-actions">
-            <button onClick={() => setActiveModal('changePassword')} className="action-btn primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-              <Key size={16} />
-              Change Password
+        {/* QUICK ACTIONS */}
+        <Card style={{ background: 'rgba(15, 23, 42, 0.6)' }}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+            <Zap size={18} color="#f59e0b" /> QUICK COMMANDS
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button onClick={() => setActiveModal('changePassword')} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#10b981', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>
+              <Key size={16} /> Change Password
             </button>
-            <button onClick={handleDownloadData} className="action-btn secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-              <Download size={16} />
-              Download Data
+            <button onClick={() => setActiveModal('manageDevices')} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', background: 'rgba(0, 245, 255, 0.1)', border: '1px solid rgba(0, 245, 255, 0.3)', color: '#00f5ff', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>
+              <Server size={16} /> Manage Devices ({devices.length})
             </button>
-            <button onClick={() => setActiveModal('getHelp')} className="action-btn secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-              <HelpCircle size={16} />
-              Get Help & Support
+            <button onClick={handleDownloadData} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', background: 'transparent', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>
+              <Download size={16} /> Download Telemetry Data
+            </button>
+            <button onClick={() => setActiveModal('getHelp')} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', background: 'transparent', border: '1px solid rgba(148, 163, 184, 0.3)', color: '#e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>
+              <HelpCircle size={16} /> Support & SOC Ticket
             </button>
           </div>
         </Card>

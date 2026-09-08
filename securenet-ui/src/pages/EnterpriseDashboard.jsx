@@ -16,6 +16,25 @@ const EnterpriseDashboard = () => {
   const { user } = useAuth();
   const [currentOrgId, setCurrentOrgId] = useState(null);
   const alerts = useRealtimeAlerts();
+  const [systemHealth, setSystemHealth] = useState({});
+
+  useEffect(() => {
+    const fetchHealth = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/health');
+        if (res.ok) {
+          const json = await res.json();
+          const data = json.data || json;
+          setSystemHealth(data.components || {});
+        }
+      } catch (e) {
+        console.debug('Could not fetch health:', e);
+      }
+    };
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (user?.org_id) {
@@ -235,30 +254,23 @@ const EnterpriseDashboard = () => {
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">System Status</h2>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Database</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                    Online
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">ML Model</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                    Ready
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Threat Intel</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                    Active
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Background Jobs</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                    Running
-                  </span>
-                </div>
+                {['database', 'ml_model', 'threat_intel', 'monitoring'].map(component => {
+                  const status = systemHealth[component];
+                  const isHealthy = status === 'healthy' || status === true || status?.status === 'healthy';
+                  const label = component.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                  const displayStatus = status ? (isHealthy ? 'Online' : 'Degraded') : 'Checking...';
+                  return (
+                    <div key={component} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">{label}</span>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        !status ? 'bg-gray-100 text-gray-500' :
+                        isHealthy ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {displayStatus}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

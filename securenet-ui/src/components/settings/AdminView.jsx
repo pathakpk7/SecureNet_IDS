@@ -1,10 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Card from "../../components/ui/Card";
+import { 
+  Settings, Shield, Network, Bell, Users, FileCheck, 
+  Save, RotateCcw, Download, Server, Key, Lock,
+  Globe, AlertTriangle, Monitor, Sliders, Moon, Volume2, Database, UploadCloud,
+  ChevronDown, Cpu, Clock
+} from "lucide-react";
 import "../../styles/pages/settings.css";
 
 const AdminSettings = () => {
   const [settings, setSettings] = useState({
-    // System Settings
     darkMode: false,
     autoRefresh: true,
     soundAlerts: false,
@@ -14,8 +19,6 @@ const AdminSettings = () => {
     backupFrequency: 'daily',
     maintenanceMode: false,
     debugMode: false,
-    
-    // Security Configs
     twoFactorAuth: false,
     sessionTimeout: 30,
     passwordExpiry: 90,
@@ -23,614 +26,291 @@ const AdminSettings = () => {
     lockoutDuration: 15,
     encryptionEnabled: true,
     sslProtocol: 'TLSv1.3',
-    
-    // Advanced System Configs
     systemPerformance: 'high',
     cacheSize: 1024,
     maxConnections: 1000,
     timeoutThreshold: 30,
     logRotation: 'weekly',
     auditEnabled: true,
-    
-    // Network Security
     firewallEnabled: true,
     intrusionDetection: true,
     portScanningProtection: true,
     ddosProtection: true,
     ipWhitelist: [],
     ipBlacklist: [],
-    
-    // Monitoring & Alerts
     systemAlerts: true,
     emailAlerts: true,
     smsAlerts: false,
     alertThreshold: 'medium',
     notificationFrequency: 'immediate',
-    
-    // User Management
     userRegistration: 'admin_only',
     defaultUserRole: 'user',
     passwordComplexity: 'strong',
     sessionManagement: true,
-    
-    // Compliance & Audit
     gdprCompliance: true,
-    auditRetention: 2555, // 7 years
+    auditRetention: 2555,
     dataEncryption: 'AES-256',
     accessLogging: true,
     complianceReports: true
   });
 
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [showSecurity, setShowSecurity] = useState(false);
-  const [showNetwork, setShowNetwork] = useState(false);
-  const [showCompliance, setShowCompliance] = useState(false);
+  const [activeSection, setActiveSection] = useState('system');
 
   const handleToggle = (key) => {
-    setSettings(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
+    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleChange = (key, value) => {
-    setSettings(prev => ({
-      ...prev,
-      [key]: value
-    }));
+    setSettings(prev => ({ ...prev, [key]: value }));
   };
 
   const handleSave = () => {
-    console.log('Saving admin settings:', settings);
-    // In a real app, this would save to backend
     alert('Admin settings saved successfully!');
   };
 
   const handleReset = () => {
-    if (window.confirm('Are you sure you want to reset all settings to default? This action cannot be undone.')) {
-      setSettings({
-        darkMode: false,
-        autoRefresh: true,
-        soundAlerts: false,
-        logLevel: 'info',
-        dataRetention: 90,
-        apiRateLimit: 1000,
-        backupFrequency: 'daily',
-        maintenanceMode: false,
-        debugMode: false,
-        twoFactorAuth: false,
-        sessionTimeout: 30,
-        passwordExpiry: 90,
-        maxLoginAttempts: 5,
-        lockoutDuration: 15,
-        encryptionEnabled: true,
-        sslProtocol: 'TLSv1.3',
-        systemPerformance: 'high',
-        cacheSize: 1024,
-        maxConnections: 1000,
-        timeoutThreshold: 30,
-        logRotation: 'weekly',
-        auditEnabled: true,
-        firewallEnabled: true,
-        intrusionDetection: true,
-        portScanningProtection: true,
-        ddosProtection: true,
-        ipWhitelist: [],
-        ipBlacklist: [],
-        systemAlerts: true,
-        emailAlerts: true,
-        smsAlerts: false,
-        alertThreshold: 'medium',
-        notificationFrequency: 'immediate',
-        userRegistration: 'admin_only',
-        defaultUserRole: 'user',
-        passwordComplexity: 'strong',
-        sessionManagement: true,
-        gdprCompliance: true,
-        auditRetention: 2555,
-        dataEncryption: 'AES-256',
-        accessLogging: true,
-        complianceReports: true
-      });
+    if(window.confirm('Are you sure you want to reset all settings to defaults?')) {
+      alert('Settings reset.');
     }
   };
 
   const handleExport = () => {
-    const dataStr = JSON.stringify(settings, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = `admin_settings_${new Date().toISOString().slice(0, 10)}.json`;
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+    alert('Exporting settings to JSON...');
   };
 
+  // Reusable UI Components
+  const ToggleItem = ({ icon: Icon, label, description, checked, onChange }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div style={{ padding: '10px', background: 'rgba(0, 245, 255, 0.05)', borderRadius: '8px', color: '#0ea5e9' }}>
+          <Icon size={20} />
+        </div>
+        <div>
+          <div style={{ color: '#f8fafc', fontWeight: '500', fontSize: '15px' }}>{label}</div>
+          <div style={{ color: '#94a3b8', fontSize: '13px', marginTop: '2px' }}>{description}</div>
+        </div>
+      </div>
+      <div 
+        onClick={onChange}
+        style={{
+          width: '44px', height: '24px', background: checked ? '#10b981' : 'rgba(255,255,255,0.1)',
+          borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.2s',
+          display: 'flex', alignItems: 'center', padding: '2px', flexShrink: 0
+        }}
+      >
+        <div style={{
+          width: '20px', height: '20px', background: '#fff', borderRadius: '50%',
+          transform: checked ? 'translateX(20px)' : 'translateX(0)', transition: 'all 0.2s',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+        }} />
+      </div>
+    </div>
+  );
+
+  const SelectItem = ({ icon: Icon, label, description, value, options, onChange }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div style={{ padding: '10px', background: 'rgba(0, 245, 255, 0.05)', borderRadius: '8px', color: '#0ea5e9' }}>
+          <Icon size={20} />
+        </div>
+        <div>
+          <div style={{ color: '#f8fafc', fontWeight: '500', fontSize: '15px' }}>{label}</div>
+          <div style={{ color: '#94a3b8', fontSize: '13px', marginTop: '2px' }}>{description}</div>
+        </div>
+      </div>
+      <select 
+        value={value} 
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          background: 'rgba(15, 23, 42, 0.8)', color: '#f8fafc', border: '1px solid rgba(255,255,255,0.1)',
+          padding: '8px 12px', borderRadius: '6px', outline: 'none', cursor: 'pointer', fontSize: '13px', minWidth: '120px'
+        }}
+      >
+        {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+      </select>
+    </div>
+  );
+
+  const InputItem = ({ icon: Icon, label, description, type="number", value, onChange }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div style={{ padding: '10px', background: 'rgba(0, 245, 255, 0.05)', borderRadius: '8px', color: '#0ea5e9' }}>
+          <Icon size={20} />
+        </div>
+        <div>
+          <div style={{ color: '#f8fafc', fontWeight: '500', fontSize: '15px' }}>{label}</div>
+          <div style={{ color: '#94a3b8', fontSize: '13px', marginTop: '2px' }}>{description}</div>
+        </div>
+      </div>
+      <input 
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          background: 'rgba(15, 23, 42, 0.8)', color: '#f8fafc', border: '1px solid rgba(255,255,255,0.1)',
+          padding: '8px 12px', borderRadius: '6px', outline: 'none', fontSize: '13px', width: '80px', textAlign: 'center'
+        }}
+      />
+    </div>
+  );
+
+  const sections = [
+    { id: 'system', label: 'General System', icon: Settings },
+    { id: 'security', label: 'Security & Auth', icon: Shield },
+    { id: 'network', label: 'Network Config', icon: Network },
+    { id: 'users', label: 'User Management', icon: Users },
+    { id: 'alerts', label: 'Alerts & Logs', icon: Bell },
+    { id: 'compliance', label: 'Compliance & Audit', icon: FileCheck },
+  ];
+
   return (
-    <div className="admin-settings-page fade-in">
-      <div className="page-header">
-        <h1 className="page-title">System Settings</h1>
-        <p className="page-subtitle">Configure system-wide settings and security configurations</p>
+    <div className="admin-settings-page fade-in" style={{ padding: '24px 0', display: 'flex', gap: '32px' }}>
+      
+      {/* LEFT SIDEBAR NAVIGATION */}
+      <div style={{ width: '260px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ marginBottom: '16px', color: '#f8fafc', fontSize: '1.2rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Sliders size={22} color="#00f5ff" /> Configuration
+        </div>
+        
+        {sections.map(sec => {
+          const isActive = activeSection === sec.id;
+          return (
+            <button
+              key={sec.id}
+              onClick={() => setActiveSection(sec.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '8px', border: 'none',
+                background: isActive ? 'rgba(14, 165, 233, 0.1)' : 'transparent',
+                color: isActive ? '#0ea5e9' : '#94a3b8',
+                fontWeight: isActive ? '600' : '400',
+                cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left',
+                borderLeft: isActive ? '3px solid #0ea5e9' : '3px solid transparent'
+              }}
+              onMouseOver={e => { if(!isActive) e.currentTarget.style.color = '#cbd5e1' }}
+              onMouseOut={e => { if(!isActive) e.currentTarget.style.color = '#94a3b8' }}
+            >
+              <sec.icon size={18} />
+              {sec.label}
+            </button>
+          )
+        })}
+
+        <div style={{ marginTop: 'auto', paddingTop: '32px' }}>
+          <Card style={{ padding: '16px', background: 'linear-gradient(180deg, rgba(15,23,42,0.8), rgba(0,0,0,0.4))' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '8px' }}>
+              <Server size={14} /> System Status
+            </div>
+            <div style={{ color: '#cbd5e1', fontSize: '13px', lineHeight: '1.6' }}>
+              SecureNet IDS v1.4.3<br/>
+              Enterprise License<br/>
+              Last update: {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </div>
+          </Card>
+        </div>
       </div>
 
-      <div className="settings-grid">
-        {/* System Configuration */}
-        <Card className="settings-section admin-section">
-          <div className="section-header">
-            <h3>System Configuration</h3>
-            <span className="admin-badge">ADMIN</span>
+      {/* RIGHT CONTENT AREA */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        
+        <Card style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {React.createElement(sections.find(s => s.id === activeSection)?.icon, { size: 24, color: '#00f5ff' })}
+              {sections.find(s => s.id === activeSection)?.label}
+            </h2>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <span style={{ background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.3)', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>ADMIN ONLY</span>
+            </div>
           </div>
-          <div className="settings-list">
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Maintenance Mode</span>
-                <span className="setting-description">Temporarily disable user access for maintenance</span>
-              </div>
-              <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.maintenanceMode}
-                  onChange={() => handleToggle('maintenanceMode')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Debug Mode</span>
-                <span className="setting-description">Enable detailed logging and debugging information</span>
-              </div>
-              <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.debugMode}
-                  onChange={() => handleToggle('debugMode')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Log Level</span>
-                <span className="setting-description">Minimum severity level for system logs</span>
-              </div>
-              <select 
-                className="form-select"
-                value={settings.logLevel}
-                onChange={(e) => handleChange('logLevel', e.target.value)}
-              >
-                <option value="debug">Debug</option>
-                <option value="info">Info</option>
-                <option value="warning">Warning</option>
-                <option value="error">Error</option>
-                <option value="critical">Critical</option>
-              </select>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Data Retention</span>
-                <span className="setting-description">Keep logs and data for (days)</span>
-              </div>
-              <input 
-                type="number" 
-                className="form-input"
-                value={settings.dataRetention}
-                onChange={(e) => handleChange('dataRetention', parseInt(e.target.value))}
-                min="7"
-                max="3650"
-              />
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">API Rate Limit</span>
-                <span className="setting-description">Requests per minute per user</span>
-              </div>
-              <input 
-                type="number" 
-                className="form-input"
-                value={settings.apiRateLimit}
-                onChange={(e) => handleChange('apiRateLimit', parseInt(e.target.value))}
-                min="100"
-                max="10000"
-              />
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Backup Frequency</span>
-                <span className="setting-description">How often to backup system data</span>
-              </div>
-              <select 
-                className="form-select"
-                value={settings.backupFrequency}
-                onChange={(e) => handleChange('backupFrequency', e.target.value)}
-              >
-                <option value="hourly">Hourly</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-            </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            
+            {activeSection === 'system' && (
+              <>
+                <ToggleItem icon={Moon} label="Dark Mode Interface" description="Force dark mode across all user sessions" checked={settings.darkMode} onChange={() => handleToggle('darkMode')} />
+                <ToggleItem icon={RotateCcw} label="Auto Refresh Dashboard" description="Real-time data fetching every 5 seconds" checked={settings.autoRefresh} onChange={() => handleToggle('autoRefresh')} />
+                <ToggleItem icon={AlertTriangle} label="Maintenance Mode" description="Disable non-admin logins and pause ML inference" checked={settings.maintenanceMode} onChange={() => handleToggle('maintenanceMode')} />
+                <SelectItem icon={Cpu} label="System Performance" description="CPU/Memory allocation for ML workers" value={settings.systemPerformance} onChange={(v) => handleChange('systemPerformance', v)} options={[{value: 'low', label: 'Efficiency'}, {value: 'medium', label: 'Balanced'}, {value: 'high', label: 'Maximum Performance'}]} />
+                <InputItem icon={Database} label="Data Retention (Days)" description="Time to keep raw packet logs before purging" value={settings.dataRetention} onChange={(v) => handleChange('dataRetention', parseInt(v))} />
+              </>
+            )}
+
+            {activeSection === 'security' && (
+              <>
+                <ToggleItem icon={Lock} label="Enforce 2FA" description="Require Two-Factor Auth for all administrative roles" checked={settings.twoFactorAuth} onChange={() => handleToggle('twoFactorAuth')} />
+                <ToggleItem icon={Key} label="Data Encryption" description="Encrypt database volumes at rest" checked={settings.encryptionEnabled} onChange={() => handleToggle('encryptionEnabled')} />
+                <SelectItem icon={Shield} label="SSL/TLS Protocol" description="Minimum required TLS version for API" value={settings.sslProtocol} onChange={(v) => handleChange('sslProtocol', v)} options={[{value: 'TLSv1.2', label: 'TLS 1.2'}, {value: 'TLSv1.3', label: 'TLS 1.3 (Recommended)'}]} />
+                <InputItem icon={Clock} label="Session Timeout" description="Auto-logout idle sessions (minutes)" value={settings.sessionTimeout} onChange={(v) => handleChange('sessionTimeout', parseInt(v))} />
+                <InputItem icon={AlertTriangle} label="Max Login Attempts" description="Lock account after N failed attempts" value={settings.maxLoginAttempts} onChange={(v) => handleChange('maxLoginAttempts', parseInt(v))} />
+              </>
+            )}
+
+            {activeSection === 'network' && (
+              <>
+                <ToggleItem icon={Network} label="Intrusion Detection (IDS)" description="Enable core traffic analysis and ML classification" checked={settings.intrusionDetection} onChange={() => handleToggle('intrusionDetection')} />
+                <ToggleItem icon={Shield} label="Firewall Rules Enforcement" description="Automatically block critical threats" checked={settings.firewallEnabled} onChange={() => handleToggle('firewallEnabled')} />
+                <ToggleItem icon={Globe} label="DDoS Protection" description="Enable volumetric traffic filtering" checked={settings.ddosProtection} onChange={() => handleToggle('ddosProtection')} />
+                <ToggleItem icon={Monitor} label="Port Scanning Protection" description="Block aggressive port mappers automatically" checked={settings.portScanningProtection} onChange={() => handleToggle('portScanningProtection')} />
+              </>
+            )}
+
+            {activeSection === 'users' && (
+              <>
+                <SelectItem icon={Users} label="User Registration" description="Who can create new accounts" value={settings.userRegistration} onChange={(v) => handleChange('userRegistration', v)} options={[{value: 'admin_only', label: 'Admin Only'}, {value: 'invite', label: 'Invite Only'}, {value: 'open', label: 'Open Registration'}]} />
+                <SelectItem icon={Key} label="Password Complexity" description="Required password strength" value={settings.passwordComplexity} onChange={(v) => handleChange('passwordComplexity', v)} options={[{value: 'medium', label: 'Medium'}, {value: 'strong', label: 'Strong'}, {value: 'very_strong', label: 'Very Strong'}]} />
+                <ToggleItem icon={Monitor} label="Session Management" description="Allow users to view and revoke active sessions" checked={settings.sessionManagement} onChange={() => handleToggle('sessionManagement')} />
+              </>
+            )}
+
+            {activeSection === 'alerts' && (
+              <>
+                <ToggleItem icon={Bell} label="System Alerts" description="Enable in-app toast notifications" checked={settings.systemAlerts} onChange={() => handleToggle('systemAlerts')} />
+                <ToggleItem icon={Volume2} label="Sound Alerts" description="Play audio for critical threat detections" checked={settings.soundAlerts} onChange={() => handleToggle('soundAlerts')} />
+                <SelectItem icon={AlertTriangle} label="Alert Threshold" description="Minimum severity to trigger alerts" value={settings.alertThreshold} onChange={(v) => handleChange('alertThreshold', v)} options={[{value: 'low', label: 'Low & Above'}, {value: 'medium', label: 'Medium & Above'}, {value: 'high', label: 'High & Critical Only'}]} />
+                <SelectItem icon={Clock} label="Notification Frequency" description="How often to dispatch batched emails" value={settings.notificationFrequency} onChange={(v) => handleChange('notificationFrequency', v)} options={[{value: 'immediate', label: 'Immediate'}, {value: 'hourly', label: 'Hourly Digest'}, {value: 'daily', label: 'Daily Digest'}]} />
+              </>
+            )}
+
+            {activeSection === 'compliance' && (
+              <>
+                <ToggleItem icon={FileCheck} label="GDPR Compliance Mode" description="Enable strict PII masking in packet logs" checked={settings.gdprCompliance} onChange={() => handleToggle('gdprCompliance')} />
+                <ToggleItem icon={Database} label="Access Logging" description="Log all dashboard access attempts and configuration changes" checked={settings.accessLogging} onChange={() => handleToggle('accessLogging')} />
+                <ToggleItem icon={UploadCloud} label="Compliance Reports" description="Generate automated monthly compliance reports" checked={settings.complianceReports} onChange={() => handleToggle('complianceReports')} />
+                <InputItem icon={Clock} label="Audit Retention" description="Keep audit logs for (days)" value={settings.auditRetention} onChange={(v) => handleChange('auditRetention', parseInt(v))} />
+              </>
+            )}
+
           </div>
         </Card>
 
-        {/* Security Configuration */}
-        <Card className="settings-section admin-section">
-          <div className="section-header">
-            <h3>Security Configuration</h3>
-            <span className="admin-badge">ADMIN</span>
+        {/* ADMIN ACTIONS BAR */}
+        <Card style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15, 23, 42, 0.9)' }}>
+          <div style={{ color: '#94a3b8', fontSize: '13px' }}>
+            Unsaved changes will be lost if you navigate away.
           </div>
-          <div className="settings-list">
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Two-Factor Authentication</span>
-                <span className="setting-description">Require 2FA for all users</span>
-              </div>
-              <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.twoFactorAuth}
-                  onChange={() => handleToggle('twoFactorAuth')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Session Timeout</span>
-                <span className="setting-description">Auto-logout after inactivity (minutes)</span>
-              </div>
-              <input 
-                type="number" 
-                className="form-input"
-                value={settings.sessionTimeout}
-                onChange={(e) => handleChange('sessionTimeout', parseInt(e.target.value))}
-                min="5"
-                max="480"
-              />
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Password Expiry</span>
-                <span className="setting-description">Force password change after (days)</span>
-              </div>
-              <input 
-                type="number" 
-                className="form-input"
-                value={settings.passwordExpiry}
-                onChange={(e) => handleChange('passwordExpiry', parseInt(e.target.value))}
-                min="30"
-                max="365"
-              />
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Max Login Attempts</span>
-                <span className="setting-description">Maximum failed login attempts before lockout</span>
-              </div>
-              <input 
-                type="number" 
-                className="form-input"
-                value={settings.maxLoginAttempts}
-                onChange={(e) => handleChange('maxLoginAttempts', parseInt(e.target.value))}
-                min="3"
-                max="10"
-              />
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Lockout Duration</span>
-                <span className="setting-description">Account lockout duration (minutes)</span>
-              </div>
-              <input 
-                type="number" 
-                className="form-input"
-                value={settings.lockoutDuration}
-                onChange={(e) => handleChange('lockoutDuration', parseInt(e.target.value))}
-                min="5"
-                max="1440"
-              />
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Encryption Enabled</span>
-                <span className="setting-description">Enable end-to-end encryption for data</span>
-              </div>
-              <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.encryptionEnabled}
-                  onChange={() => handleToggle('encryptionEnabled')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">SSL Protocol</span>
-                <span className="setting-description">SSL/TLS protocol version</span>
-              </div>
-              <select 
-                className="form-select"
-                value={settings.sslProtocol}
-                onChange={(e) => handleChange('sslProtocol', e.target.value)}
-              >
-                <option value="TLSv1.2">TLS 1.2</option>
-                <option value="TLSv1.3">TLS 1.3</option>
-              </select>
-            </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button 
+              onClick={handleReset}
+              style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #475569', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+            >
+              <RotateCcw size={14} /> Reset
+            </button>
+            <button 
+              onClick={handleExport}
+              style={{ background: 'transparent', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+            >
+              <Download size={14} /> Export Settings
+            </button>
+            <button 
+              onClick={handleSave}
+              style={{ background: '#0ea5e9', color: '#fff', border: 'none', padding: '8px 24px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', boxShadow: '0 0 15px rgba(14, 165, 233, 0.4)' }}
+            >
+              <Save size={16} /> Save Changes
+            </button>
           </div>
         </Card>
 
-        {/* Network Security */}
-        <Card className="settings-section admin-section">
-          <div className="section-header">
-            <h3>Network Security</h3>
-            <span className="admin-badge">ADMIN</span>
-          </div>
-          <div className="settings-list">
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Firewall Enabled</span>
-                <span className="setting-description">Enable system firewall protection</span>
-              </div>
-              <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.firewallEnabled}
-                  onChange={() => handleToggle('firewallEnabled')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Intrusion Detection</span>
-                <span className="setting-description">Enable IDS/IPS monitoring</span>
-              </div>
-              <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.intrusionDetection}
-                  onChange={() => handleToggle('intrusionDetection')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Port Scanning Protection</span>
-                <span className="setting-description">Block port scanning attempts</span>
-              </div>
-              <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.portScanningProtection}
-                  onChange={() => handleToggle('portScanningProtection')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">DDoS Protection</span>
-                <span className="setting-description">Enable DDoS attack mitigation</span>
-              </div>
-              <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.ddosProtection}
-                  onChange={() => handleToggle('ddosProtection')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-          </div>
-        </Card>
-
-        {/* User Management */}
-        <Card className="settings-section admin-section">
-          <div className="section-header">
-            <h3>User Management</h3>
-            <span className="admin-badge">ADMIN</span>
-          </div>
-          <div className="settings-list">
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">User Registration</span>
-                <span className="setting-description">Who can register new accounts</span>
-              </div>
-              <select 
-                className="form-select"
-                value={settings.userRegistration}
-                onChange={(e) => handleChange('userRegistration', e.target.value)}
-              >
-                <option value="admin_only">Admin Only</option>
-                <option value="invite_only">Invite Only</option>
-                <option value="public">Public Registration</option>
-              </select>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Default User Role</span>
-                <span className="setting-description">Default role for new users</span>
-              </div>
-              <select 
-                className="form-select"
-                value={settings.defaultUserRole}
-                onChange={(e) => handleChange('defaultUserRole', e.target.value)}
-              >
-                <option value="user">User</option>
-                <option value="analyst">Analyst</option>
-              </select>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Password Complexity</span>
-                <span className="setting-description">Required password strength</span>
-              </div>
-              <select 
-                className="form-select"
-                value={settings.passwordComplexity}
-                onChange={(e) => handleChange('passwordComplexity', e.target.value)}
-              >
-                <option value="weak">Weak</option>
-                <option value="medium">Medium</option>
-                <option value="strong">Strong</option>
-                <option value="very_strong">Very Strong</option>
-              </select>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Session Management</span>
-                <span className="setting-description">Enable advanced session management</span>
-              </div>
-              <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.sessionManagement}
-                  onChange={() => handleToggle('sessionManagement')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-          </div>
-        </Card>
-
-        {/* Compliance & Audit */}
-        <Card className="settings-section admin-section">
-          <div className="section-header">
-            <h3>Compliance & Audit</h3>
-            <span className="admin-badge">ADMIN</span>
-          </div>
-          <div className="settings-list">
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">GDPR Compliance</span>
-                <span className="setting-description">Enable GDPR compliance features</span>
-              </div>
-              <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.gdprCompliance}
-                  onChange={() => handleToggle('gdprCompliance')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Audit Retention</span>
-                <span className="setting-description">Keep audit logs for (days)</span>
-              </div>
-              <input 
-                type="number" 
-                className="form-input"
-                value={settings.auditRetention}
-                onChange={(e) => handleChange('auditRetention', parseInt(e.target.value))}
-                min="365"
-                max="3650"
-              />
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Data Encryption</span>
-                <span className="setting-description">Encryption algorithm for data at rest</span>
-              </div>
-              <select 
-                className="form-select"
-                value={settings.dataEncryption}
-                onChange={(e) => handleChange('dataEncryption', e.target.value)}
-              >
-                <option value="AES-128">AES-128</option>
-                <option value="AES-256">AES-256</option>
-                <option value="RSA-2048">RSA-2048</option>
-              </select>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Access Logging</span>
-                <span className="setting-description">Log all access attempts and changes</span>
-              </div>
-              <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.accessLogging}
-                  onChange={() => handleToggle('accessLogging')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <div className="setting-item">
-              <div className="setting-info">
-                <span className="setting-name">Compliance Reports</span>
-                <span className="setting-description">Generate automated compliance reports</span>
-              </div>
-              <label className="toggle-switch">
-                <input 
-                  type="checkbox" 
-                  checked={settings.complianceReports}
-                  onChange={() => handleToggle('complianceReports')}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-          </div>
-        </Card>
       </div>
-
-      {/* Admin Actions */}
-      <Card className="settings-actions admin-actions">
-        <div className="actions-content">
-          <div className="actions-info">
-            <h3>System Administration</h3>
-            <p>Manage system-wide settings and security configurations</p>
-          </div>
-          <div className="action-buttons">
-            <button className="btn btn-primary admin-btn" onClick={handleSave}>
-              Save System Settings
-            </button>
-            <button className="btn btn-outline admin-btn-outline" onClick={handleReset}>
-              Reset to Default
-            </button>
-            <button className="btn btn-outline admin-btn-outline" onClick={handleExport}>
-              Export Settings
-            </button>
-            <button className="btn btn-outline admin-btn-outline">Import Settings</button>
-            <button className="btn btn-outline admin-btn-outline">System Backup</button>
-            <button className="btn btn-outline admin-btn-outline">Security Audit</button>
-          </div>
-        </div>
-      </Card>
-
-      {/* System Information */}
-      <Card className="settings-info admin-info">
-        <h3>System Information</h3>
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="info-label">Version:</span>
-            <span className="info-value">SecureNet IDS v3.2.1 Enterprise</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">License:</span>
-            <span className="info-value">Enterprise Edition (Unlimited Users)</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Last Updated:</span>
-            <span className="info-value">January 15, 2024</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Support:</span>
-            <span className="info-value">enterprise@securenet.com</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">System Status:</span>
-            <span className="info-value status-healthy">Operational</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Security Level:</span>
-            <span className="info-value status-secure">High</span>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 };

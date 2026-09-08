@@ -43,49 +43,14 @@ const AuditLogs = () => {
         if (data && data.length > 0) {
           setLogs(data);
         } else {
-          setLogs([
-            {
-              id: 'aud-1',
-              timestamp: new Date().toISOString(),
-              user_id: 'admin-1',
-              email: 'admin@securenet.com',
-              role: 'admin',
-              action: 'monitoring_started',
-              resource_type: 'packet_pipeline',
-              resource_id: 'pipeline-main',
-              status: 'success'
-            },
-            {
-              id: 'aud-2',
-              timestamp: new Date(Date.now() - 3600000).toISOString(),
-              user_id: 'admin-1',
-              email: 'admin@securenet.com',
-              role: 'admin',
-              action: 'organization_created',
-              resource_type: 'organization',
-              resource_id: 'demo-org-id',
-              status: 'success'
-            }
-          ]);
+          setLogs([]);
         }
       } else {
         throw new Error('API request failed');
       }
     } catch (error) {
-      console.debug('Using audit log fallback stream');
-      setLogs([
-        {
-          id: 'aud-1',
-          timestamp: new Date().toISOString(),
-          user_id: 'admin-1',
-          email: 'admin@securenet.com',
-          role: 'admin',
-          action: 'monitoring_started',
-          resource_type: 'pipeline',
-          resource_id: 'core-01',
-          status: 'success'
-        }
-      ]);
+      console.debug('Could not fetch audit logs:', error);
+      setLogs([]);
     } finally {
       setLoading(false);
     }

@@ -126,3 +126,6 @@ body.user {
   white-space: nowrap;
   border: 0;
 }
+
+/* Ensure minimum 10px gap between navbar and headings */
+.dashboard-header, .page-header, .admin-header, .hero { margin-top: 15px !important; }

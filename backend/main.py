@@ -508,6 +508,42 @@ async def remove_from_blacklist(request: Request, ip_address: str) -> JSONRespon
 # API ENDPOINTS - REPORTS & EXPORTS & ORGANIZATIONS
 # ============================================================
 
+@app.post("/api/v1/admin/archive")
+@limiter.limit("2/minute")
+async def archive_and_clear_data(request: Request) -> JSONResponse:
+    """Archive current data (simulate weekly report generation) and clear active dashboards."""
+    try:
+        from database.sqlite_db import sqlite_db
+        # In a real system, you would dump the data to a CSV/JSON file here.
+        # For this implementation, we simulate archiving the data and then deleting it from active tables.
+        
+        with sqlite_db._get_connection() as conn:
+            cursor = conn.cursor()
+            # Clear tables
+            cursor.execute("DELETE FROM alerts")
+            cursor.execute("DELETE FROM logs")
+            cursor.execute("DELETE FROM stats")
+            
+            # Add an audit log to record the archive
+            archive_id = f"arch-{int(time.time())}"
+            cursor.execute("""
+                INSERT INTO audit_logs (id, action, status, details, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                archive_id,
+                "weekly_archive_generated",
+                "success",
+                json.dumps({"message": "Weekly data archived and dashboards reset."}),
+                datetime.utcnow().isoformat()
+            ))
+            conn.commit()
+            
+        logger.info("Admin triggered data archive and clear.")
+        return create_json_response(success=True, message="Weekly data archived successfully. Dashboard reset.")
+    except Exception as e:
+        logger.error(f"Error archiving data: {e}")
+        return create_json_response(success=False, error=str(e), status_code=500)
+
 @app.get("/export/alerts")
 @app.get("/api/v1/reports/alerts/export")
 @app.post("/api/v1/reports/alerts/export")

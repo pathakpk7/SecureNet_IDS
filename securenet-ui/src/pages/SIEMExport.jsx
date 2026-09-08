@@ -22,19 +22,21 @@ const SIEMExport = () => {
 
   const fetchConnectors = async () => {
     try {
-      // This would call the backend API when implemented
-      // For now, using mock data
-      setConnectors([
-        {
-          id: 1,
-          name: 'splunk-primary',
-          type: 'splunk',
-          connected: true,
-          last_export: '2026-07-02T10:00:00Z'
+      const res = await fetch('http://localhost:8000/api/v1/siem/connectors', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }
-      ]);
+      });
+      if (res.ok) {
+        const body = await res.json();
+        const data = Array.isArray(body) ? body : (body.data || []);
+        setConnectors(data);
+      } else {
+        setConnectors([]);
+      }
     } catch (error) {
-      toast.error('Failed to fetch SIEM connectors');
+      console.debug('SIEM connectors endpoint not available:', error);
+      setConnectors([]);
     }
   };
 

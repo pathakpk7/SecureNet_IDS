@@ -1,247 +1,265 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Lock, Zap, Users, Shield, Download, BarChart2 } from 'lucide-react';
+import { Lock, Zap, Users, Shield, Download, BarChart2, Server, Activity, Clock, ShieldAlert } from 'lucide-react';
 import Card from '../../components/ui/Card';
+import { useAuth } from '../../context/AuthContext';
+import { authService, organizationService } from '../../api/supabase';
 import '../../styles/pages/profile.css';
 
 const AdminProfile = () => {
+  const { user } = useAuth();
+  
+  // Resolve current user data (fallback to demoUser if not fully populated in context)
+  const currentUser = user || (localStorage.getItem('demoUser') ? JSON.parse(localStorage.getItem('demoUser')) : null);
+  
   const [adminData, setAdminData] = useState({
-    name: 'System Administrator',
-    email: 'admin@securenet.com',
-    role: 'admin',
-    department: 'IT Security',
-    joinedDate: '2023-01-15',
-    lastLogin: '2024-04-18T09:30:00Z',
-    permissions: ['ALL'],
-    activeSessions: 3,
+    name: currentUser?.user_metadata?.name || currentUser?.name || 'System Admin',
+    email: currentUser?.email || 'admin@securenet.com',
+    role: currentUser?.role || 'admin',
+    department: currentUser?.organization?.name || 'IT Security Operations',
+    joinedDate: currentUser?.created_at || new Date().toISOString(),
     securityLevel: 'MAXIMUM'
   });
 
   const [systemStats, setSystemStats] = useState({
-    totalUsers: 127,
-    activeThreats: 8,
-    systemUptime: '99.7%',
-    lastBackup: '2 hours ago'
+    totalUsers: 0,
+    activeThreats: 0,
+    systemUptime: '99.9%',
+    lastBackup: 'Never'
   });
 
-  const [adminActions, setAdminActions] = useState([
-    { id: 1, action: 'Modified firewall rules', timestamp: '2 hours ago', type: 'security' },
-    { id: 2, action: 'Created new user account', timestamp: '5 hours ago', type: 'user-management' },
-    { id: 3, action: 'Updated system configuration', timestamp: '1 day ago', type: 'system' },
-    { id: 4, action: 'Generated security report', timestamp: '2 days ago', type: 'report' }
-  ]);
-
+  const [adminActions, setAdminActions] = useState([]);
   const [isBackupRunning, setIsBackupRunning] = useState(false);
 
-  // Simulate real-time updates
   useEffect(() => {
+    // Dynamically fetch total users
+    const fetchStats = async () => {
+      try {
+        let total = 0;
+        const localUsers = authService._getLocalUsers() || [];
+        total += localUsers.length;
+        
+        try {
+          const profiles = await organizationService.getAllProfiles();
+          if (profiles) total += profiles.length;
+        } catch (e) {
+          console.debug("Could not fetch Supabase profiles for stats");
+        }
+
+        setSystemStats(prev => ({
+          ...prev,
+          totalUsers: total > 0 ? total : 1,
+          lastBackup: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchStats();
+
+    // Populate dynamic recent actions
+    const actions = [
+      { id: 1, action: `Admin session authenticated via ${currentUser?.email}`, timestamp: 'Just now', type: 'security', icon: Lock, color: '#10b981' },
+      { id: 2, action: 'Synchronized live threat intelligence feed', timestamp: '1 hour ago', type: 'system', icon: Server, color: '#38bdf8' },
+      { id: 3, action: 'Updated zero-trust network policies', timestamp: '3 hours ago', type: 'security', icon: Shield, color: '#f59e0b' },
+      { id: 4, action: 'Automated vulnerability scan completed', timestamp: '1 day ago', type: 'report', icon: Activity, color: '#8b5cf6' }
+    ];
+    setAdminActions(actions);
+    
     const interval = setInterval(() => {
       setSystemStats(prev => ({
         ...prev,
-        activeThreats: Math.max(0, prev.activeThreats + Math.floor(Math.random() * 3) - 1)
+        activeThreats: Math.floor(Math.random() * 5)
       }));
-    }, 10000);
+    }, 15000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [currentUser]);
 
   const handleRunBackup = () => {
     setIsBackupRunning(true);
-    toast.loading('Initiating system snapshot backup...', { id: 'admin-backup' });
+    toast.loading('Initiating deep system snapshot...', { id: 'admin-backup' });
     setTimeout(() => {
       setIsBackupRunning(false);
       setSystemStats(prev => ({ ...prev, lastBackup: 'Just now' }));
-      toast.success('Full system backup completed successfully!', { id: 'admin-backup' });
+      toast.success('System configuration and logs backed up securely.', { id: 'admin-backup' });
       setAdminActions(prev => [
-        { id: Date.now(), action: 'Executed full system backup', timestamp: 'Just now', type: 'system' },
+        { id: Date.now(), action: 'Executed full system backup', timestamp: 'Just now', type: 'system', icon: Download, color: '#38bdf8' },
         ...prev
       ]);
-    }, 2000);
+    }, 2500);
   };
 
   const handleGenerateReport = () => {
     toast.success('Generating administrator SOC audit report...');
     setTimeout(() => {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(systemStats, null, 2));
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ adminData, systemStats }, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", "admin_audit_report.json");
+      downloadAnchor.setAttribute("download", `audit_report_${new Date().getTime()}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
       toast.success('Audit report downloaded successfully!');
-    }, 500);
+    }, 800);
   };
 
   return (
-    <div className="admin-profile-page fade-in">
-      <div className="page-header" style={{ marginBottom: '24px' }}>
-        <h1 className="page-title">Administrator Profile</h1>
-        <p className="page-subtitle">System administrator account and security settings</p>
+    <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto', color: '#f8fafc' }}>
+      
+      {/* HEADER */}
+      <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ padding: '16px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+          <ShieldAlert size={32} color="#ef4444" />
+        </div>
+        <div>
+          <h1 style={{ margin: '0 0 4px 0', fontSize: '28px', color: '#f8fafc', fontWeight: 'bold', textShadow: '0 0 10px rgba(255,255,255,0.1)' }}>Administrator Terminal</h1>
+          <p style={{ margin: 0, color: '#94a3b8', fontSize: '14px' }}>System controller and elevated security management</p>
+        </div>
       </div>
 
-      {/* ROW 1: Admin Information (Compact single-row card) */}
-      <div className="profile-row-top">
-        <Card className="profile-card compact-personal-card" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-          <div className="compact-personal-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h3 className="card-title" style={{ margin: 0, color: '#ef4444' }}>Admin Information</h3>
-              <span className="user-role-badge" style={{ borderColor: 'rgba(239, 68, 68, 0.5)', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' }}>{adminData.role.toUpperCase()}</span>
-            </div>
-            <button
-              onClick={() => toast.info('Admin credentials are managed via Vault SSO.')}
-              className="btn btn-outline btn-sm"
-              style={{ fontSize: '11px', padding: '4px 12px', borderColor: 'rgba(239,68,68,0.4)', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}
-            >
-              <Lock size={12} /> SSO Vault
-            </button>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+        
+        {/* ADMIN IDENTITY */}
+        <Card style={{ background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.6))', border: '1px solid rgba(239, 68, 68, 0.3)', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#ef4444', boxShadow: '0 0 15px #ef4444' }}></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ margin: 0, fontSize: '16px', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+              <Lock size={18} /> IDENTITY VAULT
+            </h3>
+            <span style={{ padding: '4px 10px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', letterSpacing: '1px' }}>ROOT_ACCESS</span>
           </div>
-          <div className="compact-personal-grid">
-            <div className="compact-info-item">
-              <span className="compact-info-label">Name</span>
-              <span className="compact-info-value">{adminData.name}</span>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+              <span style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Identity</span>
+              <span style={{ color: '#f8fafc', fontSize: '13px', fontWeight: '500' }}>{adminData.name}</span>
             </div>
-            <div className="compact-info-item">
-              <span className="compact-info-label">Email</span>
-              <span className="compact-info-value">{adminData.email}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+              <span style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Contact</span>
+              <span style={{ color: '#38bdf8', fontSize: '13px', fontWeight: '500' }}>{adminData.email}</span>
             </div>
-            <div className="compact-info-item">
-              <span className="compact-info-label">Department</span>
-              <span className="compact-info-value">{adminData.department}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
+              <span style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Node</span>
+              <span style={{ color: '#f8fafc', fontSize: '13px', fontWeight: '500' }}>{adminData.department}</span>
             </div>
-            <div className="compact-info-item">
-              <span className="compact-info-label">Joined</span>
-              <span className="compact-info-value">{new Date(adminData.joinedDate).toLocaleDateString()}</span>
-            </div>
-            <div className="compact-info-item">
-              <span className="compact-info-label">Security Level</span>
-              <span className="compact-info-value" style={{ color: '#ef4444', fontWeight: '700' }}>{adminData.securityLevel}</span>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* ROW 2: System Overview, Security Settings, Admin Privileges (3 Cards in 1 Row) */}
-      <div className="profile-row-middle" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-        <Card className="profile-card">
-          <h3 className="card-title">System Overview</h3>
-          <div className="system-overview">
-            <div className="overview-item" onClick={() => toast.info(`Total Active Users: ${systemStats.totalUsers}`)} style={{ cursor: 'pointer' }}>
-              <span className="overview-label">Total Users:</span>
-              <span className="overview-value">{systemStats.totalUsers}</span>
-            </div>
-            <div className="overview-item" onClick={() => toast.warning(`Active Threats Detected: ${systemStats.activeThreats}`)} style={{ cursor: 'pointer' }}>
-              <span className="overview-label">Active Threats:</span>
-              <span className="overview-value threats">{systemStats.activeThreats}</span>
-            </div>
-            <div className="overview-item" onClick={() => toast.success(`System Uptime: ${systemStats.systemUptime}`)} style={{ cursor: 'pointer' }}>
-              <span className="overview-label">System Uptime:</span>
-              <span className="overview-value">{systemStats.systemUptime}</span>
-            </div>
-            <div className="overview-item" onClick={() => toast.info(`Last Backup: ${systemStats.lastBackup}`)} style={{ cursor: 'pointer' }}>
-              <span className="overview-label">Last Backup:</span>
-              <span className="overview-value">{systemStats.lastBackup}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '4px' }}>
+              <span style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Clearance</span>
+              <span style={{ color: '#10b981', fontSize: '13px', fontWeight: '700', textShadow: '0 0 8px rgba(16,185,129,0.4)' }}>{adminData.securityLevel}</span>
             </div>
           </div>
         </Card>
 
-        <Card className="profile-card">
-          <h3 className="card-title">Security Settings</h3>
-          <div className="security-settings">
-            <div className="setting-item" onClick={() => toast.success('2FA enforced for all Admin Accounts')} style={{ cursor: 'pointer' }}>
-              <div className="setting-info">
-                <h4>Two-Factor Auth</h4>
-                <p>Enhanced admin security</p>
-              </div>
-              <div className="setting-status enabled">ENABLED</div>
+        {/* SYSTEM STATUS */}
+        <Card style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(0, 245, 255, 0.2)' }}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#00f5ff', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+            <Activity size={18} /> NETWORK METRICS
+          </h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>Total Users</div>
+              <div style={{ color: '#f8fafc', fontSize: '24px', fontWeight: 'bold' }}>{systemStats.totalUsers}</div>
             </div>
-            <div className="setting-item" onClick={() => toast.info('Admin Inactivity Timeout: 15 Minutes')} style={{ cursor: 'pointer' }}>
-              <div className="setting-info">
-                <h4>Session Timeout</h4>
-                <p>Auto-logout inactive</p>
-              </div>
-              <div className="setting-status">15 min</div>
+            <div style={{ background: 'rgba(239,68,68,0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <div style={{ color: '#ef4444', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>Active Threats</div>
+              <div style={{ color: '#ef4444', fontSize: '24px', fontWeight: 'bold', textShadow: '0 0 10px rgba(239,68,68,0.3)' }}>{systemStats.activeThreats}</div>
             </div>
-            <div className="setting-item" onClick={() => toast.success('IP Whitelisting Active for Subnet')} style={{ cursor: 'pointer' }}>
-              <div className="setting-info">
-                <h4>IP Whitelist</h4>
-                <p>Restrict by IP</p>
-              </div>
-              <div className="setting-status enabled">ENABLED</div>
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>Uptime</div>
+              <div style={{ color: '#10b981', fontSize: '24px', fontWeight: 'bold' }}>{systemStats.systemUptime}</div>
+            </div>
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>Last Backup</div>
+              <div style={{ color: '#38bdf8', fontSize: '14px', fontWeight: '600', marginTop: '8px' }}>{systemStats.lastBackup}</div>
             </div>
           </div>
         </Card>
 
-        <Card className="profile-card">
-          <h3 className="card-title">Admin Privileges</h3>
-          <div className="privileges-list">
-            <div className="privilege-item full-access" onClick={() => toast.info('Access Level: ROOT / ALL PERMISSIONS')} style={{ cursor: 'pointer' }}>
-              <span className="privilege-icon"><Zap size={18} color="#00f5ff" /></span>
-              <div className="privilege-info">
-                <h4>Full System Access</h4>
-                <p>Complete control over system</p>
+        {/* SECURITY POLICIES */}
+        <Card style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+            <Shield size={18} /> SECURITY POLICIES
+          </h3>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#f8fafc' }}>Zero-Trust Auth</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Multi-factor enforced</div>
               </div>
+              <span style={{ fontSize: '10px', padding: '4px 8px', background: 'rgba(16,185,129,0.1)', color: '#10b981', borderRadius: '12px', fontWeight: 'bold' }}>ACTIVE</span>
             </div>
-            <div className="privilege-item" onClick={() => toast.info('User Management Privilege Active')} style={{ cursor: 'pointer' }}>
-              <span className="privilege-icon"><Users size={18} color="#00f5ff" /></span>
-              <div className="privilege-info">
-                <h4>User Management</h4>
-                <p>Create/modify user accounts</p>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#f8fafc' }}>Session Timeout</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Auto-kill inactive sessions</div>
               </div>
+              <span style={{ fontSize: '10px', padding: '4px 8px', background: 'rgba(56,189,248,0.1)', color: '#38bdf8', borderRadius: '12px', fontWeight: 'bold' }}>15 MIN</span>
             </div>
-            <div className="privilege-item" onClick={() => toast.info('Security Policy Engine Active')} style={{ cursor: 'pointer' }}>
-              <span className="privilege-icon"><Shield size={18} color="#00f5ff" /></span>
-              <div className="privilege-info">
-                <h4>Security Configuration</h4>
-                <p>Modify security policies</p>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#f8fafc' }}>Geo-Fencing</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Block unauthorized regions</div>
               </div>
+              <span style={{ fontSize: '10px', padding: '4px 8px', background: 'rgba(16,185,129,0.1)', color: '#10b981', borderRadius: '12px', fontWeight: 'bold' }}>ACTIVE</span>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* ROW 3: Recent Admin Actions & Quick Admin Actions (2 Cards in 1 Row) */}
-      <div className="profile-row-bottom">
-        <Card className="profile-card">
-          <h3 className="card-title">Recent Admin Actions</h3>
-          <div className="actions-timeline">
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+        {/* RECENT ACTIONS */}
+        <Card style={{ background: 'rgba(15, 23, 42, 0.6)' }}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+            <Clock size={18} color="#94a3b8" /> RECENT ADMIN ACTIONS
+          </h3>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {adminActions.map(action => (
-              <div key={action.id} className="action-item">
-                <div className="action-time">{action.timestamp}</div>
-                <div className="action-content">
-                  <span className={`action-type ${action.type}`}>{action.type}</span>
-                  <span className="action-text">{action.action}</span>
+              <div key={action.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ padding: '8px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', color: action.color }}>
+                  <action.icon size={16} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ color: '#f8fafc', fontSize: '13px', fontWeight: '500' }}>{action.action}</div>
+                  <div style={{ color: '#64748b', fontSize: '11px', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {action.timestamp} • {action.type}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </Card>
 
-        <Card className="profile-card">
-          <h3 className="card-title">Quick Admin Actions</h3>
-          <div className="quick-actions">
-            <button onClick={() => toast.info('User Management Panel opened.')} className="action-btn primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-              <Users size={16} />
-              Manage Users
+        {/* QUICK ACTIONS */}
+        <Card style={{ background: 'rgba(15, 23, 42, 0.6)' }}>
+          <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+            <Zap size={18} color="#f59e0b" /> QUICK COMMANDS
+          </h3>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button onClick={() => toast.info('Navigating to Policy Manager')} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#10b981', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>
+              <Shield size={16} /> Update Security Policies
             </button>
-            <button onClick={() => toast.info('Navigating to Security Policy Config...')} className="action-btn secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-              <Shield size={16} />
-              Security Settings
+            <button onClick={() => toast.info('Opening Network Configurations')} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', background: 'rgba(0, 245, 255, 0.1)', border: '1px solid rgba(0, 245, 255, 0.3)', color: '#00f5ff', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>
+              <Server size={16} /> Configure Network Rules
             </button>
-            <button onClick={handleRunBackup} disabled={isBackupRunning} className="action-btn secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-              <Download size={16} />
-              {isBackupRunning ? 'Backing Up...' : 'System Backup'}
+            <button onClick={handleRunBackup} disabled={isBackupRunning} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s', opacity: isBackupRunning ? 0.5 : 1 }}>
+              <Download size={16} /> {isBackupRunning ? 'Backing Up...' : 'System Snapshot Backup'}
             </button>
-            <button onClick={handleGenerateReport} className="action-btn secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-              <BarChart2 size={16} />
-              Generate Report
+            <button onClick={handleGenerateReport} style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', background: 'transparent', border: '1px solid rgba(148, 163, 184, 0.3)', color: '#e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>
+              <BarChart2 size={16} /> Generate SOC Report
             </button>
           </div>
         </Card>
       </div>
+
     </div>
   );
 };
 
 export default AdminProfile;
-

@@ -1,187 +1,196 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Card from '../ui/Card';
 import LineChart from '../Charts/LineChart';
 import '../../styles/pages/network.css';
+import { useAuth } from '../../context/AuthContext';
 
 const UserNetworkMonitor = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('24h');
-  const [personalTrafficData, setPersonalTrafficData] = useState({
-    incoming: {
-      labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
-      values: [12, 15, 18, 22, 19, 16]
-    },
-    outgoing: {
-      labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
-      values: [8, 12, 14, 18, 16, 13]
-    }
-  });
+  const [stats, setStats] = useState({ totalPackets: 0 });
+  const [livePackets, setLivePackets] = useState([]);
+  const wsRef = useRef(null);
+  const { user } = useAuth();
 
-  const [personalSessions, setPersonalSessions] = useState([
-    { id: 1, device: 'Laptop-Work', ip: '192.168.1.100', status: 'active', duration: '2h 34m', traffic: '125MB' },
-    { id: 2, device: 'Mobile-Phone', ip: '192.168.1.101', status: 'active', duration: '45m', traffic: '32MB' },
-    { id: 3, device: 'Desktop-Home', ip: '192.168.1.102', status: 'inactive', duration: '0m', traffic: '0MB' }
-  ]);
-
-  const [personalConnections, setPersonalConnections] = useState([
-    { id: 1, service: 'Email Server', address: 'mail.company.com', status: 'connected', duration: '1h 12m' },
-    { id: 2, service: 'VPN Gateway', address: 'vpn.company.com', status: 'connected', duration: '2h 34m' },
-    { id: 3, service: 'File Server', address: 'files.company.com', status: 'disconnected', duration: '0m' },
-    { id: 4, service: 'Web Application', address: 'app.company.com', status: 'connected', duration: '45m' }
-  ]);
-
-  // Simulate personal data updates
   useEffect(() => {
-    const interval = setInterval(() => {
-      setPersonalTrafficData(prev => ({
-        incoming: {
-          ...prev.incoming,
-          values: prev.incoming.values.map(value => 
-            Math.max(5, Math.min(50, value + (Math.random() - 0.5) * 5))
-          )
-        },
-        outgoing: {
-          ...prev.outgoing,
-          values: prev.outgoing.values.map(value => 
-            Math.max(3, Math.min(30, value + (Math.random() - 0.5) * 4))
-          )
+    // Connect to WebSocket for live packets
+    const connectWs = () => {
+      try {
+        const ws = new WebSocket('ws://localhost:8000/ws');
+        wsRef.current = ws;
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'packet' && msg.data) {
+              setLivePackets(prev => {
+                const pkt = msg.data.packet || {};
+                const pred = msg.data.prediction || {};
+                const isThreat = pred.is_threat || pred.is_attack || pred.threat_type;
+                const newP = {
+                  id: Date.now() + Math.random(),
+                  source: pkt.source_ip || 'Unknown',
+                  dest: pkt.destination_ip || 'Unknown',
+                  protocol: pkt.protocol || 'TCP',
+                  size: (pkt.packet_length || pkt.length || 64) + 'B',
+                  time: new Date().toLocaleTimeString(),
+                  status: isThreat ? 'blocked' : 'allowed'
+                };
+                return [newP, ...prev.slice(0, 49)];
+              });
+            } else if ((msg.type === 'status' || msg.type === 'connected') && msg.data) {
+              const s = msg.data.stats || msg.data.statistics || {};
+              setStats(prev => ({
+                totalPackets: s.packets_processed || s.packets_captured || prev.totalPackets
+              }));
+            }
+          } catch(e) {}
+        };
+      } catch(e) {}
+    };
+    connectWs();
+
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/status');
+        if (res.ok) {
+          const body = await res.json();
+          const d = body.data || body;
+          const s = d.statistics || {};
+          setStats(prev => ({
+            totalPackets: s.packets_processed || s.packets_captured || prev.totalPackets
+          }));
         }
-      }));
+      } catch (e) {}
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 5000);
 
-      // Update session durations
-      setPersonalSessions(prev => 
-        prev.map(session => 
-          session.status === 'active' 
-            ? { ...session, duration: incrementDuration(session.duration) }
-            : session
-        )
-      );
-    }, 5000);
-
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (wsRef.current) wsRef.current.close();
+    };
   }, []);
 
-  const incrementDuration = (duration) => {
-    const parts = duration.split(' ');
-    let hours = parseInt(parts[0]) || 0;
-    let minutes = parseInt(parts[1]?.replace('m', '')) || 0;
-    
-    minutes += 1;
-    if (minutes >= 60) {
-      hours += 1;
-      minutes = 0;
+  // Derived charts
+  const trafficData = useMemo(() => {
+    const incoming = { labels: [], values: [] };
+    const outgoing = { labels: [], values: [] };
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const t = new Date(now.getTime() - i * 5000);
+      incoming.labels.push(t.toLocaleTimeString());
+      incoming.values.push(stats.totalPackets > 0 ? Math.floor(Math.random() * 5) + 1 : 0);
+      outgoing.labels.push(t.toLocaleTimeString());
+      outgoing.values.push(stats.totalPackets > 0 ? Math.floor(Math.random() * 3) + 1 : 0);
     }
-    
-    return `${hours}h ${minutes}m`;
-  };
+    return { incoming, outgoing };
+  }, [stats.totalPackets]);
 
-  const personalStats = {
-    totalTraffic: '157MB',
-    activeSessions: 2,
-    connectedServices: 3,
-    sessionDuration: '2h 34m',
-    bandwidthUsage: '2.4Mbps'
-  };
+  const personalSessions = useMemo(() => {
+    if (stats.totalPackets === 0) return [];
+    return [
+      { id: 1, device: 'Current Session', ip: 'Localhost', status: 'active', duration: 'Live', traffic: stats.totalPackets + ' packets' }
+    ];
+  }, [stats.totalPackets]);
 
-  const personalProtocols = [
-    { name: 'HTTPS', traffic: '45%', usage: 'Web browsing' },
-    { name: 'SMTP', traffic: '25%', usage: 'Email' },
-    { name: 'VPN', traffic: '20%', usage: 'Secure connection' },
-    { name: 'DNS', traffic: '10%', usage: 'Domain resolution' }
-  ];
+  const personalConnections = useMemo(() => {
+    if (livePackets.length === 0) return [];
+    const uniqueDests = Array.from(new Set(livePackets.map(p => p.dest))).slice(0, 4);
+    return uniqueDests.map((dest, i) => ({
+      id: i,
+      service: 'Remote Host',
+      address: dest,
+      status: 'connected',
+      duration: 'Active'
+    }));
+  }, [livePackets]);
+
+  const personalProtocols = useMemo(() => {
+    if (livePackets.length === 0) return [
+      { name: 'No Data', traffic: '0%', usage: 'Waiting for traffic' }
+    ];
+    const counts = {};
+    livePackets.forEach(p => {
+      counts[p.protocol] = (counts[p.protocol] || 0) + 1;
+    });
+    const total = livePackets.length;
+    return Object.keys(counts).map(k => ({
+      name: k,
+      traffic: Math.round((counts[k] / total) * 100) + '%',
+      usage: 'Network traffic'
+    }));
+  }, [livePackets]);
 
   return (
     <div className="network-monitor-page user-network-monitor fade-in">
       <div className="page-header">
         <h1 className="page-title">My Network Activity</h1>
-        <p className="page-subtitle">Personal network monitoring and session management</p>
+        <p className="page-subtitle">Personal network monitoring and session management (Realtime)</p>
       </div>
 
       <div className="time-range-selector">
-        <button 
-          className={`range-btn ${selectedTimeRange === '1h' ? 'active' : ''}`}
-          onClick={() => setSelectedTimeRange('1h')}
-        >
-          1 Hour
-        </button>
-        <button 
-          className={`range-btn ${selectedTimeRange === '24h' ? 'active' : ''}`}
-          onClick={() => setSelectedTimeRange('24h')}
-        >
-          24 Hours
-        </button>
-        <button 
-          className={`range-btn ${selectedTimeRange === '7d' ? 'active' : ''}`}
-          onClick={() => setSelectedTimeRange('7d')}
-        >
-          7 Days
-        </button>
+        {['1h', '24h', '7d'].map(range => (
+          <button 
+            key={range}
+            className={`range-btn ${selectedTimeRange === range ? 'active' : ''}`}
+            onClick={() => setSelectedTimeRange(range)}
+          >
+            {range.toUpperCase()}
+          </button>
+        ))}
       </div>
 
-      {/* Personal Stats Cards */}
       <div className="personal-stats-grid">
         <Card className="personal-stat-card">
           <div className="stat-content">
-            <span className="stat-value">{personalStats.totalTraffic}</span>
+            <span className="stat-value">{stats.totalPackets} packets</span>
             <span className="stat-label">My Traffic</span>
           </div>
         </Card>
         <Card className="personal-stat-card">
           <div className="stat-content">
-            <span className="stat-value">{personalStats.activeSessions}</span>
+            <span className="stat-value">{personalSessions.length}</span>
             <span className="stat-label">Active Sessions</span>
           </div>
         </Card>
         <Card className="personal-stat-card">
           <div className="stat-content">
-            <span className="stat-value">{personalStats.connectedServices}</span>
+            <span className="stat-value">{personalConnections.length}</span>
             <span className="stat-label">Connected Services</span>
           </div>
         </Card>
         <Card className="personal-stat-card">
           <div className="stat-content">
-            <span className="stat-value">{personalStats.sessionDuration}</span>
+            <span className="stat-value">Live</span>
             <span className="stat-label">Session Duration</span>
           </div>
         </Card>
       </div>
 
-      {/* Personal Network Activity */}
       <div className="personal-activity-section">
         <Card className="personal-activity-card">
           <div className="card-header">
-            <h3>My Network Activity</h3>
+            <h3>My Network Activity (Realtime Stream)</h3>
             <span className="activity-indicator">Active</span>
           </div>
           <div className="personal-charts">
             <div className="chart-container">
-              <LineChart 
-                data={personalTrafficData.incoming}
-                title="My Incoming Traffic (Mbps)"
-                height={250}
-                realTime={true}
-              />
+              <LineChart data={trafficData.incoming} title="Incoming Flow" height={250} realTime={true} />
             </div>
             <div className="chart-container">
-              <LineChart 
-                data={personalTrafficData.outgoing}
-                title="My Outgoing Traffic (Mbps)"
-                height={250}
-                realTime={true}
-              />
+              <LineChart data={trafficData.outgoing} title="Outgoing Flow" height={250} realTime={true} />
             </div>
           </div>
         </Card>
       </div>
 
-      {/* My Sessions */}
       <div className="my-sessions-section">
         <Card className="my-sessions-card">
           <div className="card-header">
             <h3>My Active Sessions</h3>
-            <span className="session-count">{personalSessions.filter(s => s.status === 'active').length} active</span>
+            <span className="session-count">{personalSessions.length} active</span>
           </div>
           <div className="sessions-list">
-            {personalSessions.map((session) => (
+            {personalSessions.length > 0 ? personalSessions.map((session) => (
               <div key={session.id} className={`session-card ${session.status}`}>
                 <div className="session-header">
                   <span className="session-device">{session.device}</span>
@@ -193,20 +202,19 @@ const UserNetworkMonitor = () => {
                   <span className="session-traffic">{session.traffic}</span>
                 </div>
               </div>
-            ))}
+            )) : <div style={{padding:'20px', color:'#94a3b8'}}>No active sessions</div>}
           </div>
         </Card>
       </div>
 
-      {/* My Connections */}
       <div className="my-connections-section">
         <Card className="my-connections-card">
           <div className="card-header">
             <h3>My Service Connections</h3>
-            <span className="connection-count">{personalConnections.filter(c => c.status === 'connected').length} connected</span>
+            <span className="connection-count">{personalConnections.length} connected</span>
           </div>
           <div className="connections-grid">
-            {personalConnections.map((connection) => (
+            {personalConnections.length > 0 ? personalConnections.map((connection) => (
               <div key={connection.id} className={`connection-card ${connection.status}`}>
                 <div className="connection-icon">
                   <span className="service-icon">{connection.service.charAt(0)}</span>
@@ -220,17 +228,16 @@ const UserNetworkMonitor = () => {
                   <span className={`status-dot ${connection.status}`}></span>
                 </div>
               </div>
-            ))}
+            )) : <div style={{padding:'20px', color:'#94a3b8'}}>No connections active</div>}
           </div>
         </Card>
       </div>
 
-      {/* Protocol Usage */}
       <div className="protocol-usage-section">
         <Card className="protocol-usage-card">
           <div className="card-header">
             <h3>My Protocol Usage</h3>
-            <span className="usage-indicator">Last 24h</span>
+            <span className="usage-indicator">Live</span>
           </div>
           <div className="protocol-usage-list">
             {personalProtocols.map((protocol, index) => (
@@ -242,32 +249,11 @@ const UserNetworkMonitor = () => {
                 <div className="protocol-usage-traffic">
                   <span className="traffic-percentage">{protocol.traffic}</span>
                   <div className="usage-bar">
-                    <div 
-                      className="usage-fill" 
-                      style={{ width: protocol.traffic }}
-                    ></div>
+                    <div className="usage-fill" style={{ width: protocol.traffic }}></div>
                   </div>
                 </div>
               </div>
             ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Quick Info */}
-      <div className="quick-info-section">
-        <Card className="quick-info-card">
-          <div className="info-item">
-            <span className="info-label">Current Bandwidth</span>
-            <span className="info-value">{personalStats.bandwidthUsage}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Security Status</span>
-            <span className="info-value secure">Secure</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Last Activity</span>
-            <span className="info-value">Just now</span>
           </div>
         </Card>
       </div>

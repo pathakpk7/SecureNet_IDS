@@ -59,10 +59,8 @@ const EnhancedAdminPanel = () => {
         toast.error('Failed to fetch organizations');
       }
     } catch (error) {
-      console.error('Error fetching organizations:', error);
-      setOrganizations([
-        { id: 'demo-org-id', name: 'SecureNet Enterprise', slug: 'securenet-enterprise', plan: 'enterprise', is_active: true, created_at: new Date().toISOString() }
-      ]);
+      console.debug('Could not fetch organizations:', error);
+      setOrganizations([]);
     } finally {
       setLoading(false);
     }
@@ -85,10 +83,8 @@ const EnhancedAdminPanel = () => {
         toast.error('Failed to fetch users');
       }
     } catch (error) {
-      setUsers([
-        { id: '1', email: 'admin@securenet.com', name: 'Admin User', role: 'admin', org_id: 'demo-org-id', is_active: true, created_at: new Date().toISOString() },
-        { id: '2', email: 'analyst@securenet.com', name: 'Analyst', role: 'user', org_id: 'demo-org-id', is_active: true, created_at: new Date().toISOString() }
-      ]);
+      console.debug('Could not fetch users:', error);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
