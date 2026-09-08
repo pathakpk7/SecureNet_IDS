@@ -136,7 +136,7 @@ class DatabaseManager:
                     "source_ip": alert_dict["source_ip"],
                     "destination_ip": alert_dict["destination_ip"],
                     "protocol": alert_dict["protocol"],
-                    "timestamp": alert_dict["timestamp"],
+                    "detected_at": alert_dict["timestamp"],
                     "attack_type": alert_dict["attack_type"],
                     "risk_level": alert_dict["risk_level"],
                     "confidence": alert_dict["confidence"],
@@ -171,10 +171,10 @@ class DatabaseManager:
                     if risk_level:
                         query = query.eq("risk_level", risk_level)
                     if start_time:
-                        query = query.gte("timestamp", start_time.isoformat())
+                        query = query.gte("detected_at", start_time.isoformat())
                     if end_time:
-                        query = query.lte("timestamp", end_time.isoformat())
-                    return query.order("timestamp", desc=True).range(offset, offset + limit - 1).execute()
+                        query = query.lte("detected_at", end_time.isoformat())
+                    return query.order("detected_at", desc=True).range(offset, offset + limit - 1).execute()
                 response = await asyncio.to_thread(_fetch)
                 if response and response.data:
                     return response.data
@@ -220,7 +220,7 @@ class DatabaseManager:
             try:
                 table_name = DB_TABLES.get("logs", "ids_logs")
                 db_data = {
-                    "timestamp": log_dict["timestamp"],
+                    "logged_at": log_dict["timestamp"],
                     "level": log_dict["level"],
                     "message": log_dict["message"],
                     "source": log_dict["source"],
@@ -253,10 +253,10 @@ class DatabaseManager:
                     if level:
                         query = query.eq("level", level)
                     if start_time:
-                        query = query.gte("timestamp", start_time.isoformat())
+                        query = query.gte("detected_at", start_time.isoformat())
                     if end_time:
-                        query = query.lte("timestamp", end_time.isoformat())
-                    return query.order("timestamp", desc=True).range(offset, offset + limit - 1).execute()
+                        query = query.lte("detected_at", end_time.isoformat())
+                    return query.order("detected_at", desc=True).range(offset, offset + limit - 1).execute()
                 response = await asyncio.to_thread(_fetch_logs)
                 if response and response.data:
                     return response.data
@@ -361,7 +361,7 @@ class DatabaseManager:
             try:
                 table_name = DB_TABLES.get("stats", "ids_stats")
                 db_data = {
-                    "timestamp": stats_dict["timestamp"],
+                    "recorded_at": stats_dict["timestamp"],
                     "total_packets": stats_dict["total_packets"],
                     "malicious_packets": stats_dict["malicious_packets"],
                     "normal_packets": stats_dict["normal_packets"],
@@ -389,8 +389,8 @@ class DatabaseManager:
                 start_time = datetime.utcnow() - timedelta(hours=hours)
                 def _fetch_stats():
                     return self.supabase.table(table_name).select("*")\
-                        .gte("timestamp", start_time.isoformat())\
-                        .order("timestamp", desc=True)\
+                        .gte("detected_at", start_time.isoformat())\
+                        .order("detected_at", desc=True)\
                         .execute()
                 response = await asyncio.to_thread(_fetch_stats)
                 if response.data:
@@ -633,7 +633,7 @@ class DatabaseManager:
                 if user_id:
                     query = query.eq("user_id", user_id)
                 res = await asyncio.to_thread(
-                    lambda: query.order("timestamp", desc=True).range(offset, offset + limit - 1).execute()
+                    lambda: query.order("detected_at", desc=True).range(offset, offset + limit - 1).execute()
                 )
                 if res.data:
                     return res.data
