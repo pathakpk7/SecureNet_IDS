@@ -14,10 +14,10 @@ import '../styles/pages/dashboard.css';
 function Overview({ monitoringActive, onToggleMonitoring }) {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
-    totalPackets: 1240,
-    attacksDetected: 18,
-    blockedThreats: 14,
-    systemHealth: 99.8
+    totalPackets: 0,
+    attacksDetected: 0,
+    blockedThreats: 0,
+    systemHealth: 0
   });
 
   useEffect(() => {
@@ -36,10 +36,25 @@ function Overview({ monitoringActive, onToggleMonitoring }) {
               totalPackets: s.packets_captured || s.packets_processed || prev.totalPackets,
               attacksDetected: s.attacks_detected || prev.attacksDetected,
               blockedThreats: s.threat_intel_checks || prev.blockedThreats,
-              systemHealth: 99.8
+              systemHealth: prev.systemHealth
             }));
           }
         }
+
+        try {
+          const healthRes = await fetch('http://localhost:8000/health');
+          if (healthRes.ok) {
+            const healthData = await healthRes.json();
+            const h = healthData.data || healthData;
+            // Count healthy components
+            const components = h.components || {};
+            const total = Object.keys(components).length || 1;
+            const healthy = Object.values(components).filter(c => c === 'healthy' || c === true || c?.status === 'healthy').length;
+            if (isMounted) {
+              setStats(prev => ({ ...prev, systemHealth: total > 0 ? Math.round((healthy / total) * 100) : 0 }));
+            }
+          }
+        } catch(e) {}
       } catch (e) {
         // Fallback simulation counter increments
       }
@@ -67,7 +82,7 @@ function Overview({ monitoringActive, onToggleMonitoring }) {
               totalPackets: s.packets_captured || s.packets_processed || prev.totalPackets,
               attacksDetected: s.attacks_detected || prev.attacksDetected,
               blockedThreats: s.threat_intel_checks || prev.blockedThreats,
-              systemHealth: 99.8
+              systemHealth: prev.systemHealth
             }));
           }
         } catch (err) {}
@@ -165,6 +180,27 @@ function Overview({ monitoringActive, onToggleMonitoring }) {
 // Advanced Analytics (admin only)
 function AdvancedStats() {
   const navigate = useNavigate();
+  const [telemetry, setTelemetry] = useState(null);
+
+  useEffect(() => {
+    const fetchTelemetry = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/stats');
+        if (res.ok) {
+          const json = await res.json();
+          const data = json.data || json;
+          setTelemetry(data);
+        }
+      } catch (e) {}
+    };
+    fetchTelemetry();
+    const interval = setInterval(fetchTelemetry, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const avgLatency = telemetry?.performance_metrics?.avg_prediction_time;
+  const accuracy = telemetry?.model_info?.accuracy || telemetry?.accuracy;
+  const falsePositiveRate = telemetry?.performance_metrics?.false_positive_rate;
 
   return (
     <Card 
@@ -178,15 +214,15 @@ function AdvancedStats() {
       <div className="db-telemetry-list">
         <div className="db-telemetry-row">
           <span className="label">Classification Latency:</span>
-          <span className="val text-cyan">0.8ms</span>
+          <span className="val text-cyan">{avgLatency != null ? `${(avgLatency * 1000).toFixed(1)}ms` : '—'}</span>
         </div>
         <div className="db-telemetry-row">
           <span className="label">Detection Accuracy:</span>
-          <span className="val text-emerald">99.4%</span>
+          <span className="val text-emerald">{accuracy != null ? `${(accuracy * 100).toFixed(1)}%` : '—'}</span>
         </div>
         <div className="db-telemetry-row">
           <span className="label">False Positive Rate:</span>
-          <span className="val text-yellow">0.0%</span>
+          <span className="val text-yellow">{falsePositiveRate != null ? `${(falsePositiveRate * 100).toFixed(1)}%` : '—'}</span>
         </div>
       </div>
     </Card>
@@ -196,11 +232,31 @@ function AdvancedStats() {
 // User Activity
 function UserActivity() {
   const navigate = useNavigate();
-  const [userActivity] = useState([
-    { id: 1, user: 'Security Bot', action: 'Blacklisted IP 45.33.32.156', time: 'Just now' },
-    { id: 2, user: 'Analyst', action: 'Exported Executive Threat Report', time: '5 min ago' },
-    { id: 3, user: 'IDS Engine', action: 'Mitigated SYN Flood Burst', time: '12 min ago' }
-  ]);
+  const [userActivity, setUserActivity] = useState([]);
+  const [loadingActivity, setLoadingActivity] = useState(true);
+
+  useEffect(() => {
+    const fetchActivity = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/logs?limit=5');
+        if (res.ok) {
+          const json = await res.json();
+          const list = Array.isArray(json) ? json : (json.data || []);
+          const mapped = list.map((log, i) => ({
+            id: log.id || i,
+            user: log.source || 'System',
+            action: log.message || 'Activity logged',
+            time: log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : 'Recent'
+          }));
+          setUserActivity(mapped);
+        }
+      } catch (e) {}
+      setLoadingActivity(false);
+    };
+    fetchActivity();
+    const interval = setInterval(fetchActivity, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Card className="db-activity-card">
@@ -214,17 +270,23 @@ function UserActivity() {
         </button>
       </div>
       <div className="db-activity-list">
-        {userActivity.map(activity => (
-          <div 
-            key={activity.id} 
-            className="db-activity-item db-card-clickable"
-            onClick={() => navigate('/audit-logs')}
-          >
-            <span className="user">{activity.user}</span>
-            <span className="action">{activity.action}</span>
-            <span className="time">{activity.time}</span>
-          </div>
-        ))}
+        {loadingActivity ? (
+          <div style={{ textAlign: 'center', padding: '16px', color: '#64748b', fontSize: '13px' }}>Loading activity...</div>
+        ) : userActivity.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '16px', color: '#64748b', fontSize: '13px' }}>No recent activity — start monitoring to begin</div>
+        ) : (
+          userActivity.map(activity => (
+            <div 
+              key={activity.id} 
+              className="db-activity-item db-card-clickable"
+              onClick={() => navigate('/audit-logs')}
+            >
+              <span className="user">{activity.user}</span>
+              <span className="action">{activity.action}</span>
+              <span className="time">{activity.time}</span>
+            </div>
+          ))
+        )}
       </div>
     </Card>
   );

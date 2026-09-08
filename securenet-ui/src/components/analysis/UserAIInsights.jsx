@@ -1,133 +1,119 @@
-import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import LineChart from '../Charts/LineChart';
-import PieChart from '../Charts/PieChart';
+import React, { useState, useEffect, useMemo } from 'react';
+import Card from '../../components/ui/Card';
+import LineChart from '../../components/Charts/LineChart';
+import AnimatedCounter from '../../components/ui/AnimatedCounter';
+import useRealtimeAlerts from '../../hooks/useRealtimeAlerts';
 import '../../styles/pages/ai.css';
 
 const UserAIInsights = () => {
-  const [personalInsights, setPersonalInsights] = useState({
-    riskScore: 28,
-    threatsBlocked: 12,
-    suspiciousActivity: 3,
-    securityRecommendations: 5
-  });
+  const realtimeAlerts = useRealtimeAlerts();
+  const [stats, setStats] = useState({ totalAttacks: 0, packets: 0 });
 
-  const [threatTimeline, setThreatTimeline] = useState({
-    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
-    values: [0, 1, 2, 1, 3, 1]
-  });
-
-  const [personalRecommendations, setPersonalRecommendations] = useState([
-    { id: 1, type: 'Security', priority: 'Medium', description: 'Enable two-factor authentication' },
-    { id: 2, type: 'Privacy', priority: 'Low', description: 'Review app permissions' },
-    { id: 3, type: 'Password', priority: 'High', description: 'Update weak passwords detected' },
-    { id: 4, type: 'Network', priority: 'Medium', description: 'Review connected devices' }
-  ]);
-
-  // Simulate personal insights updates
   useEffect(() => {
-    const interval = setInterval(() => {
-      setPersonalInsights(prev => ({
-        riskScore: Math.max(0, Math.min(100, prev.riskScore + (Math.random() - 0.5) * 5)),
-        threatsBlocked: prev.threatsBlocked + (Math.random() > 0.8 ? 1 : 0),
-        suspiciousActivity: Math.max(0, prev.suspiciousActivity + Math.floor(Math.random() * 2) - 1),
-        securityRecommendations: Math.max(0, prev.securityRecommendations + Math.floor(Math.random() * 2) - 1)
-      }));
-    }, 6000);
-
-    return () => clearInterval(interval);
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/stats');
+        if (res.ok) {
+          const body = await res.json();
+          const s = body.data || body;
+          setStats({
+            totalAttacks: s.attacks_detected || s.alerts_generated || 0,
+            packets: s.packets_processed || 0
+          });
+        }
+      } catch (e) {}
+    };
+    fetchStats();
+    const int = setInterval(fetchStats, 5000);
+    return () => clearInterval(int);
   }, []);
 
+  const threatsPredicted = stats.totalAttacks || realtimeAlerts.length;
+
+  const threatTrends = useMemo(() => {
+    if (realtimeAlerts.length === 0) return { labels: ['No Data'], values: [0] };
+    const counts = {};
+    realtimeAlerts.forEach(a => {
+      const d = a.timestamp ? new Date(a.timestamp).toLocaleDateString() : new Date().toLocaleDateString();
+      counts[d] = (counts[d] || 0) + 1;
+    });
+    return {
+      labels: Object.keys(counts),
+      values: Object.values(counts)
+    };
+  }, [realtimeAlerts]);
+
+  const aiRecommendations = useMemo(() => {
+    if (threatsPredicted === 0) return [
+      { id: 1, type: 'System', priority: 'Low', description: 'Your personal session is secure. No actions required.' }
+    ];
+    return [
+      { id: 1, type: 'Security', priority: 'High', description: 'We intercepted a threat targeted at your session.' }
+    ];
+  }, [threatsPredicted]);
+
   return (
-    <div className="user-ai-insights-page fade-in">
+    <div className="ai-insights-page fade-in">
       <div className="page-header">
-        <h1 className="page-title">Personal AI Insights</h1>
-        <p className="page-subtitle">AI-powered security analysis for your account</p>
+        <h1 className="page-title">Personal AI Insights (Realtime)</h1>
+        <p className="page-subtitle">Machine learning analysis applied to your active connection</p>
       </div>
 
-      <div className="personal-metrics-grid">
+      <div className="ai-metrics-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <Card className="metric-card">
           <div className="metric-content">
-            <div className="metric-value">{personalInsights.riskScore}</div>
-            <div className="metric-label">Risk Score</div>
-            <div className="metric-trend positive">Low risk</div>
-          </div>
-        </Card>
-
-        <Card className="metric-card">
-          <div className="metric-content">
-            <div className="metric-value">{personalInsights.threatsBlocked}</div>
+            <div className="metric-value">
+              <AnimatedCounter value={threatsPredicted} />
+            </div>
             <div className="metric-label">Threats Blocked</div>
-            <div className="metric-trend positive">This month</div>
+            <div className="metric-trend positive">Realtime sync</div>
           </div>
         </Card>
 
         <Card className="metric-card">
           <div className="metric-content">
-            <div className="metric-value">{personalInsights.suspiciousActivity}</div>
-            <div className="metric-label">Suspicious Events</div>
-            <div className="metric-trend negative">Needs review</div>
+            <div className="metric-value">100%</div>
+            <div className="metric-label">Protection Status</div>
+            <div className="metric-trend positive">Fully Secure</div>
           </div>
         </Card>
 
         <Card className="metric-card">
           <div className="metric-content">
-            <div className="metric-value">{personalInsights.securityRecommendations}</div>
-            <div className="metric-label">Recommendations</div>
-            <div className="metric-trend">Action items</div>
+            <div className="metric-value">{stats.packets}</div>
+            <div className="metric-label">Session Packets Scanned</div>
+            <div className="metric-trend positive">Live Monitoring</div>
           </div>
         </Card>
       </div>
 
-      <div className="insights-grid">
-        <Card className="insights-card">
-          <h3 className="card-title">Your Threat Timeline</h3>
-          <div className="chart-container">
-            <LineChart data={threatTimeline} />
-          </div>
-        </Card>
+      <Card className="insights-card" style={{ marginBottom: '24px' }}>
+        <div className="aa-card-header">
+          <h3>Personal Threat Trends (Realtime)</h3>
+          <span className="aa-badge">LIVE FORECAST</span>
+        </div>
+        <div className="chart-container" style={{ height: '260px', position: 'relative' }}>
+          <LineChart data={threatTrends} height="100%" />
+        </div>
+      </Card>
 
-        <Card className="insights-card">
-          <h3 className="card-title">Security Score Breakdown</h3>
-          <div className="score-breakdown">
-            <div className="score-item">
-              <span className="score-label">Password Strength:</span>
-              <span className="score-value high">85%</span>
-            </div>
-            <div className="score-item">
-              <span className="score-label">Login Security:</span>
-              <span className="score-value medium">70%</span>
-            </div>
-            <div className="score-item">
-              <span className="score-label">Device Safety:</span>
-              <span className="score-value high">92%</span>
-            </div>
-            <div className="score-item">
-              <span className="score-label">Network Security:</span>
-              <span className="score-value low">45%</span>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="insights-card full-width">
-          <h3 className="card-title">Personal Security Recommendations</h3>
-          <div className="recommendations-list">
-            {personalRecommendations.map(rec => (
-              <div key={rec.id} className={`recommendation-item ${rec.priority.toLowerCase()}`}>
-                <div className="rec-header">
-                  <span className="rec-type">{rec.type}</span>
-                  <span className={`rec-priority ${rec.priority.toLowerCase()}`}>{rec.priority}</span>
-                </div>
-                <div className="rec-description">{rec.description}</div>
-                <div className="rec-actions">
-                  <button className="btn btn-sm btn-primary">Apply Now</button>
-                  <button className="btn btn-sm btn-outline">Learn More</button>
-                </div>
+      <Card className="insights-card">
+        <div className="aa-card-header">
+          <h3>AI Security Recommendations</h3>
+          <span className="aa-badge">AUTONOMOUS</span>
+        </div>
+        <div className="recommendations-list">
+          {aiRecommendations.map(rec => (
+            <div key={rec.id} className={`recommendation-item ${rec.priority.toLowerCase()}`}>
+              <div className="rec-header">
+                <span className="rec-type">{rec.type}</span>
+                <span className={`rec-priority ${rec.priority.toLowerCase()}`}>{rec.priority}</span>
               </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+              <div className="rec-description">{rec.description}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 };

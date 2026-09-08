@@ -13,7 +13,7 @@ export function useRealtimeAlerts() {
         if (res.ok) {
           const json = await res.json();
           const list = json?.data?.alerts || json?.data || [];
-          if (Array.isArray(list) && list.length > 0) {
+          if (Array.isArray(list)) {
             setAlerts(list);
             return;
           }
