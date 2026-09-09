@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://hegixktbwgbmnsszlrqm.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlZ2l4a3Rid2dibW5zc3pscnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTk4MDgsImV4cCI6MjA5MTAzNTgwOH0.Wc3NiXjGwkMyBkcG6F6rpsxRW2yxcUttvvSriVt8TZU'
+const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || 'https://hegixktbwgbmnsszlrqm.supabase.co'
+const supabaseKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlZ2l4a3Rid2dibW5zc3pscnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTk4MDgsImV4cCI6MjA5MTAzNTgwOH0.Wc3NiXjGwkMyBkcG6F6rpsxRW2yxcUttvvSriVt8TZU'
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
@@ -350,7 +350,15 @@ export const authService = {
         });
 
         if (error) {
-          console.warn("Supabase auth notice:", error.message);
+          console.warn("Supabase auth error notice:", error.message);
+          const msg = error.message?.toLowerCase() || '';
+          if (msg.includes('email not confirmed')) {
+            throw new Error("Your email has not been confirmed yet in Supabase. Please check your inbox for the confirmation link, or disable 'Confirm email' under Supabase Auth settings.");
+          }
+          if (msg.includes('invalid login credentials')) {
+            throw new Error("Incorrect password for this Supabase account. Please verify your password or use 'Forgot password?'.");
+          }
+          throw new Error(error.message || "Supabase authentication failed.");
         }
 
         if (data?.user) {
@@ -373,7 +381,8 @@ export const authService = {
           return { user: loggedInUser };
         }
       } catch (sbError) {
-        console.warn("Supabase auth check notice:", sbError.message);
+        console.error("Supabase auth error:", sbError);
+        throw sbError;
       }
 
       throw new Error("Invalid email or password. You can use the 1-Click Demo buttons above or register a new account below.");
