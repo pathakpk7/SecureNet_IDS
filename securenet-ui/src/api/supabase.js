@@ -299,43 +299,59 @@ export const authService = {
   },
 
   // Login with organization data
-  async login(email, password) {
+  async login(email, password, roleHint = 'user') {
     try {
-      console.log("Starting login for:", email);
-      
-      // 1. Check local registered users database
-      const localUsers = this._getLocalUsers();
-      const matchedLocalUser = localUsers.find(
-        u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-      );
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const cleanPass = (password || '').trim();
+      console.log("Starting login for:", cleanEmail);
 
-      if (matchedLocalUser) {
-        console.log("Local database authentication successful for:", email);
-        localStorage.setItem('demoUser', JSON.stringify(matchedLocalUser));
-        return { user: matchedLocalUser };
-      }
+      // 1. Check built-in default credentials first (instant, guaranteed entry!)
+      const isDefaultAdmin = 
+        (cleanEmail === 'admin@securenet.com' && cleanPass === 'admin123') ||
+        (cleanEmail === 'admin' && cleanPass === 'admin123') ||
+        (cleanEmail === 'admin@securenet.io' && cleanPass === 'admin123');
 
-      // 2. Check built-in demo credentials
-      if ((email === 'admin@securenet.com' && password === 'admin123') ||
-          (email === 'user@securenet.com' && password === 'user123')) {
-        const role = email === 'admin@securenet.com' ? 'admin' : 'user';
+      const isDefaultUser = 
+        (cleanEmail === 'user@securenet.com' && cleanPass === 'user123') ||
+        (cleanEmail === 'user' && cleanPass === 'user123') ||
+        (cleanEmail === 'operator@securenet.io' && cleanPass === 'user123');
+
+      if (isDefaultAdmin || isDefaultUser) {
+        const resolvedRole = isDefaultAdmin ? 'admin' : 'user';
         const demoUser = {
-          id: role === 'admin' ? 'demo-admin-id' : 'demo-user-id',
-          email,
-          role,
-          org_id: 'demo-org-id',
-          organization: { id: 'demo-org-id', name: 'Demo Organization' }
+          id: resolvedRole === 'admin' ? 'demo-admin-id' : 'demo-user-id',
+          email: resolvedRole === 'admin' ? 'admin@securenet.com' : 'user@securenet.com',
+          name: resolvedRole === 'admin' ? 'Security Administrator' : 'SOC Analyst Operator',
+          role: resolvedRole,
+          org_id: '00000000-0000-0000-0000-000000000001',
+          organization: { id: '00000000-0000-0000-0000-000000000001', name: 'SecureNet SOC Enterprise' }
         };
         localStorage.setItem('demoUser', JSON.stringify(demoUser));
         return { user: demoUser };
       }
-      
+
+      // 2. Check local registered users database
+      const localUsers = this._getLocalUsers();
+      const matchedLocalUser = localUsers.find(
+        u => (u.email || '').trim().toLowerCase() === cleanEmail && (u.password || '').trim() === cleanPass
+      );
+
+      if (matchedLocalUser) {
+        console.log("Local database authentication successful for:", cleanEmail);
+        localStorage.setItem('demoUser', JSON.stringify(matchedLocalUser));
+        return { user: matchedLocalUser };
+      }
+
       // 3. Try Supabase Auth
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
+          email: cleanEmail,
+          password: cleanPass
         });
+
+        if (error) {
+          console.warn("Supabase auth notice:", error.message);
+        }
 
         if (data?.user) {
           let profile = null;
@@ -347,18 +363,20 @@ export const authService = {
 
           const loggedInUser = {
             ...data.user,
-            role: profile?.role || 'user',
+            name: profile?.name || data.user.email?.split('@')[0] || 'User',
+            role: profile?.role || roleHint || 'user',
             org_id: profile?.org_id || null,
             organization: profile?.organizations || null
           };
-          this._saveLocalUser({ ...loggedInUser, password });
+          this._saveLocalUser({ ...loggedInUser, password: cleanPass });
+          localStorage.setItem('demoUser', JSON.stringify(loggedInUser));
           return { user: loggedInUser };
         }
       } catch (sbError) {
         console.warn("Supabase auth check notice:", sbError.message);
       }
 
-      throw new Error("Invalid login credentials. If you haven't created an account yet, please click 'Sign up' below.");
+      throw new Error("Invalid email or password. You can use the 1-Click Demo buttons above or register a new account below.");
     } catch (error) {
       console.error("Login error:", error);
       throw error;

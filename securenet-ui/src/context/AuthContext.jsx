@@ -87,10 +87,10 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, password, role) => {
     try {
       console.log("AuthContext: Starting login for:", email);
-      const result = await authService.login(email, password);
+      const result = await authService.login(email, password, role);
       
       // Get user permissions and set complete user object
       const userWithPermissions = {
@@ -98,6 +98,7 @@ export const AuthProvider = ({ children }) => {
         ...getUserPermissions(result.user)
       };
       
+      localStorage.setItem('demoUser', JSON.stringify(userWithPermissions));
       setUser(userWithPermissions);
       
       // DEBUG LOGS
@@ -110,6 +111,25 @@ export const AuthProvider = ({ children }) => {
       console.error("AuthContext login error:", error);
       throw error;
     }
+  };
+
+  const loginAsDemo = (role = 'user') => {
+    const isAdm = (role || '').toLowerCase() === 'admin';
+    const demoUser = {
+      id: isAdm ? 'demo-admin-id' : 'demo-user-id',
+      email: isAdm ? 'admin@securenet.com' : 'user@securenet.com',
+      name: isAdm ? 'Security Administrator' : 'SOC Analyst Operator',
+      role: isAdm ? 'admin' : 'user',
+      org_id: '00000000-0000-0000-0000-000000000001',
+      organization: { id: '00000000-0000-0000-0000-000000000001', name: 'SecureNet SOC Enterprise' }
+    };
+    const userWithPermissions = {
+      ...demoUser,
+      ...getUserPermissions(demoUser)
+    };
+    localStorage.setItem('demoUser', JSON.stringify(userWithPermissions));
+    setUser(userWithPermissions);
+    return userWithPermissions;
   };
 
   const adminSignup = async (email, password) => {
@@ -186,6 +206,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     login,
+    loginAsDemo,
     adminSignup,
     userSignup,
     logout,

@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Key, User, Shield, Check, History, ArrowRight } from 'lucide-react';
+import { User, Shield, History, Eye, EyeOff, Zap, CheckCircle2 } from 'lucide-react';
 import '../styles/pages/login.css';
 
 const Login = () => {
-  const [showLoginForm, setShowLoginForm] = useState(false);
-  const [selectedRole, setSelectedRole] = useState('user');
+  const [selectedRole, setSelectedRole] = useState('user'); // 'user' | 'admin'
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -19,32 +18,22 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-  const { login, resetPassword, resendEmailConfirmation } = useAuth();
+  const { login, loginAsDemo, resetPassword, resendEmailConfirmation } = useAuth();
   const navigate = useNavigate();
 
-  // Sample data for demo accounts
+  // Demo accounts for reference
   const demoAccounts = {
     admin: {
       email: 'admin@securenet.com',
       password: 'admin123',
-      name: 'Admin User',
-      features: [
-        'Complete system control',
-        'Advanced security tools',
-        'User management',
-        'Full reporting access'
-      ]
+      label: 'Security Administrator',
+      desc: 'Full administrative control, IP firewall management & user settings'
     },
     user: {
       email: 'user@securenet.com',
       password: 'user123',
-      name: 'Regular User',
-      features: [
-        'Security monitoring',
-        'Alert management',
-        'Basic reporting',
-        'Personal settings'
-      ]
+      label: 'SOC Analyst / Operator',
+      desc: 'Threat monitoring, packet telemetry inspection & security analytics'
     }
   };
 
@@ -65,13 +54,14 @@ const Login = () => {
               role: parsed.role || 'user',
               label: 'Remembered Account'
             });
-            // Pre-fill form by default if remembered
+            // Pre-fill form by default with remembered
             setFormData(prev => ({
               ...prev,
               email: parsed.email,
               password: parsed.password || '',
               rememberMe: true
             }));
+            if (parsed.role) setSelectedRole(parsed.role);
           }
         } catch (e) {}
       }
@@ -96,18 +86,18 @@ const Login = () => {
         } catch (e) {}
       }
 
-      // 3. Add demo accounts for convenience
+      // 3. Add built-in demo presets
       accounts.push({
         email: demoAccounts.admin.email,
         password: demoAccounts.admin.password,
         role: 'admin',
-        label: 'Demo Administrator'
+        label: 'Default Admin Demo'
       });
       accounts.push({
         email: demoAccounts.user.email,
         password: demoAccounts.user.password,
         role: 'user',
-        label: 'Demo Operator'
+        label: 'Default Analyst Demo'
       });
 
       setSavedAccounts(accounts);
@@ -116,6 +106,12 @@ const Login = () => {
     }
   }, []);
 
+  const handleRoleChange = (newRole) => {
+    setSelectedRole(newRole);
+    setError('');
+    setSuccess('');
+  };
+
   const handleApplySavedCredential = (account) => {
     setSelectedRole(account.role || 'user');
     setFormData({
@@ -123,10 +119,38 @@ const Login = () => {
       password: account.password || '',
       rememberMe: true
     });
-    setShowLoginForm(true);
     setShowSavedList(false);
     setError('');
     setSuccess(`Loaded credentials for ${account.email}`);
+  };
+
+  const handleQuickFillDemo = () => {
+    const creds = demoAccounts[selectedRole];
+    setFormData(prev => ({
+      ...prev,
+      email: creds.email,
+      password: creds.password
+    }));
+    setError('');
+    setSuccess(`Filled ${selectedRole.toUpperCase()} demo credentials`);
+  };
+
+  const handleInstantDemoLogin = async () => {
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      if (loginAsDemo) {
+        loginAsDemo(selectedRole);
+      } else {
+        await login(demoAccounts[selectedRole].email, demoAccounts[selectedRole].password, selectedRole);
+      }
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Demo login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -139,32 +163,6 @@ const Login = () => {
     setSuccess('');
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const handleCardSelect = (role) => {
-    setSelectedRole(role);
-    setShowLoginForm(true);
-    setFormData({
-      email: demoAccounts[role].email,
-      password: demoAccounts[role].password,
-      rememberMe: false
-    });
-  };
-
-  const handleDirectLoginClick = () => {
-    setShowLoginForm(true);
-    setError('');
-    setSuccess('');
-  };
-
-  const handleBackToCards = () => {
-    setShowLoginForm(false);
-    setError('');
-    setSuccess('');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -172,87 +170,38 @@ const Login = () => {
     setLoading(true);
 
     try {
-      if (!formData.email || !formData.password) {
-        setError('Please fill in all fields');
+      const email = (formData.email || '').trim();
+      const password = (formData.password || '').trim();
+
+      if (!email || !password) {
+        setError('Please fill in both email and password');
         setLoading(false);
         return;
       }
 
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        setError('Please enter a valid email');
-        setLoading(false);
-        return;
-      }
-
-      // Save credentials for "Remember Me" or older credential fetching
+      // Save for "Remember Me"
       if (formData.rememberMe) {
         localStorage.setItem('saved_login_credentials', JSON.stringify({
-          email: formData.email,
-          password: formData.password,
+          email,
+          password,
           role: selectedRole
         }));
+      } else {
+        localStorage.removeItem('saved_login_credentials');
       }
 
-      // Check if demo account
-      const isAdminDemo = formData.email === demoAccounts.admin.email && formData.password === demoAccounts.admin.password;
-      const isUserDemo = formData.email === demoAccounts.user.email && formData.password === demoAccounts.user.password;
-      
-      if (isAdminDemo || isUserDemo) {
-        const mockUser = {
-          id: isAdminDemo ? 'demo-admin-id' : 'demo-user-id',
-          email: formData.email,
-          role: isAdminDemo ? 'admin' : 'user',
-          org_id: 'demo-org-id',
-          organization: { id: 'demo-org-id', name: "Demo Organization" },
-          permissions: {
-            canManageUsers: isAdminDemo,
-            canManageOrgSettings: isAdminDemo,
-            canInviteUsers: isAdminDemo,
-            canViewLogs: true,
-            canBlockIP: isAdminDemo,
-            canRunSimulation: isAdminDemo,
-            canViewAnalytics: true,
-            canGenerateReports: true,
-            canExportData: true,
-            canViewUsers: true,
-            canResetPasswords: true,
-            canDeactivateUsers: true
-          }
-        };
-        
-        localStorage.setItem('demoUser', JSON.stringify(mockUser));
-        navigate('/dashboard');
-        return;
-      }
-      
-      // Attempt login
-      const result = await login(formData.email, formData.password, formData.rememberMe);
+      // Authenticate via AuthContext
+      const result = await login(email, password, selectedRole);
       if (result) {
         navigate('/dashboard');
       }
     } catch (err) {
-      // Fallback check
-      const isAdminDemo = formData.email === demoAccounts.admin.email && formData.password === demoAccounts.admin.password;
-      const isUserDemo = formData.email === demoAccounts.user.email && formData.password === demoAccounts.user.password;
-      
-      if (isAdminDemo || isUserDemo) {
-        const mockUser = {
-          id: isAdminDemo ? 'demo-admin-id' : 'demo-user-id',
-          email: formData.email,
-          role: isAdminDemo ? 'admin' : 'user',
-          org_id: 'demo-org-id',
-          organization: { id: 'demo-org-id', name: "Demo Organization" }
-        };
-        localStorage.setItem('demoUser', JSON.stringify(mockUser));
-        navigate('/dashboard');
-        return;
-      }
-      
-      if (err.message && err.message.toLowerCase().includes('invalid login credentials')) {
-        setError("Invalid email or password. If you haven't created an account yet, please click 'Create one' below.");
+      console.error("Login attempt error:", err);
+      const msg = err.message || '';
+      if (msg.toLowerCase().includes('invalid')) {
+        setError("Invalid email or password. Check your details or use 1-Click Demo Login above.");
       } else {
-        setError(err.message || 'Login failed. Please try again.');
+        setError(msg || 'Sign in failed. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -262,12 +211,12 @@ const Login = () => {
   const handlePasswordReset = async (e) => {
     e.preventDefault();
     if (!formData.email) {
-      setError('Please enter your email address first');
+      setError('Please enter your email address in the field above');
       return;
     }
     try {
-      await resetPassword(formData.email);
-      setSuccess('Password reset email sent! Check your inbox.');
+      await resetPassword(formData.email.trim());
+      setSuccess('Password reset instructions sent! Please check your inbox.');
       setError('');
     } catch (err) {
       setError(err.message || 'Failed to send password reset email');
@@ -278,11 +227,11 @@ const Login = () => {
   const handleResendConfirmation = async (e) => {
     e.preventDefault();
     if (!formData.email) {
-      setError('Please enter your email address first');
+      setError('Please enter your email address in the field above');
       return;
     }
     try {
-      await resendEmailConfirmation(formData.email);
+      await resendEmailConfirmation(formData.email.trim());
       setSuccess('Confirmation email resent! Please check your inbox.');
       setError('');
     } catch (err) {
@@ -291,262 +240,201 @@ const Login = () => {
     }
   };
 
+  const isCurrentAdmin = selectedRole === 'admin';
+
   return (
     <div className="auth-container">
       <div className="auth-background">
         <div className="grid-lines"></div>
         <div className="particles"></div>
       </div>
-      
-      {!showLoginForm ? (
-        <div className="login-selection-container">
-          <div className="selection-header">
-            <Link to="/" style={{ display: 'inline-block' }}>
-              <img src="/logo.jpg" alt="SecureNet IDS Logo" className="login-logo-img" />
-            </Link>
-            <h1>SecureNet IDS</h1>
-            <p>Select an account type or access with saved credentials</p>
+
+      <div className={`auth-card unified-card ${isCurrentAdmin ? 'role-admin' : 'role-user'}`}>
+        
+        {/* Top Header */}
+        <div className="auth-header">
+          <Link to="/" className="brand-logo-link" title="Return to Home">
+            <img src="/logo.jpg" alt="SecureNet IDS Logo" className="login-logo-img" />
+          </Link>
+          <h2>SecureNet <span className="text-cyan">IDS</span></h2>
+          <p>Enterprise Intrusion Detection & Threat Telemetry</p>
+        </div>
+
+        {/* Interactive Role Switcher */}
+        <div className="login-role-tabs">
+          <button
+            type="button"
+            className={`role-tab-btn user-tab ${!isCurrentAdmin ? 'active' : ''}`}
+            onClick={() => handleRoleChange('user')}
+          >
+            <User size={15} /> Analyst / Operator
+          </button>
+          <button
+            type="button"
+            className={`role-tab-btn admin-tab ${isCurrentAdmin ? 'active' : ''}`}
+            onClick={() => handleRoleChange('admin')}
+          >
+            <Shield size={15} /> Security Admin
+          </button>
+        </div>
+
+        {/* Role Summary & 1-Click Demo Quick Bar */}
+        <div className={`demo-quick-banner ${isCurrentAdmin ? 'admin-banner' : 'user-banner'}`}>
+          <div className="demo-badge-info">
+            <div className="demo-role-title">
+              {isCurrentAdmin ? <Shield size={14} color="#ef4444" /> : <User size={14} color="#00f5ff" />}
+              <span>{demoAccounts[selectedRole].label}</span>
+            </div>
+            <div className="demo-sub-text">{demoAccounts[selectedRole].desc}</div>
+          </div>
+          
+          <div className="demo-action-buttons">
+            <button
+              type="button"
+              className="btn-demo-fill"
+              onClick={handleQuickFillDemo}
+              title={`Autofill ${demoAccounts[selectedRole].email}`}
+            >
+              Fill Credentials
+            </button>
+            <button
+              type="button"
+              className="btn-demo-instant"
+              onClick={handleInstantDemoLogin}
+              disabled={loading}
+              title={`Instant access as ${selectedRole}`}
+            >
+              <Zap size={13} /> 1-Click Access
+            </button>
+          </div>
+        </div>
+
+        {/* Saved Accounts Drawer Toggle */}
+        {savedAccounts.length > 0 && (
+          <div className="saved-accounts-accordion">
+            <button
+              type="button"
+              className="btn-toggle-saved"
+              onClick={() => setShowSavedList(!showSavedList)}
+            >
+              <History size={13} />
+              <span>Saved & Demo Accounts ({savedAccounts.length})</span>
+              <span className="accordion-chevron">{showSavedList ? '▲' : '▼'}</span>
+            </button>
+
+            {showSavedList && (
+              <div className="saved-accounts-dropdown">
+                {savedAccounts.map((acc, idx) => (
+                  <div
+                    key={idx}
+                    className="saved-account-row"
+                    onClick={() => handleApplySavedCredential(acc)}
+                  >
+                    <div className="saved-row-info">
+                      <span className="saved-row-email">{acc.email}</span>
+                      <span className={`saved-row-tag ${acc.role}`}>{acc.label}</span>
+                    </div>
+                    <span className="saved-row-action">Use →</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Main Sign In Form */}
+        <form onSubmit={handleSubmit} className="auth-form" autoComplete="on">
+          <div className="form-group">
+            <label htmlFor="email">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder={isCurrentAdmin ? "admin@securenet.com" : "user@securenet.com"}
+              className="auth-input"
+              autoComplete="username email"
+              required
+            />
           </div>
 
-          {/* FETCH SAVED CREDENTIALS BANNER */}
-          {savedAccounts.length > 0 && (
-            <div className="saved-credentials-banner">
-              <div className="saved-banner-header" onClick={() => setShowSavedList(!showSavedList)}>
-                <div className="saved-banner-title">
-                  <History size={16} className="text-cyan" />
-                  <span>Older Saved Credentials Available ({savedAccounts.length})</span>
-                </div>
-                <button type="button" className="btn-fetch-saved">
-                  {showSavedList ? 'Hide Saved Accounts ▲' : 'Fetch Saved Accounts ▼'}
-                </button>
-              </div>
+          <div className="form-group">
+            <div className="form-label-row">
+              <label htmlFor="password">Password</label>
+            </div>
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter account password"
+                className="auth-input password-input"
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="password-toggle-btn"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </div>
 
-              {showSavedList && (
-                <div className="saved-accounts-list">
-                  {savedAccounts.map((account, idx) => (
-                    <div 
-                      key={idx} 
-                      className="saved-account-item"
-                      onClick={() => handleApplySavedCredential(account)}
-                    >
-                      <div className="saved-account-details">
-                        <span className="saved-email">{account.email}</span>
-                        <span className="saved-tag">{account.label}</span>
-                      </div>
-                      <button type="button" className="btn-use-cred">
-                        Autofill & Login →
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <div className="form-options-row">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                name="rememberMe"
+                checked={formData.rememberMe}
+                onChange={handleChange}
+                className="auth-checkbox"
+              />
+              <span>Remember me</span>
+            </label>
+            <a href="#forgot" onClick={handlePasswordReset} className="forgot-password-link">
+              Forgot password?
+            </a>
+          </div>
+
+          {error && (
+            <div className="error-message fade-in">
+              {error}
             </div>
           )}
           
-          <div className="login-cards">
-            <div className="login-card admin-card" onClick={() => handleCardSelect('admin')}>
-              <div className="card-icon"><Shield size={28} color="#ef4444" /></div>
-              <h2>Login as ADMIN</h2>
-              <div className="demo-info">
-                <p><strong>Demo Account:</strong></p>
-                <p>Email: {demoAccounts.admin.email}</p>
-                <p>Password: {demoAccounts.admin.password}</p>
-              </div>
-              <div className="features-list">
-                <h3>Admin Features:</h3>
-                <ul>
-                  {demoAccounts.admin.features.map((feature, index) => (
-                    <li key={index}>{feature}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="card-action">
-                <button className="btn btn-primary" type="button">Access Admin Terminal</button>
-              </div>
-            </div>
-
-            <div className="login-card user-card" onClick={() => handleCardSelect('user')}>
-              <div className="card-icon"><User size={28} color="#00f5ff" /></div>
-              <h2>Login as USER</h2>
-              <div className="demo-info">
-                <p><strong>Demo Account:</strong></p>
-                <p>Email: {demoAccounts.user.email}</p>
-                <p>Password: {demoAccounts.user.password}</p>
-              </div>
-              <div className="features-list">
-                <h3>User Features:</h3>
-                <ul>
-                  {demoAccounts.user.features.map((feature, index) => (
-                    <li key={index}>{feature}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="card-action">
-                <button className="btn btn-primary" type="button">Access SOC Workspace</button>
-              </div>
-            </div>
-          </div>
-
-          <div className="direct-login-option" style={{ marginTop: '24px' }}>
-            <button 
-              type="button" 
-              onClick={handleDirectLoginClick}
-              className="btn-direct-login"
-            >
-              Sign In with Custom Email & Password →
-            </button>
-          </div>
-
-          <div className="selection-footer">
-            <p>
-              Don't have an account?{' '}
-              <Link to="/signup" className="auth-link">Create one</Link>
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="auth-card glass neon-border fade-in">
-          <div className="auth-header">
-            <button onClick={handleBackToCards} className="back-btn" type="button">← Back</button>
-            <h2>Secure Sign In</h2>
-            <p>Enter your credentials to access the SOC workspace</p>
-          </div>
-
-          {/* Quick-fill button if saved accounts exist */}
-          {savedAccounts.length > 0 && (
-            <div className="form-saved-quickfill">
-              <span className="quickfill-label"><History size={13} /> Saved accounts:</span>
-              <div className="quickfill-chips">
-                {savedAccounts.slice(0, 3).map((acc, i) => (
-                  <button 
-                    key={i} 
-                    type="button" 
-                    className="quickfill-chip"
-                    onClick={() => handleApplySavedCredential(acc)}
-                    title={`Autofill ${acc.email}`}
-                  >
-                    {acc.email}
-                  </button>
-                ))}
-              </div>
+          {success && (
+            <div className="success-message fade-in">
+              <CheckCircle2 size={14} /> {success}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="auth-form" autoComplete="on">
-            <div className="form-group">
-              <label htmlFor="email">Email Address</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Enter your email"
-                className="auth-input"
-                autoComplete="username email"
-                required
-              />
-            </div>
+          <button 
+            type="submit" 
+            className={`btn-auth-submit ${isCurrentAdmin ? 'admin-submit' : 'user-submit'}`}
+            disabled={loading}
+          >
+            {loading ? 'Authenticating...' : `Sign In as ${isCurrentAdmin ? 'Administrator' : 'Analyst'} →`}
+          </button>
+        </form>
 
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <div className="password-input-wrapper">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Enter your password"
-                  className="auth-input password-input"
-                  autoComplete="current-password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  className="password-toggle-btn"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? 'Hide' : 'Show'}
-                </button>
-              </div>
-            </div>
-
-            <div className="form-group checkbox-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  id="rememberMe"
-                  name="rememberMe"
-                  checked={formData.rememberMe}
-                  onChange={handleChange}
-                  className="auth-checkbox"
-                />
-                Remember Me (Save Credentials for Quick Access)
-              </label>
-            </div>
-
-            {error && (
-              <div className="error-message">
-                {error}
-                {error.includes('email has not been confirmed') && (
-                  <div style={{ marginTop: '8px' }}>
-                    <button 
-                      type="button"
-                      onClick={handleResendConfirmation}
-                      style={{
-                        background: 'none',
-                        border: '1px solid #ff3366',
-                        color: '#ff3366',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '10px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Resend Confirmation Email
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {success && (
-              <div className="success-message">
-                {success}
-              </div>
-            )}
-
-            <button 
-              type="submit" 
-              className="btn btn-primary auth-button"
-              disabled={loading}
-            >
-              {loading ? 'Authenticating...' : 'Sign In to Dashboard'}
-            </button>
-          </form>
-
-          <div className="auth-footer">
-            <p>
-              <a href="#" onClick={handlePasswordReset} className="auth-link">
-                Forgot Password?
-              </a>
-            </p>
-            <p>
-              <a href="#" onClick={handleResendConfirmation} className="auth-link">
-                Resend Confirmation Email
-              </a>
-            </p>
-            <p>
-              Don't have an account?{' '}
-              <Link to="/signup" className="auth-link">
-                Create one
-              </Link>
-            </p>
-          </div>
+        {/* Footer */}
+        <div className="auth-footer">
+          <p>
+            Don't have an organization account?{' '}
+            <Link to="/signup" className="auth-link">
+              Register Organization
+            </Link>
+          </p>
         </div>
-      )}
+
+      </div>
     </div>
   );
 };

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '../context/AuthContext';
 import ProtectedRoute from '../components/common/ProtectedRoute';
 import DashboardLayout from '../layouts/DashboardLayout';
 
@@ -30,8 +29,7 @@ import Integrations from '../pages/Integrations';
 
 const AppRoutes = () => {
   return (
-    <AuthProvider>
-      <Routes>
+    <Routes>
         {/* Public Routes */}
         <Route path="/" element={<CyberLanding />} />
         <Route path="/landing" element={<Landing />} />
@@ -244,7 +242,6 @@ const AppRoutes = () => {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
-    </AuthProvider>
   );
 };
 
