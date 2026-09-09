@@ -4,6 +4,7 @@ import Card from '../ui/Card';
 import { supabase } from '../../api/supabase';
 import { getDeviceId, fetchRemoteNotificationState, pushRemoteNotificationState } from '../../api/notificationSync';
 import toast from 'react-hot-toast';
+import InvestigationModal from './InvestigationModal';
 import '../../styles/pages/notifications.css';
 
 const USER_NOTIF_KEY = 'securenet_user_notifications_v3';
@@ -71,6 +72,7 @@ const BASELINE_USER_NOTIFICATIONS = [
 const UserNotifications = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
+  const [investigatingNotification, setInvestigatingNotification] = useState(null);
 
   const formatTime = (timestamp) => {
     try {
@@ -630,6 +632,15 @@ const UserNotifications = () => {
                         </button>
                       )}
                       <button 
+                        className="btn btn-sm btn-outline btn-investigate"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setInvestigatingNotification(notification);
+                        }}
+                      >
+                        Investigate
+                      </button>
+                      <button 
                         className="btn btn-sm btn-danger"
                         onClick={(e) => deleteNotification(notification.id, e)}
                       >
@@ -652,6 +663,23 @@ const UserNotifications = () => {
             <p>You have no notifications matching the current filter.</p>
           </div>
         </Card>
+      )}
+
+      {/* SOC FORENSIC INVESTIGATION MODAL */}
+      {investigatingNotification && (
+        <InvestigationModal
+          notification={investigatingNotification}
+          onClose={() => setInvestigatingNotification(null)}
+          onBlockIp={(ip) => {
+            try {
+              supabase.from('blacklist').insert([{ 
+                ip_address: ip, 
+                reason: `Blocked during user investigation of notice: ${investigatingNotification.title}` 
+              }]);
+            } catch (e) {}
+          }}
+          onMarkRead={(id) => markAsRead(id)}
+        />
       )}
     </div>
   );
