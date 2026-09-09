@@ -341,6 +341,115 @@
   color: #f8fafc;
 }
 
+/* Security CAPTCHA Box */
+.auth-captcha-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+}
+
+.auth-captcha-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-captcha-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.auth-captcha-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-captcha-canvas-wrap {
+  position: relative;
+  background: #050b14;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 245, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  height: 40px;
+  padding: 0 4px;
+}
+
+.role-admin .auth-captcha-canvas-wrap {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.auth-captcha-refresh-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.auth-captcha-refresh-btn:hover {
+  color: #00f5ff;
+  transform: rotate(90deg);
+}
+
+.role-admin .auth-captcha-refresh-btn:hover {
+  color: #ef4444;
+}
+
+.auth-captcha-input {
+  flex: 1;
+  height: 40px;
+  padding: 0 12px;
+  background: rgba(10, 16, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  box-sizing: border-box;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.auth-captcha-input::placeholder {
+  letter-spacing: normal;
+  text-transform: none;
+  font-size: 11px;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.auth-captcha-input:focus {
+  border-color: #00f5ff;
+  box-shadow: 0 0 10px rgba(0, 245, 255, 0.25);
+}
+
+.role-admin .auth-captcha-input:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+}
+
 /* Options row: remember & forgot */
 .auth-login-options {
   display: flex;

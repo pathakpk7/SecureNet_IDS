@@ -102,15 +102,39 @@ const Signup = () => {
 
       if (formData.role === 'admin') {
         await adminSignup(formData.email, formData.password, formData.orgName, formData.orgDescription);
-        setSuccess('Admin account created successfully! Organization created. Redirecting...');
+        setSuccess('Admin account created successfully! Organization created. Redirecting to login...');
       } else {
         await userSignup(formData.email, formData.password, formData.orgId);
-        setSuccess('User account created successfully! You can now login. Redirecting...');
+        setSuccess('User account created successfully! Redirecting to login...');
+      }
+
+      // Persist credentials for easy instant login
+      try {
+        const cleanEmail = formData.email.trim();
+        const cleanPass = formData.password.trim();
+        localStorage.setItem('saved_login_credentials', JSON.stringify({
+          email: cleanEmail,
+          password: cleanPass,
+          role: formData.role
+        }));
+        let list = [];
+        try { list = JSON.parse(localStorage.getItem('saved_accounts_list') || '[]'); } catch {}
+        if (!Array.isArray(list)) list = [];
+        const existingIdx = list.findIndex(a => a.email.toLowerCase() === cleanEmail.toLowerCase());
+        const item = { email: cleanEmail, password: cleanPass, role: formData.role, updatedAt: new Date().toISOString() };
+        if (existingIdx >= 0) {
+          list[existingIdx] = item;
+        } else {
+          list.unshift(item);
+        }
+        localStorage.setItem('saved_accounts_list', JSON.stringify(list));
+      } catch (e) {
+        console.warn("Storage error saving signup credentials:", e);
       }
 
       setTimeout(() => {
         navigate('/login');
-      }, 1800);
+      }, 1500);
       
     } catch (err) {
       console.error("Signup error:", err);

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, Shield, Eye, EyeOff, Zap, CheckCircle2, ArrowRight } from 'lucide-react';
+import { User, Shield, Eye, EyeOff, Zap, CheckCircle2, ArrowRight, ShieldCheck, RotateCw } from 'lucide-react';
 import '../styles/pages/login.css';
 
 const Login = () => {
@@ -9,13 +9,18 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    rememberMe: false
+    rememberMe: true
   });
   const [savedAccounts, setSavedAccounts] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Security CAPTCHA State
+  const [captchaCode, setCaptchaCode] = useState('');
+  const [captchaInput, setCaptchaInput] = useState('');
+  const captchaCanvasRef = useRef(null);
   
   const { login, loginAsDemo, resetPassword } = useAuth();
   const navigate = useNavigate();
@@ -36,48 +41,92 @@ const Login = () => {
     }
   };
 
-  // Fetch older saved credentials from localStorage on mount
+  // Generate a random alphanumeric CAPTCHA
+  const generateCaptchaCode = () => {
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let code = '';
+    for (let i = 0; i < 5; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
+  // Draw cyber-styled distorted CAPTCHA onto canvas
+  const renderCaptchaCanvas = (code) => {
+    const canvas = captchaCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Background gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+    bgGrad.addColorStop(0, '#030712');
+    bgGrad.addColorStop(1, '#0f172a');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Security interference lines
+    for (let i = 0; i < 4; i++) {
+      ctx.strokeStyle = selectedRole === 'admin' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(0, 245, 255, 0.35)';
+      ctx.lineWidth = 1 + Math.random();
+      ctx.beginPath();
+      ctx.moveTo(Math.random() * width, Math.random() * height);
+      ctx.lineTo(Math.random() * width, Math.random() * height);
+      ctx.stroke();
+    }
+
+    // Distorted security characters
+    const charSpacing = width / (code.length + 1);
+    for (let i = 0; i < code.length; i++) {
+      const char = code[i];
+      ctx.save();
+      const x = (i + 1) * charSpacing;
+      const y = height / 2 + 3 + (Math.random() * 4 - 2);
+      const angle = (Math.random() * 24 - 12) * Math.PI / 180;
+      
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.font = 'bold 20px "Courier New", monospace';
+      ctx.fillStyle = selectedRole === 'admin' ? '#f87171' : '#00f5ff';
+      ctx.shadowColor = selectedRole === 'admin' ? 'rgba(239, 68, 68, 0.8)' : 'rgba(0, 245, 255, 0.8)';
+      ctx.shadowBlur = 6;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(char, 0, 0);
+      ctx.restore();
+    }
+  };
+
+  const refreshCaptcha = () => {
+    const newCode = generateCaptchaCode();
+    setCaptchaCode(newCode);
+    setCaptchaInput('');
+    renderCaptchaCanvas(newCode);
+  };
+
+  // Initial load: Fetch older saved credentials from localStorage & generate CAPTCHA
   useEffect(() => {
+    const newCode = generateCaptchaCode();
+    setCaptchaCode(newCode);
+    setTimeout(() => renderCaptchaCanvas(newCode), 50);
+
     try {
       const accounts = [];
 
-      // 1. Check for Remembered credentials
-      const remembered = localStorage.getItem('saved_login_credentials');
-      if (remembered) {
+      // 1. Check permanent saved accounts list
+      const savedListRaw = localStorage.getItem('saved_accounts_list');
+      if (savedListRaw) {
         try {
-          const parsed = JSON.parse(remembered);
-          if (parsed?.email) {
-            accounts.push({
-              email: parsed.email,
-              password: parsed.password || '',
-              role: parsed.role || 'user',
-              label: `Saved: ${parsed.email}`
-            });
-            // Pre-fill form by default with remembered
-            setFormData(prev => ({
-              ...prev,
-              email: parsed.email,
-              password: parsed.password || '',
-              rememberMe: true
-            }));
-            if (parsed.role) setSelectedRole(parsed.role);
-          }
-        } catch (e) {}
-      }
-
-      // 2. Check for registered users in local DB
-      const regUsersStr = localStorage.getItem('registeredUsers');
-      if (regUsersStr) {
-        try {
-          const regUsers = JSON.parse(regUsersStr);
-          if (Array.isArray(regUsers)) {
-            regUsers.forEach(u => {
-              if (u.email && !accounts.some(a => a.email.toLowerCase() === u.email.toLowerCase())) {
+          const parsedList = JSON.parse(savedListRaw);
+          if (Array.isArray(parsedList)) {
+            parsedList.forEach(item => {
+              if (item.email && !accounts.some(a => a.email.toLowerCase() === item.email.toLowerCase())) {
                 accounts.push({
-                  email: u.email,
-                  password: u.password || '',
-                  role: u.role || 'user',
-                  label: `${u.role === 'admin' ? 'Admin' : 'User'}: ${u.email}`
+                  email: item.email,
+                  password: item.password || '',
+                  role: item.role || 'user',
+                  label: `Saved: ${item.email}`
                 });
               }
             });
@@ -85,29 +134,116 @@ const Login = () => {
         } catch (e) {}
       }
 
+      // 2. Check latest remembered credentials
+      const remembered = localStorage.getItem('saved_login_credentials');
+      if (remembered) {
+        try {
+          const parsed = JSON.parse(remembered);
+          if (parsed?.email) {
+            if (!accounts.some(a => a.email.toLowerCase() === parsed.email.toLowerCase())) {
+              accounts.unshift({
+                email: parsed.email,
+                password: parsed.password || '',
+                role: parsed.role || 'user',
+                label: `Recent: ${parsed.email}`
+              });
+            }
+            // Auto-prefill form with last used account
+            setFormData({
+              email: parsed.email,
+              password: parsed.password || '',
+              rememberMe: true
+            });
+            if (parsed.role) setSelectedRole(parsed.role);
+          }
+        } catch (e) {}
+      }
+
+      // 3. Add default presets for easy 1-click test
+      accounts.push({
+        email: demoAccounts.user.email,
+        password: demoAccounts.user.password,
+        role: 'user',
+        label: 'Analyst Demo (user@securenet.com)'
+      });
+      accounts.push({
+        email: demoAccounts.admin.email,
+        password: demoAccounts.admin.password,
+        role: 'admin',
+        label: 'Admin Demo (admin@securenet.com)'
+      });
+
       setSavedAccounts(accounts);
     } catch (err) {
       console.warn("Could not retrieve saved credentials:", err);
     }
   }, []);
 
+  // Re-render canvas if role or captcha changes
+  useEffect(() => {
+    if (captchaCode) {
+      renderCaptchaCanvas(captchaCode);
+    }
+  }, [selectedRole, captchaCode]);
+
+  // Persist credentials in localStorage for automatic future 1-click logins
+  const persistUserCredentials = (email, password, role) => {
+    try {
+      const cleanEmail = email.trim();
+      const cleanPass = password.trim();
+
+      // 1. Save as latest login
+      localStorage.setItem('saved_login_credentials', JSON.stringify({
+        email: cleanEmail,
+        password: cleanPass,
+        role
+      }));
+
+      // 2. Add to permanent list
+      let list = [];
+      try {
+        const raw = localStorage.getItem('saved_accounts_list');
+        if (raw) list = JSON.parse(raw);
+      } catch {}
+      if (!Array.isArray(list)) list = [];
+
+      const existingIndex = list.findIndex(a => a.email.toLowerCase() === cleanEmail.toLowerCase());
+      const accountItem = {
+        email: cleanEmail,
+        password: cleanPass,
+        role,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (existingIndex >= 0) {
+        list[existingIndex] = accountItem;
+      } else {
+        list.unshift(accountItem);
+      }
+      localStorage.setItem('saved_accounts_list', JSON.stringify(list));
+    } catch (e) {
+      console.warn("Could not persist credentials to storage:", e);
+    }
+  };
+
   const handleRoleChange = (newRole) => {
     setSelectedRole(newRole);
     setError('');
     setSuccess('');
+    refreshCaptcha();
   };
 
   const handleQuickAutofill = (role) => {
     const creds = demoAccounts[role];
     setSelectedRole(role);
-    setFormData(prev => ({
-      ...prev,
+    setFormData({
       email: creds.email,
       password: creds.password,
       rememberMe: true
-    }));
+    });
     setError('');
-    setSuccess(`Loaded demo credentials for ${creds.label}`);
+    setSuccess(`Loaded credentials for ${creds.label}`);
+    refreshCaptcha();
   };
 
   const handleSavedSelect = (e) => {
@@ -122,7 +258,8 @@ const Login = () => {
         rememberMe: true
       });
       setError('');
-      setSuccess(`Loaded saved account: ${account.email}`);
+      setSuccess(`Loaded saved account for ${account.email}`);
+      refreshCaptcha();
     }
   };
 
@@ -131,6 +268,7 @@ const Login = () => {
     setSuccess('');
     setLoading(true);
     try {
+      persistUserCredentials(demoAccounts[selectedRole].email, demoAccounts[selectedRole].password, selectedRole);
       if (loginAsDemo) {
         loginAsDemo(selectedRole);
       } else {
@@ -170,18 +308,24 @@ const Login = () => {
         return;
       }
 
-      // Save or remove Remember Me credentials
-      if (formData.rememberMe) {
-        localStorage.setItem('saved_login_credentials', JSON.stringify({
-          email,
-          password,
-          role: selectedRole
-        }));
-      } else {
-        localStorage.removeItem('saved_login_credentials');
+      // Security CAPTCHA Backend Validation
+      if (!captchaInput.trim()) {
+        setError('Security Verification Required: Please enter the CAPTCHA code.');
+        setLoading(false);
+        return;
       }
 
-      // Authenticate
+      if (captchaInput.trim().toUpperCase() !== captchaCode.toUpperCase()) {
+        setError('Security verification failed: Incorrect CAPTCHA code. A new code has been generated.');
+        refreshCaptcha();
+        setLoading(false);
+        return;
+      }
+
+      // Store credentials permanently for easy future login
+      persistUserCredentials(email, password, selectedRole);
+
+      // Authenticate via Supabase / AuthContext
       const userResult = await login(email, password, selectedRole);
       if (userResult) {
         navigate('/dashboard');
@@ -189,8 +333,11 @@ const Login = () => {
     } catch (err) {
       console.error("Login attempt error:", err);
       const msg = err.message || '';
-      if (msg.toLowerCase().includes('invalid')) {
-        setError("Invalid credentials. Try using 'Quick Demo Autofill' below or reset your password.");
+      refreshCaptcha();
+      if (msg.toLowerCase().includes('email not confirmed')) {
+        setError("Your email address has not been confirmed yet in Supabase. Please verify via your inbox link.");
+      } else if (msg.toLowerCase().includes('invalid login credentials')) {
+        setError("Incorrect password for this account. Please verify your credentials or use 'Forgot password?'.");
       } else {
         setError(msg || 'Authentication failed. Please check your credentials.');
       }
@@ -278,13 +425,13 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Older Saved Accounts Dropdown (if any exist) */}
+        {/* Saved Accounts Dropdown (auto-stores every signed in user) */}
         {savedAccounts.length > 0 && (
           <div className="auth-saved-select-box">
             <select
               className="auth-saved-select"
               onChange={handleSavedSelect}
-              defaultValue=""
+              value={formData.email || ""}
             >
               <option value="" disabled>Saved Accounts ({savedAccounts.length})</option>
               {savedAccounts.map((acc, idx) => (
@@ -338,6 +485,45 @@ const Login = () => {
             </div>
           </div>
 
+          {/* Security CAPTCHA Verification Box */}
+          <div className="auth-captcha-box">
+            <div className="auth-captcha-header">
+              <span className="auth-captcha-title">
+                <ShieldCheck size={14} color={isCurrentAdmin ? '#ef4444' : '#00f5ff'} />
+                Security Verification
+              </span>
+              <button
+                type="button"
+                className="auth-captcha-refresh-btn"
+                onClick={refreshCaptcha}
+                title="Generate new CAPTCHA"
+              >
+                <RotateCw size={13} />
+              </button>
+            </div>
+
+            <div className="auth-captcha-row">
+              <div className="auth-captcha-canvas-wrap">
+                <canvas
+                  ref={captchaCanvasRef}
+                  width={110}
+                  height={38}
+                  style={{ display: 'block', borderRadius: '4px' }}
+                />
+              </div>
+              <input
+                type="text"
+                value={captchaInput}
+                onChange={(e) => setCaptchaInput(e.target.value)}
+                placeholder="Enter CAPTCHA"
+                className="auth-captcha-input"
+                maxLength={6}
+                required
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
           {/* Options Row */}
           <div className="auth-login-options">
             <label className="auth-login-checkbox-label">
@@ -375,7 +561,7 @@ const Login = () => {
             className={`auth-login-submit-btn ${isCurrentAdmin ? 'admin-btn' : 'user-btn'}`}
             disabled={loading}
           >
-            {loading ? 'Authenticating...' : (
+            {loading ? 'Verifying & Authenticating...' : (
               <>
                 Sign In as {isCurrentAdmin ? 'Security Admin' : 'SOC Analyst'} <ArrowRight size={16} />
               </>
