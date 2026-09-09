@@ -767,10 +767,13 @@ body.user .info-value.secure {
     padding: var(--spacing-sm);
   }
   
-  body.admin .global-stats-grid,
+  body.admin .global-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+  }
   body.user .personal-stats-grid {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-md);
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
   }
   
   body.admin .dual-charts,
@@ -1288,27 +1291,99 @@ body.user .info-value.secure {
 }
 
 @media (max-width: 768px) {
+  .network-container {
+    padding: 12px 10px;
+  }
   .traffic-overview {
     grid-template-columns: 1fr;
   }
-  .nm-charts-row, .nm-bottom-row {
-    grid-template-columns: 1fr;
+  .nm-top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 12px;
+  }
+  .nm-controls-group {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .nm-toggle-btn {
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+  .nm-time-selector {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
   }
   .nm-kpi-row {
-    grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .nm-kpi-pill {
+    padding: 6px 8px;
+  }
+  .nm-kpi-pill .val {
+    font-size: 14px;
+  }
+  .nm-kpi-pill .lbl {
+    font-size: 9px;
+  }
+  .nm-charts-row, .nm-bottom-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .nm-chart-card, .nm-feed-card, .nm-protocol-card, .nm-ips-card {
+    padding: 14px;
   }
   .nm-ip-table {
-    min-width: 580px;
+    min-width: 540px;
+  }
+  .nm-stream-item {
+    padding: 8px 10px;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 480px) {
   .nm-kpi-row {
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
   }
-  .nm-card {
-    padding: 14px;
+  .nm-controls-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .nm-toggle-btn {
+    width: 100%;
+  }
+  .nm-time-selector {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .nm-time-selector .range-btn {
+    flex: 1;
+    text-align: center;
+    padding: 5px 6px;
+    font-size: 11px;
+  }
+  .nm-stream-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .stream-details {
+    width: 100%;
+    justify-content: space-between;
   }
 }
+
 

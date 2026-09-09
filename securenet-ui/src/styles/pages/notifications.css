@@ -626,38 +626,110 @@ input:checked + .slider:before {
 }
 
 /* Mobile Responsive */
+@media (max-width: 1024px) {
+  .notifications-list,
+  .admin-list,
+  .user-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+
 @media (max-width: 768px) {
+  .admin-notifications-page,
+  .user-notifications-page,
+  .notifications-page {
+    padding: 12px 10px;
+  }
+
   .notifications-stats,
   .admin-stats,
   .user-stats,
   body.admin .admin-stats,
   body.user .user-stats {
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+  }
+
+  .notifications-list,
+  .admin-list,
+  .user-list {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
   
   .notifications-controls {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
   }
   
   .filter-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     width: 100%;
-    justify-content: flex-start;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+
+  .filter-tab {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .admin-actions,
+  .user-actions {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .admin-actions button,
+  .user-actions button {
+    flex: 1;
+    text-align: center;
+    padding: 8px 10px;
+    font-size: 12px;
   }
   
+  .notification-item {
+    padding: 14px;
+  }
+
   .notification-header {
-    flex-direction: column;
-    gap: 12px;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .notification-title {
+    white-space: normal;
+    word-break: break-word;
+    font-size: 14px;
   }
   
   .notification-meta {
-    align-items: flex-start;
+    align-items: flex-end;
     min-width: auto;
+    flex-shrink: 0;
   }
   
   .notification-actions {
     width: 100%;
     justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .notification-actions button {
+    padding: 5px 10px;
+    font-size: 11px;
   }
   
   .settings-grid {
@@ -677,16 +749,36 @@ input:checked + .slider:before {
   .user-stats,
   body.admin .admin-stats,
   body.user .user-stats {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px;
+  }
+
+  .stat-card,
+  body.admin .admin-stat,
+  body.user .user-stat {
+    padding: 10px 8px;
+    min-height: 70px;
+  }
+
+  .stat-card .stat-value,
+  body.admin .admin-stat .stat-value,
+  body.user .user-stat .stat-value {
+    font-size: 18px;
+  }
+
+  .stat-card .stat-label,
+  body.admin .admin-stat .stat-label,
+  body.user .user-stat .stat-label {
+    font-size: 10px;
   }
   
   .filter-tabs {
-    flex-direction: column;
-    width: 100%;
+    gap: 6px;
   }
   
   .filter-tab {
-    width: 100%;
-    text-align: center;
+    padding: 5px 10px;
+    font-size: 11px;
   }
 }
+

@@ -112,30 +112,30 @@ const AdminIntegrations = () => {
 
       {/* COMPACT DYNAMIC KPIs IN ONE BOX */}
       <Card style={{ padding: '0', background: 'rgba(15, 23, 42, 0.8)', overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', alignItems: 'center' }}>
+        <div className="admin-integrations-kpis">
           
-          <div style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+          <div className="admin-int-kpi-item">
             <Layers size={20} color="#38bdf8" />
             <div style={{ fontSize: '14px', color: '#cbd5e1', whiteSpace: 'nowrap' }}>
               Total Integrations: <b style={{ color: '#f8fafc', fontSize: '16px', marginLeft: '6px' }}>{stats.total}</b>
             </div>
           </div>
 
-          <div style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="admin-int-kpi-item bordered">
             <CheckCircle2 size={20} color="#10b981" />
             <div style={{ fontSize: '14px', color: '#cbd5e1', whiteSpace: 'nowrap' }}>
               Active: <b style={{ color: '#10b981', fontSize: '16px', marginLeft: '6px' }}>{stats.active}</b>
             </div>
           </div>
 
-          <div style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="admin-int-kpi-item bordered">
             <XCircle size={20} color="#f59e0b" />
             <div style={{ fontSize: '14px', color: '#cbd5e1', whiteSpace: 'nowrap' }}>
               Inactive: <b style={{ color: '#f59e0b', fontSize: '16px', marginLeft: '6px' }}>{stats.inactive}</b>
             </div>
           </div>
 
-          <div style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="admin-int-kpi-item bordered">
             <AlertTriangle size={20} color="#ef4444" />
             <div style={{ fontSize: '14px', color: '#cbd5e1', whiteSpace: 'nowrap' }}>
               Errors: <b style={{ color: '#ef4444', fontSize: '16px', marginLeft: '6px' }}>{stats.error}</b>
@@ -145,7 +145,7 @@ const AdminIntegrations = () => {
         </div>
       </Card>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '24px', alignItems: 'start' }}>
+      <div className="admin-integrations-layout">
         
         {/* ACTIVE INTEGRATIONS */}
         <Card style={{ padding: '24px' }}>
@@ -169,7 +169,7 @@ const AdminIntegrations = () => {
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px', marginTop: '4px' }}>
+                <div className="admin-int-footer">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#64748b' }}>
                     <RotateCw size={12} color="#10b981" /> Last sync: <span style={{ color: '#cbd5e1' }}>{integration.lastSync}</span>
                   </div>
@@ -213,7 +213,7 @@ const AdminIntegrations = () => {
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px', marginTop: '4px' }}>
+                <div className="admin-int-footer">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#64748b' }}>
                     <RotateCw size={12} color="#f59e0b" /> Last sync: <span style={{ color: '#cbd5e1' }}>{integration.lastSync}</span>
                   </div>
@@ -260,7 +260,7 @@ const AdminIntegrations = () => {
                 <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '6px', color: '#fca5a5', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
                    <AlertTriangle size={14} /> Connection timeout. Please check credentials.
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px', marginTop: '4px' }}>
+                <div className="admin-int-footer" style={{ justifyContent: 'flex-end' }}>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button style={{
                       background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px'

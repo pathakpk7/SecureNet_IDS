@@ -2066,3 +2066,132 @@ body.user .help-actions {
     flex-direction: column;
   }
 }
+
+/* ==========================================================================
+   INTEGRATIONS RESPONSIVE STYLES
+   ========================================================================== */
+
+.admin-integrations-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+}
+
+.admin-int-kpi-item {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.admin-int-kpi-item.bordered {
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-integrations-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.admin-int-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 12px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 992px) {
+  .admin-integrations-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .integrations-page,
+  .admin-integrations-page,
+  .user-integrations-page {
+    padding: 12px 10px !important;
+  }
+
+  .admin-integrations-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-int-kpi-item {
+    padding: 12px 10px;
+  }
+
+  .admin-int-kpi-item.bordered:nth-child(2) {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .admin-int-kpi-item.bordered:nth-child(3) {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .admin-int-kpi-item.bordered:nth-child(4) {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .integrations-stats-row {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .integrations-main-row {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  .integration-item-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .integration-item-row > div:last-child {
+    width: 100%;
+  }
+
+  .integration-item-row > div:last-child button {
+    width: 100%;
+  }
+
+  .admin-int-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .admin-int-footer > div:last-child {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .admin-int-footer > div:last-child button {
+    flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-integrations-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-int-kpi-item.bordered {
+    border-left: none !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+

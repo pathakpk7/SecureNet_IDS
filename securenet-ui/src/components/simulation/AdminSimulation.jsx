@@ -156,7 +156,7 @@ const AdminSimulation = () => {
 
       {/* COMPACT DYNAMIC KPIs IN ONE BOX */}
       <Card style={{ padding: '0', background: 'rgba(15, 23, 42, 0.8)', overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', alignItems: 'center' }}>
+        <div className="admin-sim-kpis">
           
           <div style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
             <Cpu size={20} color="#a855f7" />
@@ -182,7 +182,7 @@ const AdminSimulation = () => {
         </div>
       </Card>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', alignItems: 'start' }}>
+      <div className="admin-sim-layout">
         
         {/* AVAILABLE SIMULATIONS - LEFT COL */}
         <Card style={{ padding: '24px' }}>
@@ -209,9 +209,9 @@ const AdminSimulation = () => {
               <div key={sim.id} style={{
                 background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '20px', transition: 'all 0.2s', position: 'relative'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div className="admin-sim-item-inner">
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
                       <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#f8fafc' }}>{sim.name}</h4>
                       <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold', ...getStatusBadgeStyle(sim.status) }}>
                         {sim.status.toUpperCase()}
@@ -237,7 +237,7 @@ const AdminSimulation = () => {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '140px' }}>
+                  <div className="admin-sim-actions-col">
                     {sim.status === 'ready' && (
                       <button onClick={() => handleStartSimulation(sim)} style={{
                         background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: '1px solid #10b981', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'

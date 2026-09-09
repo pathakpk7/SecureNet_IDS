@@ -57,54 +57,47 @@ const UserSettings = () => {
 
   // Reusable UI Components
   const ToggleItem = ({ icon: Icon, label, description, checked, onChange }) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-        <div style={{ padding: '10px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '8px', color: '#10b981' }}>
+    <div className="settings-control-row">
+      <div className="settings-control-info">
+        <div className="settings-control-icon user-icon">
           <Icon size={20} />
         </div>
-        <div>
-          <div style={{ color: '#f8fafc', fontWeight: '500', fontSize: '15px' }}>{label}</div>
-          <div style={{ color: '#94a3b8', fontSize: '13px', marginTop: '2px' }}>{description}</div>
+        <div className="settings-control-text">
+          <div className="settings-control-label">{label}</div>
+          <div className="settings-control-desc">{description}</div>
         </div>
       </div>
-      <div 
-        onClick={onChange}
-        style={{
-          width: '44px', height: '24px', background: checked ? '#10b981' : 'rgba(255,255,255,0.1)',
-          borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.2s',
-          display: 'flex', alignItems: 'center', padding: '2px', flexShrink: 0
-        }}
-      >
-        <div style={{
-          width: '20px', height: '20px', background: '#fff', borderRadius: '50%',
-          transform: checked ? 'translateX(20px)' : 'translateX(0)', transition: 'all 0.2s',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-        }} />
+      <div className="settings-control-action">
+        <div 
+          onClick={onChange}
+          className={`settings-toggle-switch ${checked ? 'checked' : ''}`}
+        >
+          <div className="settings-toggle-thumb" />
+        </div>
       </div>
     </div>
   );
 
   const SelectItem = ({ icon: Icon, label, description, value, options, onChange }) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-      <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-        <div style={{ padding: '10px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '8px', color: '#10b981' }}>
+    <div className="settings-control-row">
+      <div className="settings-control-info">
+        <div className="settings-control-icon user-icon">
           <Icon size={20} />
         </div>
-        <div>
-          <div style={{ color: '#f8fafc', fontWeight: '500', fontSize: '15px' }}>{label}</div>
-          <div style={{ color: '#94a3b8', fontSize: '13px', marginTop: '2px' }}>{description}</div>
+        <div className="settings-control-text">
+          <div className="settings-control-label">{label}</div>
+          <div className="settings-control-desc">{description}</div>
         </div>
       </div>
-      <select 
-        value={value} 
-        onChange={(e) => onChange(e.target.value)}
-        style={{
-          background: 'rgba(15, 23, 42, 0.8)', color: '#f8fafc', border: '1px solid rgba(255,255,255,0.1)',
-          padding: '8px 12px', borderRadius: '6px', outline: 'none', cursor: 'pointer', fontSize: '13px', minWidth: '120px'
-        }}
-      >
-        {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-      </select>
+      <div className="settings-control-action">
+        <select 
+          value={value} 
+          onChange={(e) => onChange(e.target.value)}
+          className="settings-select-input"
+        >
+          {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        </select>
+      </div>
     </div>
   );
 
@@ -117,38 +110,31 @@ const UserSettings = () => {
   ];
 
   return (
-    <div className="user-settings-page fade-in" style={{ padding: '24px 0', display: 'flex', gap: '32px' }}>
+    <div className="user-settings-page settings-view-layout fade-in">
       
       {/* LEFT SIDEBAR NAVIGATION */}
-      <div style={{ width: '260px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div style={{ marginBottom: '16px', color: '#f8fafc', fontSize: '1.2rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Settings size={22} color="#10b981" /> My Settings
+      <div className="settings-nav-sidebar">
+        <div className="settings-sidebar-title">
+          <Settings size={20} color="#10b981" /> My Settings
         </div>
         
-        {sections.map(sec => {
-          const isActive = activeSection === sec.id;
-          return (
-            <button
-              key={sec.id}
-              onClick={() => setActiveSection(sec.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '8px', border: 'none',
-                background: isActive ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
-                color: isActive ? '#10b981' : '#94a3b8',
-                fontWeight: isActive ? '600' : '400',
-                cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left',
-                borderLeft: isActive ? '3px solid #10b981' : '3px solid transparent'
-              }}
-              onMouseOver={e => { if(!isActive) e.currentTarget.style.color = '#cbd5e1' }}
-              onMouseOut={e => { if(!isActive) e.currentTarget.style.color = '#94a3b8' }}
-            >
-              <sec.icon size={18} />
-              {sec.label}
-            </button>
-          )
-        })}
+        <div className="settings-nav-items-scroll">
+          {sections.map(sec => {
+            const isActive = activeSection === sec.id;
+            return (
+              <button
+                key={sec.id}
+                onClick={() => setActiveSection(sec.id)}
+                className={`settings-nav-btn user-nav ${isActive ? 'active' : ''}`}
+              >
+                <sec.icon size={18} />
+                <span>{sec.label}</span>
+              </button>
+            )
+          })}
+        </div>
 
-        <div style={{ marginTop: 'auto', paddingTop: '32px' }}>
+        <div className="settings-sidebar-status">
           <Card style={{ padding: '16px', background: 'linear-gradient(180deg, rgba(15,23,42,0.8), rgba(0,0,0,0.4))' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '8px' }}>
               <User size={14} /> Profile Status
@@ -163,16 +149,16 @@ const UserSettings = () => {
       </div>
 
       {/* RIGHT CONTENT AREA */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div className="settings-main-panel">
         
-        <Card style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {React.createElement(sections.find(s => s.id === activeSection)?.icon, { size: 24, color: '#10b981' })}
-              {sections.find(s => s.id === activeSection)?.label}
+        <Card className="settings-panel-card">
+          <div className="settings-panel-header">
+            <h2 className="settings-panel-title">
+              {React.createElement(sections.find(s => s.id === activeSection)?.icon, { size: 22, color: '#10b981' })}
+              <span>{sections.find(s => s.id === activeSection)?.label}</span>
             </h2>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>PERSONAL</span>
+            <div>
+              <span className="settings-badge-user">PERSONAL</span>
             </div>
           </div>
 
@@ -226,20 +212,20 @@ const UserSettings = () => {
         </Card>
 
         {/* ACTIONS BAR */}
-        <Card style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15, 23, 42, 0.9)' }}>
-          <div style={{ color: '#94a3b8', fontSize: '13px' }}>
+        <Card className="settings-bottom-actions-card">
+          <div className="settings-bottom-note">
             Need advanced system settings? Contact your Administrator.
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="settings-bottom-btns">
             <button 
               onClick={handleReset}
-              style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #475569', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+              className="settings-btn-reset"
             >
               <RotateCcw size={14} /> Reset
             </button>
             <button 
               onClick={handleSave}
-              style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 24px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', boxShadow: '0 0 15px rgba(16, 185, 129, 0.4)' }}
+              className="settings-btn-save user-save"
             >
               <Save size={16} /> Save Changes
             </button>
