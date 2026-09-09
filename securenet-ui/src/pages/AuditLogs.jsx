@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import RoleGuard from '../components/RoleGuard';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 /**
  * Audit Logs Page
@@ -30,7 +31,7 @@ const AuditLogs = () => {
       if (filters.date_from) params.append('date_from', filters.date_from);
       if (filters.date_to) params.append('date_to', filters.date_to);
 
-      const url = `http://localhost:8000/api/v1/audit-logs?${params.toString()}`;
+      const url = `${API_V1}/audit-logs?${params.toString()}`;
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
@@ -58,7 +59,7 @@ const AuditLogs = () => {
 
   const exportLogs = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/reports/audit-logs/export', {
+      const response = await fetch('${API_V1}/reports/audit-logs/export', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }

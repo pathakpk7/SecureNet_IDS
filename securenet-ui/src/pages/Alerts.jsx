@@ -6,6 +6,7 @@ import useRealtimeAlerts from '../hooks/useRealtimeAlerts';
 import ThreatIntelligence from '../components/security/ThreatIntelligence';
 import IncidentPanel from '../components/security/IncidentPanel';
 import '../styles/pages/alerts.css';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 const Alerts = () => {
   const [selectedSeverity, setSelectedSeverity] = useState('all');
@@ -22,7 +23,7 @@ const Alerts = () => {
   useEffect(() => {
     const fetchPersistedAlerts = async () => {
       try {
-        const res = await fetch('http://localhost:8000/alerts?limit=50');
+        const res = await fetch('${API_BASE}/alerts?limit=50');
         if (res.ok) {
           const body = await res.json();
           const list = Array.isArray(body) ? body : (body?.data?.alerts || body?.data || []);
@@ -91,7 +92,7 @@ const Alerts = () => {
 
   const handleBlockIP = async (ip) => {
     try {
-      await fetch('http://localhost:8000/blacklist', {
+      await fetch('${API_BASE}/blacklist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ip_address: ip, reason: 'Manually blocked from Security Alerts UI' })

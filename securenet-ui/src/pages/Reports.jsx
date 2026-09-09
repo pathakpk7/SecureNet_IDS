@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import Card from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
 import '../styles/pages/reports.css';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 /**
  * Enterprise Reports Page
@@ -20,7 +21,7 @@ const Reports = () => {
   const generateReport = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/reports/generate?report_type=${reportType}&format=${format}`);
+      const response = await fetch(`${API_V1}/reports/generate?report_type=${reportType}&format=${format}`);
 
       if (response.ok) {
         const blob = await response.blob();
@@ -57,7 +58,7 @@ const Reports = () => {
 
   const exportAlerts = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/reports/alerts/export?format=csv');
+      const response = await fetch('${API_V1}/reports/alerts/export?format=csv');
 
       if (response.ok) {
         const blob = await response.blob();
@@ -81,7 +82,7 @@ const Reports = () => {
 
   const exportAuditLogs = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/reports/audit-logs/export?format=csv');
+      const response = await fetch('${API_V1}/reports/audit-logs/export?format=csv');
 
       if (response.ok) {
         const blob = await response.blob();
@@ -108,7 +109,7 @@ const Reports = () => {
     
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/v1/admin/archive', { method: 'POST' });
+      const response = await fetch('${API_V1}/admin/archive', { method: 'POST' });
       const data = await response.json();
       if (response.ok && data.success) {
         toast.success(data.message || 'Weekly data archived successfully!');

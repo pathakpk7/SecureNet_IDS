@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: securenet-ids-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: ABUSEIPDB_API_KEY
+        sync: false
+      - key: VIRUSTOTAL_API_KEY
+        sync: false
+      - key: OTX_API_KEY
+        sync: false
+      - key: URLSCAN_API_KEY
+        sync: false
+      - key: GOOGLE_SAFE_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.0

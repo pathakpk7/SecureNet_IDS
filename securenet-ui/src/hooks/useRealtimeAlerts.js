@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../api/supabase";
+import { API_V1, WS_URL } from '@/config/api';
 
 export function useRealtimeAlerts() {
   const [alerts, setAlerts] = useState([]);
@@ -9,7 +10,7 @@ export function useRealtimeAlerts() {
     // 1. Fetch initial alerts from FastAPI backend or Supabase
     const fetchInitial = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/alerts?limit=20");
+        const res = await fetch(`${API_V1}/alerts?limit=20`);
         if (res.ok) {
           const json = await res.json();
           const list = json?.data?.alerts || json?.data || [];
@@ -39,7 +40,7 @@ export function useRealtimeAlerts() {
     const connectWs = () => {
       if (isDisposed) return;
       try {
-        const ws = new WebSocket("ws://localhost:8000/ws");
+        const ws = new WebSocket(WS_URL);
         wsRef.current = ws;
 
         ws.onopen = () => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import RoleGuard from '../components/RoleGuard';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 /**
  * SIEM Export Page
@@ -22,7 +23,7 @@ const SIEMExport = () => {
 
   const fetchConnectors = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/v1/siem/connectors', {
+      const res = await fetch('${API_V1}/siem/connectors', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }

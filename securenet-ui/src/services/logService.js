@@ -1,6 +1,5 @@
 import { supabase } from "../api/supabase";
-
-const API_BASE = "http://localhost:8000/api/v1";
+import { API_V1 as API_BASE } from '@/config/api';
 
 export const fetchLogs = async () => {
   try {

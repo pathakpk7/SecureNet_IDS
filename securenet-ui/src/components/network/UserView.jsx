@@ -3,6 +3,7 @@ import Card from '../ui/Card';
 import LineChart from '../Charts/LineChart';
 import '../../styles/pages/network.css';
 import { useAuth } from '../../context/AuthContext';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 const UserNetworkMonitor = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('24h');
@@ -15,7 +16,7 @@ const UserNetworkMonitor = () => {
     // Connect to WebSocket for live packets
     const connectWs = () => {
       try {
-        const ws = new WebSocket('ws://localhost:8000/ws');
+        const ws = new WebSocket('${WS_URL}');
         wsRef.current = ws;
         ws.onmessage = (event) => {
           try {
@@ -50,7 +51,7 @@ const UserNetworkMonitor = () => {
 
     const fetchStats = async () => {
       try {
-        const res = await fetch('http://localhost:8000/status');
+        const res = await fetch('${API_BASE}/status');
         if (res.ok) {
           const body = await res.json();
           const d = body.data || body;

@@ -4,6 +4,7 @@ import BarChart from '../Charts/BarChart';
 import PieChart from '../Charts/PieChart';
 import useRealtimeAlerts from '../../hooks/useRealtimeAlerts';
 import '../../styles/pages/analysis.css';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 const UserAttackAnalysis = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('24h');
@@ -13,7 +14,7 @@ const UserAttackAnalysis = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('http://localhost:8000/stats');
+        const res = await fetch('${API_BASE}/stats');
         if (res.ok) {
           const body = await res.json();
           const s = body.data || body;

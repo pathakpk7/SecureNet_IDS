@@ -4,6 +4,7 @@ import LineChart from '../../components/Charts/LineChart';
 import AnimatedCounter from '../../components/ui/AnimatedCounter';
 import useRealtimeAlerts from '../../hooks/useRealtimeAlerts';
 import '../../styles/pages/ai.css';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 const AdminAIInsights = () => {
   const realtimeAlerts = useRealtimeAlerts();
@@ -12,7 +13,7 @@ const AdminAIInsights = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('http://localhost:8000/stats');
+        const res = await fetch('${API_BASE}/stats');
         if (res.ok) {
           const body = await res.json();
           const s = body.data || body;
