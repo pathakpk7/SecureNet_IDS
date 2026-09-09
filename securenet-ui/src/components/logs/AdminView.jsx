@@ -44,12 +44,31 @@ const AdminView = () => {
     { id: 'log-101', timestamp: new Date().toISOString(), level: 'INFO', message: 'IDS Core Detection Engine active and listening on eth0', source: 'pipeline' },
     { id: 'log-102', timestamp: new Date(Date.now() - 45000).toISOString(), level: 'WARNING', message: 'High packet volume burst detected from IP 192.168.1.105', source: 'traffic_monitor' },
     { id: 'log-103', timestamp: new Date(Date.now() - 120000).toISOString(), level: 'ERROR', message: 'Unauthorized connection attempt on SSH port 22 blocked', source: 'firewall' },
-    { id: 'log-104', timestamp: new Date(Date.now() - 300000).toISOString(), level: 'INFO', message: 'Threat intelligence IP feed updated successfully', source: 'threat_intel' },
-    { id: 'log-105', timestamp: new Date(Date.now() - 600000).toISOString(), level: 'WARNING', message: 'Abnormal DNS query rate detected from workstation-04', source: 'dns_inspector' },
-    { id: 'log-106', timestamp: new Date(Date.now() - 900000).toISOString(), level: 'INFO', message: 'System security audit telemetry verified', source: 'audit_service' }
+    { id: 'log-104', timestamp: new Date(Date.now() - 210000).toISOString(), level: 'CRITICAL', message: 'DDoS SYN Flood volumetric spike: 14,200 req/s detected', source: 'ddos_mitigator' },
+    { id: 'log-105', timestamp: new Date(Date.now() - 300000).toISOString(), level: 'INFO', message: 'Threat intelligence IP feed updated successfully (1,420 signatures loaded)', source: 'threat_intel' },
+    { id: 'log-106', timestamp: new Date(Date.now() - 450000).toISOString(), level: 'ERROR', message: 'SQL Injection signature intercepted from IP 185.220.101.5', source: 'waf_service' },
+    { id: 'log-107', timestamp: new Date(Date.now() - 600000).toISOString(), level: 'WARNING', message: 'Abnormal DNS query rate detected from workstation-04', source: 'dns_inspector' },
+    { id: 'log-108', timestamp: new Date(Date.now() - 750000).toISOString(), level: 'CRITICAL', message: 'Ransomware beacon communication blocked to domain evil-c2.net', source: 'endpoint_agent' },
+    { id: 'log-109', timestamp: new Date(Date.now() - 900000).toISOString(), level: 'INFO', message: 'System security audit telemetry verified across all worker nodes', source: 'audit_service' }
   ];
 
   const filteredLogs = logs.filter(log => {
+    // 1. Level Filter
+    if (filterLevel && filterLevel !== 'ALL') {
+      const logLvl = String(log.level || '').toUpperCase();
+      const targetLvl = String(filterLevel).toUpperCase();
+      if (targetLvl === 'WARNING') {
+        if (!['WARN', 'WARNING'].includes(logLvl)) return false;
+      } else if (targetLvl === 'ERROR') {
+        if (!['ERROR', 'CRITICAL'].includes(logLvl)) return false;
+      } else if (targetLvl === 'INFO') {
+        if (logLvl !== 'INFO') return false;
+      } else if (logLvl !== targetLvl) {
+        return false;
+      }
+    }
+
+    // 2. Search Filter
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (

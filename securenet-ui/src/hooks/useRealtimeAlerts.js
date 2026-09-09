@@ -137,6 +137,15 @@ export function useRealtimeAlerts() {
 
   useEffect(() => {
     // 1. Fetch initial alerts from FastAPI backend or Supabase
+    const normalizeAlert = (item) => ({
+      ...item,
+      sourceIP: item.sourceIP || item.source_ip || item.src_ip || '192.168.1.100',
+      destinationIP: item.destinationIP || item.destination_ip || item.dest_ip || item.dst_ip || '10.0.0.1',
+      threatType: item.threatType || item.threat_type || item.attack_type || 'Threat Detection',
+      severity: (item.severity || item.risk_level || 'medium').toLowerCase(),
+      status: item.status || 'logged'
+    });
+
     const fetchInitial = async () => {
       try {
         const res = await fetch(`${API_V1}/alerts?limit=20`);
@@ -144,7 +153,7 @@ export function useRealtimeAlerts() {
           const json = await res.json();
           const list = json?.data?.alerts || json?.data || [];
           if (Array.isArray(list) && list.length > 0) {
-            setAlerts(list);
+            setAlerts(list.map(normalizeAlert));
             return;
           }
         }
@@ -159,7 +168,7 @@ export function useRealtimeAlerts() {
           .order("timestamp", { ascending: false })
           .limit(20);
         if (data && data.length > 0) {
-          setAlerts(data);
+          setAlerts(data.map(normalizeAlert));
           return;
         }
       } catch (e) {}
@@ -185,7 +194,7 @@ export function useRealtimeAlerts() {
           try {
             const message = JSON.parse(event.data);
             if (message.type === "alert" && message.data) {
-              setAlerts(prev => [message.data, ...prev.slice(0, 49)]);
+              setAlerts(prev => [normalizeAlert(message.data), ...prev.slice(0, 49)]);
             }
           } catch (e) {}
         };
@@ -216,7 +225,7 @@ export function useRealtimeAlerts() {
           { event: "INSERT", schema: "public", table: "alerts" },
           (payload) => {
             if (payload?.new) {
-              setAlerts(prev => [payload.new, ...prev.slice(0, 49)]);
+              setAlerts(prev => [normalizeAlert(payload.new), ...prev.slice(0, 49)]);
             }
           }
         )

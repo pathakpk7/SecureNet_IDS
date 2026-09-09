@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { 
   Settings, User, Bell, LayoutDashboard, Eye, Accessibility,
   Save, RotateCcw, Moon, RotateCw, Volume2, Mail, Smartphone,
-  Globe, Clock, Maximize, Lock, Activity, EyeOff, Type, Contrast, Hand
+  Globe, Clock, Maximize, Lock, Activity, EyeOff, Type, Contrast, Hand, Menu, X
 } from "lucide-react";
 import '../../styles/pages/settings.css';
 
@@ -36,6 +36,7 @@ const UserSettings = () => {
   });
 
   const [activeSection, setActiveSection] = useState('personal');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleToggle = (key) => {
     setSettings(prev => ({ ...prev, [key]: !prev[key] }));
@@ -114,23 +115,43 @@ const UserSettings = () => {
       
       {/* LEFT SIDEBAR NAVIGATION */}
       <div className="settings-nav-sidebar">
-        <div className="settings-sidebar-title">
-          <Settings size={20} color="#10b981" /> My Settings
+        <div className="settings-sidebar-header" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <div className="settings-sidebar-title">
+            <Settings size={20} color="#10b981" />
+            <span>My Settings</span>
+            <span className="settings-active-chip-mobile user-chip">
+              {sections.find(s => s.id === activeSection)?.label}
+            </span>
+          </div>
+          <button 
+            type="button"
+            className="settings-hamburger-btn user-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setMobileMenuOpen(!mobileMenuOpen);
+            }}
+            aria-label="Toggle settings navigation"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
         
-        <div className="settings-nav-items-scroll">
+        <div className={`settings-nav-items-scroll ${mobileMenuOpen ? 'mobile-open' : ''}`}>
           {sections.map(sec => {
             const isActive = activeSection === sec.id;
             return (
               <button
                 key={sec.id}
-                onClick={() => setActiveSection(sec.id)}
+                onClick={() => {
+                  setActiveSection(sec.id);
+                  setMobileMenuOpen(false);
+                }}
                 className={`settings-nav-btn user-nav ${isActive ? 'active' : ''}`}
               >
                 <sec.icon size={18} />
                 <span>{sec.label}</span>
               </button>
-            )
+            );
           })}
         </div>
 

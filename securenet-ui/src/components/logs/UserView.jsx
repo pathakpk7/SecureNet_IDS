@@ -7,6 +7,7 @@ import { API_BASE, API_V1, WS_URL } from '@/config/api';
 const UserView = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterLevel, setFilterLevel] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -37,11 +38,29 @@ const UserView = () => {
 
   const getFallbackUserLogs = () => [
     { id: 'user-log-1', timestamp: new Date().toISOString(), level: 'INFO', message: 'User session authenticated successfully via Multi-Factor Auth', source: 'auth_service' },
-    { id: 'user-log-2', timestamp: new Date(Date.now() - 180000).toISOString(), level: 'INFO', message: 'Dashboard telemetry connection established', source: 'session_manager' },
-    { id: 'user-log-3', timestamp: new Date(Date.now() - 600000).toISOString(), level: 'INFO', message: 'Network security status verified clean', source: 'security_monitor' }
+    { id: 'user-log-2', timestamp: new Date(Date.now() - 90000).toISOString(), level: 'WARNING', message: 'Session idle timeout warning: inactive for 25 minutes', source: 'session_manager' },
+    { id: 'user-log-3', timestamp: new Date(Date.now() - 180000).toISOString(), level: 'INFO', message: 'Dashboard telemetry connection established with TLS 1.3', source: 'session_manager' },
+    { id: 'user-log-4', timestamp: new Date(Date.now() - 360000).toISOString(), level: 'ERROR', message: 'API key authorization failed for secondary device sync', source: 'auth_service' },
+    { id: 'user-log-5', timestamp: new Date(Date.now() - 600000).toISOString(), level: 'INFO', message: 'Network security status verified clean', source: 'security_monitor' }
   ];
 
   const filteredLogs = logs.filter(log => {
+    // 1. Level Filter
+    if (filterLevel && filterLevel !== 'ALL') {
+      const logLvl = String(log.level || '').toUpperCase();
+      const targetLvl = String(filterLevel).toUpperCase();
+      if (targetLvl === 'WARNING') {
+        if (!['WARN', 'WARNING'].includes(logLvl)) return false;
+      } else if (targetLvl === 'ERROR') {
+        if (!['ERROR', 'CRITICAL'].includes(logLvl)) return false;
+      } else if (targetLvl === 'INFO') {
+        if (logLvl !== 'INFO') return false;
+      } else if (logLvl !== targetLvl) {
+        return false;
+      }
+    }
+
+    // 2. Search Filter
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
@@ -109,6 +128,17 @@ const UserView = () => {
         </div>
 
         <div className="logs-filter-group">
+          <select
+            value={filterLevel}
+            onChange={(e) => setFilterLevel(e.target.value)}
+            className="logs-select"
+          >
+            <option value="ALL">All Levels</option>
+            <option value="INFO">INFO Level</option>
+            <option value="WARNING">WARNING Level</option>
+            <option value="ERROR">ERROR Level</option>
+          </select>
+
           <button onClick={fetchLogs} className="logs-btn">
             Refresh Activity
           </button>

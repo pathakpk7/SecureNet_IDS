@@ -711,14 +711,28 @@ body.user input:checked + .slider {
   gap: 8px;
 }
 
-.settings-sidebar-title {
+.settings-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.settings-sidebar-title {
   color: #f8fafc;
   font-size: 1.15rem;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.settings-active-chip-mobile {
+  display: none;
+}
+
+.settings-hamburger-btn {
+  display: none;
 }
 
 .settings-nav-items-scroll {
@@ -1055,51 +1069,111 @@ body.user input:checked + .slider {
     gap: 0;
   }
 
+  .settings-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(0, 245, 255, 0.2);
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
   .settings-sidebar-title {
-    font-size: 1rem;
-    margin-bottom: 8px;
+    font-size: 0.95rem;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .settings-active-chip-mobile {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: rgba(0, 245, 255, 0.12);
+    color: #00f5ff;
+    border: 1px solid rgba(0, 245, 255, 0.25);
+  }
+
+  .settings-active-chip-mobile.user-chip {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.25);
+  }
+
+  .settings-hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #00f5ff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .settings-hamburger-btn.user-btn {
+    color: #10b981;
+  }
+
+  .settings-hamburger-btn:hover {
+    background: rgba(0, 245, 255, 0.1);
+    border-color: rgba(0, 245, 255, 0.4);
   }
 
   .settings-nav-items-scroll {
-    flex-direction: row;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    display: none;
+    flex-direction: column;
     gap: 6px;
-    padding-bottom: 8px;
     width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    animation: fadeIn 0.2s ease;
   }
 
-  .settings-nav-items-scroll::-webkit-scrollbar {
-    height: 3px;
-  }
-
-  .settings-nav-items-scroll::-webkit-scrollbar-thumb {
-    background: rgba(0, 245, 255, 0.2);
-    border-radius: 3px;
+  .settings-nav-items-scroll.mobile-open {
+    display: flex;
   }
 
   .settings-nav-btn {
-    flex-shrink: 0;
-    white-space: nowrap;
-    padding: 8px 14px;
+    width: 100%;
+    justify-content: flex-start;
+    padding: 10px 14px;
+    border-radius: 6px;
     font-size: 13px;
-    border-radius: 8px;
-    gap: 6px;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    border-bottom: 2px solid transparent;
-    background: rgba(15, 23, 42, 0.6);
+    border-left: 3px solid transparent;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    background: transparent;
   }
 
   .settings-nav-btn.admin-nav.active {
-    border-left: 1px solid rgba(14, 165, 233, 0.4);
-    border-bottom: 2px solid #0ea5e9;
+    background: rgba(14, 165, 233, 0.15);
+    border-left: 3px solid #0ea5e9;
+    border-bottom: none;
   }
 
   .settings-nav-btn.user-nav.active {
-    border-left: 1px solid rgba(16, 185, 129, 0.4);
-    border-bottom: 2px solid #10b981;
+    background: rgba(16, 185, 129, 0.15);
+    border-left: 3px solid #10b981;
+    border-bottom: none;
   }
 
   .settings-sidebar-status {

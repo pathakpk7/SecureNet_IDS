@@ -1040,11 +1040,39 @@ body.user .info-value.secure {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 18px;
+}
+
+.nm-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nm-card-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.nm-ip-table-scroll {
+  width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  margin-top: 12px;
+  padding-bottom: 4px;
+}
+
+.nm-ip-table-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.nm-ip-table-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 245, 255, 0.2);
+  border-radius: 4px;
 }
 
 .nm-ip-table {
+  min-width: 620px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1052,7 +1080,7 @@ body.user .info-value.secure {
 
 .nm-ip-table-header {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1.5fr;
+  grid-template-columns: minmax(130px, 1.4fr) minmax(95px, 1fr) minmax(85px, 0.9fr) minmax(110px, 1fr) minmax(95px, 1fr) minmax(90px, 0.9fr);
   align-items: center;
   padding: 10px 16px;
   background: rgba(255, 255, 255, 0.03);
@@ -1072,7 +1100,7 @@ body.user .info-value.secure {
 
 .nm-ip-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1.5fr;
+  grid-template-columns: minmax(130px, 1.4fr) minmax(95px, 1fr) minmax(85px, 0.9fr) minmax(110px, 1fr) minmax(95px, 1fr) minmax(90px, 0.9fr);
   align-items: center;
   padding: 10px 16px;
   background: rgba(15, 23, 42, 0.4);
@@ -1086,10 +1114,24 @@ body.user .info-value.secure {
   border-color: rgba(0, 245, 255, 0.2);
 }
 
+.nm-ip-row.blocked {
+  opacity: 0.85;
+  background: rgba(239, 68, 68, 0.03);
+}
+
 .ip-cell {
   font-size: 13px;
   display: flex;
   align-items: center;
+}
+
+.ip-indicator-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .actions-cell {
@@ -1107,7 +1149,7 @@ body.user .info-value.secure {
 }
 
 .nm-btn-sm {
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
@@ -1133,9 +1175,18 @@ body.user .info-value.secure {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-.btn-block-action:disabled {
+.btn-block-action:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+}
+
+.btn-block-action:disabled,
+.btn-block-action.blocked {
   opacity: 0.5;
   cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* 4. BOTTOM ROW (Live Traffic Feed & Protocol Analysis) */
