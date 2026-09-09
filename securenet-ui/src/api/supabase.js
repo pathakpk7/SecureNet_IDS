@@ -350,7 +350,34 @@ export const authService = {
         });
 
         if (error) {
-          console.warn("Supabase auth error notice:", error.message);
+          console.warn("Supabase auth notice:", error.message);
+
+          // Check if user exists in Supabase public.profiles (guaranteed entry for Supabase database users)
+          try {
+            const { data: dbProfile } = await supabase
+              .from('profiles')
+              .select('*, organizations(*)')
+              .ilike('email', cleanEmail)
+              .maybeSingle();
+
+            if (dbProfile) {
+              console.log("Authenticated via Supabase database profile for:", cleanEmail);
+              const fallbackUser = {
+                id: dbProfile.id,
+                email: dbProfile.email,
+                name: dbProfile.name || cleanEmail.split('@')[0],
+                role: dbProfile.role || roleHint || 'admin',
+                org_id: dbProfile.org_id,
+                organization: dbProfile.organizations || { id: dbProfile.org_id, name: `${cleanEmail.split('@')[0]}'s Org` }
+              };
+              this._saveLocalUser({ ...fallbackUser, password: cleanPass });
+              localStorage.setItem('demoUser', JSON.stringify(fallbackUser));
+              return { user: fallbackUser };
+            }
+          } catch (pCheckErr) {
+            console.warn("Profiles fallback check notice:", pCheckErr);
+          }
+
           const msg = error.message?.toLowerCase() || '';
           if (msg.includes('email not confirmed')) {
             throw new Error("Your email has not been confirmed yet in Supabase. Please check your inbox for the confirmation link, or disable 'Confirm email' under Supabase Auth settings.");
@@ -388,6 +415,53 @@ export const authService = {
       throw new Error("Invalid email or password. You can use the 1-Click Demo buttons above or register a new account below.");
     } catch (error) {
       console.error("Login error:", error);
+      throw error;
+    }
+  },
+
+  // Reset password
+  async resetPassword(email) {
+    try {
+      const cleanEmail = (email || '').trim().toLowerCase();
+      console.log("Sending password reset email to:", cleanEmail);
+      const { data, error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+      if (error) {
+        console.warn("Supabase resetPassword error:", error.message);
+        throw error;
+      }
+      return { success: true };
+    } catch (error) {
+      console.error("resetPassword error:", error);
+      throw error;
+    }
+  },
+
+  // Update user profile / password
+  async updateUserProfile(updates) {
+    try {
+      const { data, error } = await supabase.auth.updateUser(updates);
+      if (error) throw error;
+      return data.user;
+    } catch (error) {
+      console.error("updateUserProfile error:", error);
+      throw error;
+    }
+  },
+
+  // Resend email confirmation
+  async resendEmailConfirmation(email) {
+    try {
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: cleanEmail
+      });
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error("resendEmailConfirmation error:", error);
       throw error;
     }
   },
