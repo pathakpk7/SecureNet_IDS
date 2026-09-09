@@ -1037,6 +1037,8 @@ body.user .info-value.secure {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 18px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .nm-ip-table {
@@ -1295,9 +1297,8 @@ body.user .info-value.secure {
   .nm-kpi-row {
     grid-template-columns: repeat(2, 1fr);
   }
-  .nm-ip-table-header, .nm-ip-row {
-    grid-template-columns: 1fr;
-    gap: 6px;
+  .nm-ip-table {
+    min-width: 580px;
   }
 }
 

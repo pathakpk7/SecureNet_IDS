@@ -571,3 +571,68 @@
     justify-content: flex-start;
   }
 }
+
+/* Single-row compact stats bar responsive support */
+.admin-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+}
+
+@media (max-width: 1024px) {
+  .admin-stats-bar {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .admin-stats-bar > div:nth-child(n+4) {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-stats-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .admin-stats-bar > div {
+    border-left: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-stats-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Admin actions bar responsive */
+.admin-actions-bar {
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.6);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .admin-actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Two column split grid */
+.admin-main-split {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .admin-main-split {
+    grid-template-columns: 1fr;
+  }
+}
+

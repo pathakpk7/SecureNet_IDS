@@ -72,6 +72,12 @@
   margin-top: 16px;
 }
 
+@media (max-width: 640px) {
+  .incident-actions {
+    flex-direction: column;
+  }
+}
+
 .incident-actions button {
   flex: 1;
   padding: 8px 12px;
@@ -79,6 +85,12 @@
   font-size: 12px;
   font-weight: 500;
   transition: all 0.2s ease;
+}
+
+@media (max-width: 640px) {
+  .incident-actions button {
+    width: 100%;
+  }
 }
 
 .incident-actions .btn-primary {

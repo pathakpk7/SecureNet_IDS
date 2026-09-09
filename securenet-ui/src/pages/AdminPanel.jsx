@@ -238,7 +238,7 @@ const AdminPanel = () => {
 
       {/* SINGLE ROW COMPACT STATS */}
       <Card style={{ padding: '0', background: 'rgba(15, 23, 42, 0.8)', overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', alignItems: 'center' }}>
+        <div className="admin-stats-bar">
           
           <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
             <Users size={16} color="#38bdf8" />
@@ -279,18 +279,18 @@ const AdminPanel = () => {
       </Card>
 
       {/* USER MANAGEMENT ACTION ROW */}
-      <Card style={{ padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15, 23, 42, 0.6)' }}>
+      <Card className="admin-actions-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f8fafc', fontSize: '13px', fontWeight: '600' }}>
           <Settings size={16} color="#38bdf8" /> User Management
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button 
             onClick={() => setShowAddUserModal(true)}
             style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <UserPlus size={14} /> Add User
           </button>
-          <button onClick={handleExportCSV} style={{ background: 'transparent', color: '#0ea5e9', border: '1px solid rgba(14, 165, 233, 0.3)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button onClick={handleExportCSV} style={{ background: 'transparent', color: '#0ea5e9', border: '1px solid rgba(145, 165, 233, 0.3)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <FileText size={14} /> Export CSV
           </button>
           <div style={{ position: 'relative' }}>
@@ -316,7 +316,7 @@ const AdminPanel = () => {
       </Card>
 
       {/* TWO COLUMN GRID: USER LIST | SYSTEM SETTINGS */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', alignItems: 'start' }}>
+      <div className="admin-main-split">
         
         {/* COMPACT USER LIST */}
         <Card style={{ padding: '0', background: 'rgba(15, 23, 42, 0.6)', overflow: 'hidden' }}>
@@ -328,11 +328,11 @@ const AdminPanel = () => {
             </div>
           </div>
           
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             {loadingUsers ? (
               <div style={{ padding: '30px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>Loading users...</div>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '12px' }}>
                 <thead>
                   <tr style={{ background: 'rgba(0,0,0,0.2)', color: '#94a3b8', textAlign: 'left' }}>
                     <th style={{ padding: '10px 20px', width: '40px' }}>
@@ -422,8 +422,8 @@ const AdminPanel = () => {
 
       {/* MODALS */}
       {showAddUserModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <Card style={{ width: '400px', padding: '24px', background: '#0f172a', border: '1px solid rgba(0,245,255,0.2)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <Card style={{ width: '100%', maxWidth: '420px', padding: '24px', background: '#0f172a', border: '1px solid rgba(0,245,255,0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, color: '#f8fafc', fontSize: '16px' }}>Add New User</h3>
               <button onClick={() => setShowAddUserModal(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={20}/></button>
@@ -456,8 +456,8 @@ const AdminPanel = () => {
       )}
 
       {showUserActivityModal && selectedUser && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <Card style={{ width: '500px', padding: '24px', background: '#0f172a', border: '1px solid rgba(0,245,255,0.2)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <Card style={{ width: '100%', maxWidth: '520px', padding: '24px', background: '#0f172a', border: '1px solid rgba(0,245,255,0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, color: '#f8fafc', fontSize: '16px' }}>Activity - {selectedUser.name}</h3>
               <button onClick={() => setShowUserActivityModal(false)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={20}/></button>

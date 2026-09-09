@@ -629,8 +629,10 @@ input:checked + .slider:before {
 @media (max-width: 768px) {
   .notifications-stats,
   .admin-stats,
-  .user-stats {
-    grid-template-columns: repeat(2, 1fr);
+  .user-stats,
+  body.admin .admin-stats,
+  body.user .user-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
   
   .notifications-controls {
@@ -672,8 +674,10 @@ input:checked + .slider:before {
 @media (max-width: 480px) {
   .notifications-stats,
   .admin-stats,
-  .user-stats {
-    grid-template-columns: 1fr;
+  .user-stats,
+  body.admin .admin-stats,
+  body.user .user-stats {
+    grid-template-columns: 1fr !important;
   }
   
   .filter-tabs {

@@ -119,7 +119,7 @@ const AdminProfile = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+      <div className="profile-cards-grid">
         
         {/* ADMIN IDENTITY */}
         <Card style={{ background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.6))', border: '1px solid rgba(239, 68, 68, 0.3)', position: 'relative', overflow: 'hidden' }}>
@@ -157,7 +157,7 @@ const AdminProfile = () => {
             <Activity size={18} /> NETWORK METRICS
           </h3>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="profile-metrics-grid">
             <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>Total Users</div>
               <div style={{ color: '#f8fafc', fontSize: '24px', fontWeight: 'bold' }}>{systemStats.totalUsers}</div>
@@ -211,7 +211,7 @@ const AdminProfile = () => {
         </Card>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+      <div className="profile-row-bottom">
         {/* RECENT ACTIONS */}
         <Card style={{ background: 'rgba(15, 23, 42, 0.6)' }}>
           <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>

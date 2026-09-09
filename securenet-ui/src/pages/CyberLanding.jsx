@@ -4,16 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import '../styles/pages/cyber-landing.css';
 
 const CyberLanding = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   const handleLaunchDashboard = (e) => {
     if (e) e.preventDefault();
-    if (user) {
-      navigate('/dashboard');
-    } else {
-      navigate('/login');
-    }
+    navigate('/login');
   };
 
   return (
@@ -21,28 +16,20 @@ const CyberLanding = () => {
       {/* Top Header / Navigation */}
       <nav className="cl-nav">
         <div className="cl-brand">
-          <Link to={user ? "/dashboard" : "/login"} onClick={handleLaunchDashboard} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+          <Link to="/login" onClick={handleLaunchDashboard} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
             <img src="/logo.jpg" alt="SecureNet IDS Logo" className="cl-logo-img" />
             <span className="cl-brand-title">SecureNet <span className="cl-brand-tag">IDS</span></span>
           </Link>
         </div>
 
         <div className="cl-nav-actions">
-          {user ? (
-            <Link to="/dashboard" className="cl-btn-primary" style={{ textDecoration: 'none' }}>
-              SOC Dashboard →
-            </Link>
-          ) : (
-            <>
-              <Link to="/login" className="cl-btn-text">
-                Sign In
-              </Link>
-              <button onClick={handleLaunchDashboard} className="cl-btn-primary" style={{ cursor: 'pointer', border: 'none' }}>
-                <span className="cl-btn-text-full">Launch Dashboard →</span>
-                <span className="cl-btn-text-short">Dashboard →</span>
-              </button>
-            </>
-          )}
+          <Link to="/login" className="cl-btn-text">
+            Sign In
+          </Link>
+          <button onClick={handleLaunchDashboard} className="cl-btn-primary" style={{ cursor: 'pointer', border: 'none' }}>
+            <span className="cl-btn-text-full">Launch Dashboard →</span>
+            <span className="cl-btn-text-short">Dashboard →</span>
+          </button>
         </div>
       </nav>
 

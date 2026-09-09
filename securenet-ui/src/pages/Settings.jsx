@@ -4,6 +4,7 @@ import AdminView from "../components/settings/AdminView";
 import UserView from "../components/settings/UserView";
 import AdminIntegrations from "../components/integrations/AdminIntegrations";
 import UserIntegrations from "../components/integrations/UserIntegrations";
+import "../styles/pages/settings.css";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("settings");

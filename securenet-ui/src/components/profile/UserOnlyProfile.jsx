@@ -236,7 +236,7 @@ const UserOnlyProfile = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+      <div className="profile-cards-grid">
         {/* PERSONAL INFO */}
         <Card style={{ background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.6))', border: '1px solid rgba(0, 245, 255, 0.3)', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: '#00f5ff', boxShadow: '0 0 15px #00f5ff' }}></div>
@@ -276,7 +276,7 @@ const UserOnlyProfile = () => {
           <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
             <Activity size={18} /> SECURITY METRICS
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="profile-metrics-grid">
             <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ color: '#64748b', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>Alerts Rx</div>
               <div style={{ color: '#f59e0b', fontSize: '24px', fontWeight: 'bold' }}>{userStats.alertsReceived}</div>
@@ -335,7 +335,7 @@ const UserOnlyProfile = () => {
         </Card>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+      <div className="profile-row-bottom">
         {/* RECENT ACTIVITY */}
         <Card style={{ background: 'rgba(15, 23, 42, 0.6)' }}>
           <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>

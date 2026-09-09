@@ -1025,3 +1025,74 @@ body.user .help-actions {
     gap: var(--spacing-sm);
   }
 }
+
+/* Responsive Profile Grids */
+.profile-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 640px) {
+  .profile-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.profile-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .profile-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Universal Profile Modals */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(6px);
+  padding: 16px;
+}
+
+.modal-card {
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(0, 245, 255, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 16px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #00f5ff;
+}
+
