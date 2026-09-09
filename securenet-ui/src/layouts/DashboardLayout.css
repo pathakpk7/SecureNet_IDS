@@ -1,63 +1,65 @@
+/* ============================================================
+   MAIN DASHBOARD LAYOUT & RESPONSIVE CONTAINER
+   ============================================================ */
+
 .layout {
   width: 100%;
   min-height: 100vh;
-  background: var(--bg-primary);
+  min-height: 100dvh;
+  background: var(--bg-primary, #030712);
   display: flex;
   flex-direction: column;
-}
-
-.content {
-  width: 100%;
-  padding: 64px 30px 48px;
-  margin-top: 0;
-  box-sizing: border-box;
-  flex: 1;
-}
-
-.dashboard {
-  margin-top: 30px;
-}
-
-.hero {
-  margin-top: 40px;
-  margin-bottom: 40px;
-}
-
-.hero h1 {
-  font-size: 48px;
-  margin-bottom: 20px;
-  color: var(--text-primary);
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.hero p {
-  color: #8b9bb4;
-}
-
-/* Prevent content shift */
-body {
+  position: relative;
   overflow-x: hidden;
 }
 
-/* Mobile Overlay */
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
+/* Content Container with guaranteed >= 10px gap between navbar and first heading */
+.content {
   width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  max-width: 100%;
+  padding: 24px 24px 48px;
+  margin-top: 0;
+  box-sizing: border-box;
+  flex: 1;
+  overflow-x: hidden;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .main-content {
-    margin-left: 0;
+/* Tablet (641px - 1024px) */
+@media (max-width: 1024px) {
+  .content {
+    padding: 18px 16px 36px;
   }
-  
-  .content-area {
-    padding: var(--spacing-md);
+}
+
+/* Mobile (< 640px) */
+@media (max-width: 640px) {
+  .content {
+    padding: 14px 12px 28px;
   }
+}
+
+/* Universal Responsive Table Wrapper Utility */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: rgba(0, 245, 255, 0.25);
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 245, 255, 0.5);
 }

@@ -127,5 +127,37 @@ body.user {
   border: 0;
 }
 
-/* Ensure minimum 10px gap between navbar and headings */
-.dashboard-header, .page-header, .admin-header, .hero { margin-top: 15px !important; }
+/* Ensure minimum 10px gap between navbar and headings across every page */
+.dashboard-header, 
+.page-header, 
+.admin-header, 
+.hero, 
+.alerts-header, 
+.reports-header, 
+.logs-header, 
+.settings-header, 
+.simulation-header, 
+.integrations-header, 
+.notifications-header, 
+.profile-header,
+.audit-header { 
+  margin-top: 15px !important; 
+}
+
+/* Universal Table Responsive Container */
+.table-responsive,
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile Touch Tap Target Helpers */
+@media (max-width: 768px) {
+  button, 
+  .btn, 
+  a.nav-link,
+  .filter-btn {
+    min-height: 38px;
+  }
+}

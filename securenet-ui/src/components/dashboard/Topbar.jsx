@@ -162,8 +162,8 @@ function Navbar({ toggleMenu, menuOpen }) {
             {(user?.role || user?.user_metadata?.role || 'USER').toUpperCase()}
           </div>
         </div>
+        <button className="logout-btn" onClick={handleLogout}>Logout</button>
       </div>
-      <button className="logout-btn" onClick={handleLogout}>Logout</button>
 
       <button className={`hamburger ${menuOpen ? "active" : ""}`} onClick={toggleMenu}>
         <span></span>

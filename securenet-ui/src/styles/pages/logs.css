@@ -1047,3 +1047,16 @@ body.user .page-info {
   }
 }
 
+@media (max-width: 640px) {
+  .logs-filter-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+  }
+  .logs-select,
+  .logs-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+

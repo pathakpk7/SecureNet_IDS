@@ -45,8 +45,19 @@
   box-shadow: 0 0 6px #00f5ff;
 }
 
-/* SHOW ONLY ON MOBILE */
-@media (max-width: 768px) {
+/* SHOW ONLY ON MOBILE & TABLET (<= 1024px) */
+@media (max-width: 1024px) {
+  .navbar {
+    padding: 0 16px;
+    height: 54px;
+    min-height: 54px;
+  }
+
+  .topbar-logo-img {
+    width: 38px;
+    height: 38px;
+  }
+
   .hamburger {
     display: flex;
   }

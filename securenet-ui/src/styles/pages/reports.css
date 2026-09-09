@@ -83,3 +83,16 @@
   background: rgba(30, 41, 59, 0.8);
   border-color: rgba(0, 245, 255, 0.25);
 }
+
+@media (max-width: 640px) {
+  .report-item-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+  .reports-card,
+  .reports-history-card {
+    padding: 14px;
+  }
+}

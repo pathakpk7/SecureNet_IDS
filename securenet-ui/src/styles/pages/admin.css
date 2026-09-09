@@ -3,12 +3,12 @@
   min-height: 100vh;
 }
 
-/* Admin Stats - One Row Layout */
+/* Admin Stats - Responsive Grid */
 .admin-stats {
-  display: flex;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
   margin-bottom: 25px;
-  justify-content: space-between;
 }
 
 .stat-card {

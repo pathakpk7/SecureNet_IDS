@@ -191,13 +191,12 @@ const Alerts = () => {
           ))}
         </div>
 
-        {/* Search Field */}
-        <div className="alerts-search" style={{ display: 'flex', gap: '12px' }}>
+        {/* Search Field & Threat Dropdown */}
+        <div className="alerts-search-group">
           <select 
             value={selectedType} 
             onChange={(e) => setSelectedType(e.target.value)}
-            className="search-input"
-            style={{ padding: '8px 12px', width: '200px', background: 'rgba(15, 23, 42, 0.6)', color: '#f8fafc', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '6px', cursor: 'pointer', outline: 'none' }}
+            className="search-select"
           >
             {availableTypes.map(type => (
               <option key={type} value={type}>

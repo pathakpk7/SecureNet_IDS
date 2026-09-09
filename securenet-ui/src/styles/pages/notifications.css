@@ -627,6 +627,7 @@ input:checked + .slider:before {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+  .notifications-stats,
   .admin-stats,
   .user-stats {
     grid-template-columns: repeat(2, 1fr);
@@ -669,6 +670,7 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 480px) {
+  .notifications-stats,
   .admin-stats,
   .user-stats {
     grid-template-columns: 1fr;

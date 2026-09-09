@@ -1286,6 +1286,9 @@ body.user .info-value.secure {
 }
 
 @media (max-width: 768px) {
+  .traffic-overview {
+    grid-template-columns: 1fr;
+  }
   .nm-charts-row, .nm-bottom-row {
     grid-template-columns: 1fr;
   }
@@ -1295,6 +1298,16 @@ body.user .info-value.secure {
   .nm-ip-table-header, .nm-ip-row {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+}
+
+@media (max-width: 640px) {
+  .nm-kpi-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .nm-card {
+    padding: 14px;
   }
 }
 
