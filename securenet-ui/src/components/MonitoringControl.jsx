@@ -21,7 +21,7 @@ const MonitoringControl = ({ orgId }) => {
 
   const fetchMonitoringStatus = async () => {
     try {
-      const response = await fetch('${API_V1}/monitoring/status');
+      const response = await fetch(`${API_V1}/monitoring/status`);
       if (response.ok) {
         const data = await response.json();
         setMonitoringStatus(data);
@@ -35,7 +35,7 @@ const MonitoringControl = ({ orgId }) => {
   const startMonitoring = async () => {
     setLoading(true);
     try {
-      const response = await fetch('${API_V1}/monitoring/start', {
+      const response = await fetch(`${API_V1}/monitoring/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ const MonitoringControl = ({ orgId }) => {
   const stopMonitoring = async () => {
     setLoading(true);
     try {
-      const response = await fetch('${API_V1}/monitoring/stop', {
+      const response = await fetch(`${API_V1}/monitoring/stop`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`

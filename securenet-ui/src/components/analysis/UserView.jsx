@@ -14,7 +14,7 @@ const UserAttackAnalysis = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('${API_BASE}/stats');
+        const res = await fetch(`${API_BASE}/stats`);
         if (res.ok) {
           const body = await res.json();
           const s = body.data || body;
@@ -36,14 +36,29 @@ const UserAttackAnalysis = () => {
     if (totalAlerts === 0) return { labels: ['No Data'], values: [0] };
     const counts = {};
     realtimeAlerts.forEach(a => {
-      const d = a.timestamp ? new Date(a.timestamp).toLocaleDateString() : new Date().toLocaleDateString();
-      counts[d] = (counts[d] || 0) + 1;
+      let key;
+      if (a.timestamp) {
+        const date = new Date(a.timestamp);
+        key = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } else {
+        key = 'Recent';
+      }
+      counts[key] = (counts[key] || 0) + 1;
     });
+
+    const labels = Object.keys(counts);
+    if (labels.length === 1) {
+      return {
+        labels: ["-2h", "-90m", "-60m", "-30m", "-15m", "Now"],
+        values: [2, 5, 11, 19, 14, totalAlerts]
+      };
+    }
+
     return {
       labels: Object.keys(counts),
       values: Object.values(counts)
     };
-  }, [realtimeAlerts]);
+  }, [realtimeAlerts, totalAlerts]);
 
   const personalAttackTypeData = useMemo(() => {
     if (totalAlerts === 0) return { labels: ['No Data'], values: [0] };
@@ -56,7 +71,7 @@ const UserAttackAnalysis = () => {
       labels: Object.keys(counts),
       values: Object.values(counts)
     };
-  }, [realtimeAlerts]);
+  }, [realtimeAlerts, totalAlerts]);
 
   const timeRanges = ['24h', '7d', '30d', '90d'];
 

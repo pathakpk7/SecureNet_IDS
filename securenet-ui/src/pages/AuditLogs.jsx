@@ -59,7 +59,7 @@ const AuditLogs = () => {
 
   const exportLogs = async () => {
     try {
-      const response = await fetch('${API_V1}/reports/audit-logs/export', {
+      const response = await fetch(`${API_V1}/reports/audit-logs/export`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }

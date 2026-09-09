@@ -23,7 +23,7 @@ const SIEMExport = () => {
 
   const fetchConnectors = async () => {
     try {
-      const res = await fetch('${API_V1}/siem/connectors', {
+      const res = await fetch(`${API_V1}/siem/connectors`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }

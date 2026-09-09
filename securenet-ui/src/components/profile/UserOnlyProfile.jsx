@@ -78,7 +78,7 @@ const UserOnlyProfile = () => {
     // Fetch stats from backend
     const fetchStats = async () => {
       try {
-        const res = await fetch('${API_BASE}/stats');
+        const res = await fetch(`${API_BASE}/stats`);
         if (res.ok) {
           const json = await res.json();
           const data = json.data || json;
@@ -95,16 +95,18 @@ const UserOnlyProfile = () => {
     // Fetch recent activity from logs
     const fetchActivity = async () => {
       try {
-        const res = await fetch('${API_BASE}/logs?limit=4');
+        const res = await fetch(`${API_BASE}/logs?limit=4`);
         if (res.ok) {
           const json = await res.json();
           const list = Array.isArray(json) ? json : (json.data || []);
-          setRecentActivity(list.map((log, i) => ({
-            id: log.id || i,
-            action: log.message || 'Activity logged',
-            timestamp: log.timestamp ? new Date(log.timestamp).toLocaleString() : 'Recent',
-            location: log.source || 'System'
-          })));
+          if (list.length > 0) {
+            setRecentActivity(list.map((log, i) => ({
+              id: log.id || i,
+              action: log.message || 'Activity logged',
+              timestamp: log.timestamp ? new Date(log.timestamp).toLocaleString() : 'Recent',
+              location: log.source || 'System'
+            })));
+          }
         }
       } catch (e) {}
     };

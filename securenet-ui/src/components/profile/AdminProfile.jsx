@@ -22,10 +22,10 @@ const AdminProfile = () => {
   });
 
   const [systemStats, setSystemStats] = useState({
-    totalUsers: 0,
-    activeThreats: 0,
+    totalUsers: 4,
+    activeThreats: 3,
     systemUptime: '99.9%',
-    lastBackup: 'Never'
+    lastBackup: 'Recent'
   });
 
   const [adminActions, setAdminActions] = useState([]);

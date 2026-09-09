@@ -16,7 +16,7 @@ const UserView = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const response = await fetch('${API_BASE}/logs?limit=50');
+      const response = await fetch(`${API_BASE}/logs?limit=50`);
       if (response.ok) {
         const body = await response.json();
         const data = Array.isArray(body) ? body : (body.data || []);

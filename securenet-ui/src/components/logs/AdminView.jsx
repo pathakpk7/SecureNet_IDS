@@ -18,7 +18,7 @@ const AdminView = () => {
     setLoading(true);
     try {
       const url = filterLevel === 'ALL' 
-        ? '${API_BASE}/logs?limit=100'
+        ? `${API_BASE}/logs?limit=100`
         : `${API_BASE}/logs?limit=100&level=${filterLevel}`;
       
       const response = await fetch(url);

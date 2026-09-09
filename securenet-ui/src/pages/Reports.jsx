@@ -58,7 +58,7 @@ const Reports = () => {
 
   const exportAlerts = async () => {
     try {
-      const response = await fetch('${API_V1}/reports/alerts/export?format=csv');
+      const response = await fetch(`${API_V1}/reports/alerts/export?format=csv`);
 
       if (response.ok) {
         const blob = await response.blob();
@@ -82,7 +82,7 @@ const Reports = () => {
 
   const exportAuditLogs = async () => {
     try {
-      const response = await fetch('${API_V1}/reports/audit-logs/export?format=csv');
+      const response = await fetch(`${API_V1}/reports/audit-logs/export?format=csv`);
 
       if (response.ok) {
         const blob = await response.blob();
@@ -109,7 +109,7 @@ const Reports = () => {
     
     setLoading(true);
     try {
-      const response = await fetch('${API_V1}/admin/archive', { method: 'POST' });
+      const response = await fetch(`${API_V1}/admin/archive`, { method: 'POST' });
       const data = await response.json();
       if (response.ok && data.success) {
         toast.success(data.message || 'Weekly data archived successfully!');

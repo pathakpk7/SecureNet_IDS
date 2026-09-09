@@ -22,7 +22,7 @@ const EnterpriseDashboard = () => {
   useEffect(() => {
     const fetchHealth = async () => {
       try {
-        const res = await fetch('${API_BASE}/health');
+        const res = await fetch(`${API_BASE}/health`);
         if (res.ok) {
           const json = await res.json();
           const data = json.data || json;

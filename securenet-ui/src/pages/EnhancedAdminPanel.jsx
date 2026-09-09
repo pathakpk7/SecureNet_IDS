@@ -46,7 +46,7 @@ const EnhancedAdminPanel = () => {
   const fetchOrganizations = async () => {
     setLoading(true);
     try {
-      const response = await fetch('${API_V1}/organizations/', {
+      const response = await fetch(`${API_V1}/organizations/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }
@@ -70,7 +70,7 @@ const EnhancedAdminPanel = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('${API_V1}/users/', {
+      const response = await fetch(`${API_V1}/users/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }
@@ -93,7 +93,7 @@ const EnhancedAdminPanel = () => {
 
   const createOrganization = async () => {
     try {
-      const response = await fetch('${API_V1}/organizations/', {
+      const response = await fetch(`${API_V1}/organizations/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ const EnhancedAdminPanel = () => {
 
   const createUser = async () => {
     try {
-      const response = await fetch('${API_V1}/users/', {
+      const response = await fetch(`${API_V1}/users/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -13,7 +13,7 @@ const UserAIInsights = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('${API_BASE}/stats');
+        const res = await fetch(`${API_BASE}/stats`);
         if (res.ok) {
           const body = await res.json();
           const s = body.data || body;
