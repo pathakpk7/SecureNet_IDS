@@ -36,12 +36,56 @@ const USER_PRESETS = [
 ];
 
 const UserAIInsights = () => {
-  const [activePreset, setActivePreset] = useState(USER_PRESETS[0]);
   const [appliedActions, setAppliedActions] = useState(new Set());
   const [customQuestion, setCustomQuestion] = useState('');
-  const [customResponse, setCustomResponse] = useState(null);
+  const [isThinking, setIsThinking] = useState(false);
+  const messagesEndRef = React.useRef(null);
+
+  const [messages, setMessages] = useState([
+    {
+      id: 'msg-init',
+      sender: 'ai',
+      title: USER_PRESETS[0].label,
+      summary: USER_PRESETS[0].answer,
+      time: 'Just now'
+    }
+  ]);
 
   const securityScore = 96;
+
+  // Auto-scroll on new messages
+  React.useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isThinking]);
+
+  const handleSelectPreset = (preset) => {
+    toast(`Running ${preset.label}...`, { icon: '🛡️' });
+    setIsThinking(true);
+
+    const userMsg = {
+      id: 'msg_user_' + Date.now(),
+      sender: 'user',
+      text: `Run ${preset.label} diagnostic`,
+      time: 'Just now'
+    };
+
+    setMessages(prev => [...prev, userMsg]);
+
+    setTimeout(() => {
+      const aiMsg = {
+        id: 'msg_ai_' + Date.now(),
+        sender: 'ai',
+        title: preset.label,
+        summary: preset.answer,
+        time: 'Just now'
+      };
+      setMessages(prev => [...prev, aiMsg]);
+      setIsThinking(false);
+      toast.success(`${preset.label} verified!`);
+    }, 250);
+  };
 
   const handleApplyAction = (key, text) => {
     setAppliedActions(prev => new Set(prev).add(key));
@@ -50,10 +94,47 @@ const UserAIInsights = () => {
 
   const handleCustomSubmit = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!customQuestion.trim()) return;
 
-    setCustomResponse(`AI Analysis: "${customQuestion.trim()}". Your connection is protected by SecureNet real-time IDS. No security anomalies or leaks were detected for this query.`);
+    const query = customQuestion.trim();
     setCustomQuestion('');
+    setIsThinking(true);
+
+    const userMsg = {
+      id: 'msg_user_' + Date.now(),
+      sender: 'user',
+      text: query,
+      time: 'Just now'
+    };
+
+    setMessages(prev => [...prev, userMsg]);
+
+    setTimeout(() => {
+      const aiMsg = {
+        id: 'msg_ai_' + Date.now(),
+        sender: 'ai',
+        title: 'Diagnostic Result',
+        summary: `AI Security Verification for "${query}": Your session and local credentials are fully safeguarded. No unauthorized access attempts, leaked auth tokens, or network eavesdropping detected.`,
+        time: 'Just now'
+      };
+      setMessages(prev => [...prev, aiMsg]);
+      setIsThinking(false);
+      toast.success('Security query analyzed!');
+    }, 300);
+  };
+
+  const handleClearChat = () => {
+    setMessages([
+      {
+        id: 'msg-init',
+        sender: 'ai',
+        title: USER_PRESETS[0].label,
+        summary: USER_PRESETS[0].answer,
+        time: 'Just now'
+      }
+    ]);
+    toast.success('Conversation reset');
   };
 
   const userTrendData = useMemo(() => ({
@@ -128,17 +209,29 @@ const UserAIInsights = () => {
               <p>Explore automated safety diagnostics and recommendations for your account</p>
             </div>
           </div>
-          <span className="copilot-badge" style={{ color: '#00f5ff', borderColor: 'rgba(0, 245, 255, 0.3)' }}>AI ADVISOR</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button 
+              type="button" 
+              className="btn btn-xs btn-outline" 
+              onClick={handleClearChat}
+              title="Reset conversation"
+            >
+              Clear Chat
+            </button>
+            <span className="copilot-badge" style={{ color: '#00f5ff', borderColor: 'rgba(0, 245, 255, 0.3)' }}>AI ADVISOR</span>
+          </div>
         </div>
 
         <div className="copilot-chips-row">
           {USER_PRESETS.map(preset => (
             <button
               key={preset.id}
-              className={`copilot-chip ${activePreset.id === preset.id ? 'active' : ''}`}
-              onClick={() => {
-                setActivePreset(preset);
-                setCustomResponse(null);
+              type="button"
+              className="copilot-chip"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSelectPreset(preset);
               }}
             >
               {preset.label}
@@ -146,14 +239,38 @@ const UserAIInsights = () => {
           ))}
         </div>
 
-        <div className="copilot-output-container">
-          <div className="copilot-response-content">
-            <div className="response-header">
-              <h4 className="response-title">{customResponse ? 'Custom Diagnostic' : activePreset.label}</h4>
-              <span className="response-timestamp">Live verification</span>
+        <div className="copilot-output-container chat-scroll-container">
+          {messages.map((msg) => {
+            if (msg.sender === 'user') {
+              return (
+                <div key={msg.id} className="copilot-user-bubble-row">
+                  <div className="copilot-user-bubble">
+                    <span className="bubble-label">Your Query:</span>
+                    <p>{msg.text}</p>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div key={msg.id} className="copilot-response-content ai-bubble">
+                <div className="response-header">
+                  <h4 className="response-title">{msg.title}</h4>
+                  <span className="response-timestamp">{msg.time}</span>
+                </div>
+                <p className="response-summary">{msg.summary}</p>
+              </div>
+            );
+          })}
+
+          {isThinking && (
+            <div className="copilot-thinking">
+              <Zap size={20} className="spinning" />
+              <span>Analyzing security telemetry...</span>
             </div>
-            <p className="response-summary">{customResponse || activePreset.answer}</p>
-          </div>
+          )}
+
+          <div ref={messagesEndRef} />
         </div>
 
         <form className="copilot-query-form" onSubmit={handleCustomSubmit}>

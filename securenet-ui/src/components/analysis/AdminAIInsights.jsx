@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Card from '../../components/ui/Card';
 import LineChart from '../../components/Charts/LineChart';
 import AnimatedCounter from '../../components/ui/AnimatedCounter';
@@ -22,7 +22,9 @@ import {
   Eye, 
   Search,
   ExternalLink,
-  Flame
+  Flame,
+  Trash2,
+  CornerDownLeft
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import '../../styles/pages/ai.css';
@@ -154,12 +156,28 @@ const BASELINE_ANOMALIES = [
 const AdminAIInsights = () => {
   const realtimeAlerts = useRealtimeAlerts();
   const [stats, setStats] = useState({ totalAttacks: 0, packets: 0 });
-  const [activeCopilot, setActiveCopilot] = useState(COPILOT_PRESETS[0]);
   const [customPrompt, setCustomPrompt] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [appliedActions, setAppliedActions] = useState(new Set());
   const [blockedIps, setBlockedIps] = useState(new Set());
   const [investigatingAnomaly, setInvestigatingAnomaly] = useState(null);
+  const messagesEndRef = useRef(null);
+
+  // Conversational thread history
+  const [messages, setMessages] = useState([
+    {
+      id: 'msg-init',
+      sender: 'ai',
+      presetId: 'threat_vectors',
+      title: COPILOT_PRESETS[0].answer.title,
+      summary: COPILOT_PRESETS[0].answer.summary,
+      metrics: COPILOT_PRESETS[0].answer.metrics,
+      actions: COPILOT_PRESETS[0].answer.actions,
+      actionBtnText: 'Quarantine Inbound Subnet (203.0.113.0/24)',
+      actionKey: 'quarantine_subnet',
+      time: 'Just now'
+    }
+  ]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -182,14 +200,62 @@ const AdminAIInsights = () => {
     return () => clearInterval(int);
   }, []);
 
+  // Auto-scroll conversation smoothly on new messages
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isThinking]);
+
   const totalThreats = Math.max(stats.totalAttacks, realtimeAlerts.length, 12);
   const riskScore = Math.min(94, Math.max(68, 60 + Math.floor(totalThreats * 1.5)));
 
+  // Instant trigger when user clicks any preset chip
   const handleSelectPreset = (preset) => {
+    toast(`Running ${preset.label}...`, { icon: '⚡' });
     setIsThinking(true);
-    setActiveCopilot(preset);
+
+    const userMsg = {
+      id: 'msg_user_' + Date.now(),
+      sender: 'user',
+      text: preset.prompt,
+      time: 'Just now'
+    };
+
+    let actionBtnText = 'Apply Recommended Policy';
+    let actionKey = 'policy_' + preset.id;
+    if (preset.id === 'threat_vectors') {
+      actionBtnText = 'Quarantine Inbound Subnet (203.0.113.0/24)';
+      actionKey = 'quarantine_subnet';
+    } else if (preset.id === 'firewall_rules') {
+      actionBtnText = 'Push Adaptive Firewall Rules to IPTables';
+      actionKey = 'firewall_adaptive';
+    } else if (preset.id === 'vulnerable_ports') {
+      actionBtnText = 'Bind Port 3306 (MySQL) Strictly to Localhost';
+      actionKey = 'bind_port_3306';
+    } else if (preset.id === 'ciso_briefing') {
+      actionBtnText = 'Download Official Executive Briefing (.TXT)';
+      actionKey = 'download_briefing';
+    }
+
+    setMessages(prev => [...prev, userMsg]);
+
     setTimeout(() => {
+      const aiMsg = {
+        id: 'msg_ai_' + Date.now(),
+        sender: 'ai',
+        presetId: preset.id,
+        title: preset.answer.title,
+        summary: preset.answer.summary,
+        metrics: preset.answer.metrics,
+        actions: preset.answer.actions,
+        actionBtnText,
+        actionKey,
+        time: 'Just now'
+      };
+      setMessages(prev => [...prev, aiMsg]);
       setIsThinking(false);
+      toast.success(`${preset.label} generated!`);
     }, 300);
   };
 
@@ -197,36 +263,65 @@ const AdminAIInsights = () => {
     e.preventDefault();
     if (!customPrompt.trim()) return;
 
-    setIsThinking(true);
     const query = customPrompt.trim();
+    setCustomPrompt('');
+    setIsThinking(true);
+
+    const userMsg = {
+      id: 'msg_user_' + Date.now(),
+      sender: 'user',
+      text: query,
+      time: 'Just now'
+    };
+    setMessages(prev => [...prev, userMsg]);
 
     setTimeout(() => {
-      setActiveCopilot({
-        id: 'custom_' + Date.now(),
-        label: `🔍 Query: "${query.substring(0, 24)}..."`,
-        prompt: query,
-        answer: {
-          title: `AI Security Assessment: ${query}`,
-          summary: `Heuristic evaluation for "${query}". The CICIDS2017 inference pipeline analyzed recent network flows and confirms that telemetry aligns with guarded threshold limits. Immediate containment is active on identified adversarial subnets.`,
-          metrics: [
-            { name: 'Evaluated Context', value: 'Realtime SOC Feed' },
-            { name: 'Model Verdict', value: 'Guarded / Elevated' },
-            { name: 'Inference Confidence', value: '98.1%' }
-          ],
-          actions: [
-            'Maintain continuous packet telemetry monitoring.',
-            'Review corresponding events in Logs and Network Monitor.'
-          ]
-        }
-      });
+      const aiMsg = {
+        id: 'msg_ai_' + Date.now(),
+        sender: 'ai',
+        presetId: 'custom',
+        title: `AI Security Assessment: "${query}"`,
+        summary: `Heuristic evaluation for "${query}". The CICIDS2017 inference pipeline analyzed recent network flows and telemetry. All detected packets match guarded baseline thresholds. Active containment is operational across all perimeter interfaces.`,
+        metrics: [
+          { name: 'Target Query', value: query.substring(0, 20) },
+          { name: 'Inference Status', value: 'Guarded / Secure' },
+          { name: 'Model Confidence', value: '98.6%' }
+        ],
+        actions: [
+          'Continuous real-time packet monitoring active.',
+          'Verify matched telemetry in Logs and Network Monitor.'
+        ],
+        actionBtnText: 'Log Security Inquiry to Audit Trail',
+        actionKey: 'audit_inquiry_' + Date.now(),
+        time: 'Just now'
+      };
+      setMessages(prev => [...prev, aiMsg]);
       setIsThinking(false);
-      setCustomPrompt('');
+      toast.success('AI analysis complete');
     }, 450);
   };
 
   const handleApplyAction = (actionKey, message) => {
     setAppliedActions(prev => new Set(prev).add(actionKey));
     toast.success(message);
+  };
+
+  const handleClearChat = () => {
+    setMessages([
+      {
+        id: 'msg-init',
+        sender: 'ai',
+        presetId: 'threat_vectors',
+        title: COPILOT_PRESETS[0].answer.title,
+        summary: COPILOT_PRESETS[0].answer.summary,
+        metrics: COPILOT_PRESETS[0].answer.metrics,
+        actions: COPILOT_PRESETS[0].answer.actions,
+        actionBtnText: 'Quarantine Inbound Subnet (203.0.113.0/24)',
+        actionKey: 'quarantine_subnet',
+        time: 'Just now'
+      }
+    ]);
+    toast.success('Copilot conversation cleared');
   };
 
   const handleBlockIp = (ip) => {
@@ -260,13 +355,9 @@ ACTIVE THREAT VECTORS
 2. Port 22 (SSH)            - Distributed Credential Stuffing (22%)
 3. Port 80 (HTTP)           - Inbound TCP SYN Flood Wave (10%)
 
-COPILOT AUDIT FINDINGS (${activeCopilot.label})
+LATEST COPILOT ASSESSMENT
 --------------------------------------------------------------------------------
-${activeCopilot.answer.summary}
-
-RECOMMENDED ACTIONABLE DIRECTIVES
---------------------------------------------------------------------------------
-${activeCopilot.answer.actions.map((act, i) => `${i + 1}. ${act}`).join('\n')}
+${messages[messages.length - 1]?.summary || 'System telemetry running normally.'}
 
 ================================================================================
 SecureNet Autonomous Security Framework`;
@@ -307,7 +398,7 @@ SecureNet Autonomous Security Framework`;
         </div>
 
         <div className="header-quick-actions">
-          <button className="btn btn-outline" onClick={handleExportBriefing}>
+          <button type="button" className="btn btn-outline" onClick={handleExportBriefing}>
             <Download size={15} /> Export Threat Briefing
           </button>
         </div>
@@ -384,65 +475,137 @@ SecureNet Autonomous Security Framework`;
             </div>
             <div>
               <h3>AI SOC Security Copilot</h3>
-              <p>Query real-time threat models, inspect attack surfaces, and extract technical incident insights</p>
+              <p>Click any prompt chip below or type an inquiry to run live security analysis</p>
             </div>
           </div>
-          <span className="copilot-badge">CICIDS2017 REASONING MODEL</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button 
+              type="button" 
+              className="btn btn-xs btn-outline" 
+              onClick={handleClearChat}
+              title="Reset conversation"
+            >
+              <Trash2 size={12} /> Clear Chat
+            </button>
+            <span className="copilot-badge">CICIDS2017 INFERENCE</span>
+          </div>
         </div>
 
-        {/* QUICK QUERY CHIPS */}
+        {/* QUICK QUERY CHIPS - 4 INSTANT ACTIONS */}
         <div className="copilot-chips-row">
           {COPILOT_PRESETS.map(preset => (
             <button
               key={preset.id}
-              className={`copilot-chip ${activeCopilot.id === preset.id ? 'active' : ''}`}
-              onClick={() => handleSelectPreset(preset)}
+              type="button"
+              className="copilot-chip"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSelectPreset(preset);
+              }}
             >
               {preset.label}
             </button>
           ))}
         </div>
 
-        {/* COPILOT RESPONSE PANEL */}
-        <div className="copilot-output-container">
-          {isThinking ? (
+        {/* CONVERSATION THREAD CONTAINER */}
+        <div className="copilot-output-container chat-scroll-container">
+          {messages.map((msg) => {
+            if (msg.sender === 'user') {
+              return (
+                <div key={msg.id} className="copilot-user-bubble-row">
+                  <div className="copilot-user-bubble">
+                    <span className="bubble-label">SOC Admin Query:</span>
+                    <p>{msg.text}</p>
+                  </div>
+                </div>
+              );
+            }
+
+            // AI message bubble
+            const isActionApplied = appliedActions.has(msg.actionKey);
+
+            return (
+              <div key={msg.id} className="copilot-response-content ai-bubble">
+                <div className="response-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="ai-response-icon"><Cpu size={14} color="#00f5ff" /></span>
+                    <h4 className="response-title">{msg.title}</h4>
+                  </div>
+                  <span className="response-timestamp">{msg.time}</span>
+                </div>
+
+                <p className="response-summary">{msg.summary}</p>
+
+                {/* METRIC BADGES */}
+                {msg.metrics && msg.metrics.length > 0 && (
+                  <div className="response-metrics-grid">
+                    {msg.metrics.map((m, idx) => (
+                      <div key={idx} className="response-metric-pill">
+                        <span className="res-metric-name">{m.name}:</span>
+                        <strong className="res-metric-val">{m.value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* ACTIONABLE DIRECTIVES */}
+                {msg.actions && msg.actions.length > 0 && (
+                  <div className="response-actions-box">
+                    <div className="actions-title">
+                      <CheckCircle2 size={15} color="#39ff14" />
+                      <span>Recommended Action Directives:</span>
+                    </div>
+                    <ul className="actions-list">
+                      {msg.actions.map((action, i) => (
+                        <li key={i}>{action}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* DIRECT 1-CLICK ACTION TRIGGER IN RESPONSE */}
+                {msg.actionBtnText && (
+                  <div className="bubble-action-row">
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${isActionApplied ? 'btn-applied' : 'btn-primary'}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (msg.actionKey === 'download_briefing') {
+                          handleExportBriefing();
+                        } else {
+                          handleApplyAction(msg.actionKey, `${msg.actionBtnText} executed successfully!`);
+                        }
+                      }}
+                      disabled={isActionApplied}
+                    >
+                      {isActionApplied ? (
+                        <>
+                          <CheckCircle2 size={14} /> Executed Policy ✓
+                        </>
+                      ) : (
+                        <>
+                          <Zap size={14} /> {msg.actionBtnText}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {isThinking && (
             <div className="copilot-thinking">
               <RefreshCw size={20} className="spinning" />
               <span>Analyzing live network telemetry and querying heuristic models...</span>
             </div>
-          ) : (
-            <div className="copilot-response-content">
-              <div className="response-header">
-                <h4 className="response-title">{activeCopilot.answer.title}</h4>
-                <span className="response-timestamp">Evaluated: Just now</span>
-              </div>
-
-              <p className="response-summary">{activeCopilot.answer.summary}</p>
-
-              {/* METRIC BADGES */}
-              <div className="response-metrics-grid">
-                {activeCopilot.answer.metrics.map((m, idx) => (
-                  <div key={idx} className="response-metric-pill">
-                    <span className="res-metric-name">{m.name}:</span>
-                    <strong className="res-metric-val">{m.value}</strong>
-                  </div>
-                ))}
-              </div>
-
-              {/* ACTIONABLE DIRECTIVES */}
-              <div className="response-actions-box">
-                <div className="actions-title">
-                  <CheckCircle2 size={15} color="#39ff14" />
-                  <span>Recommended Action Items:</span>
-                </div>
-                <ul className="actions-list">
-                  {activeCopilot.answer.actions.map((action, i) => (
-                    <li key={i}>{action}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
           )}
+
+          <div ref={messagesEndRef} />
         </div>
 
         {/* CUSTOM QUERY BAR */}
@@ -480,8 +643,12 @@ SecureNet Autonomous Security Framework`;
                 <p>Throttle IP subnet 192.168.1.0/24 to 200 req/min to suppress volumetric packet flooding.</p>
               </div>
               <button 
+                type="button"
                 className={`btn btn-sm ${appliedActions.has('ratelimit') ? 'btn-applied' : 'btn-primary'}`}
-                onClick={() => handleApplyAction('ratelimit', 'Subnet rate limiting policy applied to perimeter firewall!')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleApplyAction('ratelimit', 'Subnet rate limiting policy applied to perimeter firewall!');
+                }}
                 disabled={appliedActions.has('ratelimit')}
               >
                 {appliedActions.has('ratelimit') ? 'Enforced ✓' : 'Apply Rule'}
@@ -494,8 +661,12 @@ SecureNet Autonomous Security Framework`;
                 <p>Automatically block any external IP registering over 10 failed login attempts within 60s.</p>
               </div>
               <button 
+                type="button"
                 className={`btn btn-sm ${appliedActions.has('autoblock') ? 'btn-applied' : 'btn-primary'}`}
-                onClick={() => handleApplyAction('autoblock', 'Auto-quarantine rule active on authentication endpoint!')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleApplyAction('autoblock', 'Auto-quarantine rule active on authentication endpoint!');
+                }}
                 disabled={appliedActions.has('autoblock')}
               >
                 {appliedActions.has('autoblock') ? 'Active ✓' : 'Enable Rule'}
@@ -508,8 +679,12 @@ SecureNet Autonomous Security Framework`;
                 <p>Inject real-time heuristic pattern rejection for UNION SELECT, 1=1, and sleep payloads.</p>
               </div>
               <button 
+                type="button"
                 className={`btn btn-sm ${appliedActions.has('waf_sqli') ? 'btn-applied' : 'btn-primary'}`}
-                onClick={() => handleApplyAction('waf_sqli', 'Virtual SQLi WAF shield deployed successfully!')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleApplyAction('waf_sqli', 'Virtual SQLi WAF shield deployed successfully!');
+                }}
                 disabled={appliedActions.has('waf_sqli')}
               >
                 {appliedActions.has('waf_sqli') ? 'Shielded ✓' : 'Deploy Shield'}
@@ -587,15 +762,23 @@ SecureNet Autonomous Security Framework`;
                     <td>
                       <div className="anomaly-action-btns">
                         <button
+                          type="button"
                           className={`btn btn-xs ${isItemBlocked ? 'btn-disabled' : 'btn-danger'}`}
-                          onClick={() => handleBlockIp(item.sourceIp)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleBlockIp(item.sourceIp);
+                          }}
                           disabled={isItemBlocked}
                         >
                           {isItemBlocked ? 'Blocked ✓' : 'Block IP'}
                         </button>
                         <button
+                          type="button"
                           className="btn btn-xs btn-outline"
-                          onClick={() => setInvestigatingAnomaly(item)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setInvestigatingAnomaly(item);
+                          }}
                         >
                           <Eye size={12} /> Investigate
                         </button>
