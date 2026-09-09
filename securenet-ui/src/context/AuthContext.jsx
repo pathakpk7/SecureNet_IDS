@@ -91,11 +91,14 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log("AuthContext: Starting login for:", email);
       const result = await authService.login(email, password, role);
+      const rawUser = (result && result.user) ? result.user : (result || {});
+      const resolvedRole = rawUser.role || rawUser.user_metadata?.role || role || 'user';
       
       // Get user permissions and set complete user object
       const userWithPermissions = {
-        ...result.user,
-        ...getUserPermissions(result.user)
+        ...rawUser,
+        role: resolvedRole,
+        ...getUserPermissions({ ...rawUser, role: resolvedRole })
       };
       
       localStorage.setItem('demoUser', JSON.stringify(userWithPermissions));

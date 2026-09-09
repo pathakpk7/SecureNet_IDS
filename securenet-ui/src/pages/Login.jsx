@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, Shield, History, Eye, EyeOff, Zap, CheckCircle2 } from 'lucide-react';
+import { User, Shield, Eye, EyeOff, Zap, CheckCircle2, ArrowRight } from 'lucide-react';
 import '../styles/pages/login.css';
 
 const Login = () => {
@@ -12,28 +12,27 @@ const Login = () => {
     rememberMe: false
   });
   const [savedAccounts, setSavedAccounts] = useState([]);
-  const [showSavedList, setShowSavedList] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-  const { login, loginAsDemo, resetPassword, resendEmailConfirmation } = useAuth();
+  const { login, loginAsDemo, resetPassword } = useAuth();
   const navigate = useNavigate();
 
-  // Demo accounts for reference
+  // Standard demo credentials
   const demoAccounts = {
     admin: {
       email: 'admin@securenet.com',
       password: 'admin123',
       label: 'Security Administrator',
-      desc: 'Full administrative control, IP firewall management & user settings'
+      role: 'admin'
     },
     user: {
       email: 'user@securenet.com',
       password: 'user123',
       label: 'SOC Analyst / Operator',
-      desc: 'Threat monitoring, packet telemetry inspection & security analytics'
+      role: 'user'
     }
   };
 
@@ -52,7 +51,7 @@ const Login = () => {
               email: parsed.email,
               password: parsed.password || '',
               role: parsed.role || 'user',
-              label: 'Remembered Account'
+              label: `Saved: ${parsed.email}`
             });
             // Pre-fill form by default with remembered
             setFormData(prev => ({
@@ -78,27 +77,13 @@ const Login = () => {
                   email: u.email,
                   password: u.password || '',
                   role: u.role || 'user',
-                  label: u.role === 'admin' ? 'Admin Account' : 'Registered User'
+                  label: `${u.role === 'admin' ? 'Admin' : 'User'}: ${u.email}`
                 });
               }
             });
           }
         } catch (e) {}
       }
-
-      // 3. Add built-in demo presets
-      accounts.push({
-        email: demoAccounts.admin.email,
-        password: demoAccounts.admin.password,
-        role: 'admin',
-        label: 'Default Admin Demo'
-      });
-      accounts.push({
-        email: demoAccounts.user.email,
-        password: demoAccounts.user.password,
-        role: 'user',
-        label: 'Default Analyst Demo'
-      });
 
       setSavedAccounts(accounts);
     } catch (err) {
@@ -112,27 +97,33 @@ const Login = () => {
     setSuccess('');
   };
 
-  const handleApplySavedCredential = (account) => {
-    setSelectedRole(account.role || 'user');
-    setFormData({
-      email: account.email,
-      password: account.password || '',
-      rememberMe: true
-    });
-    setShowSavedList(false);
-    setError('');
-    setSuccess(`Loaded credentials for ${account.email}`);
-  };
-
-  const handleQuickFillDemo = () => {
-    const creds = demoAccounts[selectedRole];
+  const handleQuickAutofill = (role) => {
+    const creds = demoAccounts[role];
+    setSelectedRole(role);
     setFormData(prev => ({
       ...prev,
       email: creds.email,
-      password: creds.password
+      password: creds.password,
+      rememberMe: true
     }));
     setError('');
-    setSuccess(`Filled ${selectedRole.toUpperCase()} demo credentials`);
+    setSuccess(`Loaded demo credentials for ${creds.label}`);
+  };
+
+  const handleSavedSelect = (e) => {
+    const selectedEmail = e.target.value;
+    if (!selectedEmail) return;
+    const account = savedAccounts.find(a => a.email === selectedEmail);
+    if (account) {
+      setSelectedRole(account.role || 'user');
+      setFormData({
+        email: account.email,
+        password: account.password || '',
+        rememberMe: true
+      });
+      setError('');
+      setSuccess(`Loaded saved account: ${account.email}`);
+    }
   };
 
   const handleInstantDemoLogin = async () => {
@@ -147,7 +138,7 @@ const Login = () => {
       }
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Demo login failed');
+      setError(err.message || 'Demo access failed');
     } finally {
       setLoading(false);
     }
@@ -174,12 +165,12 @@ const Login = () => {
       const password = (formData.password || '').trim();
 
       if (!email || !password) {
-        setError('Please fill in both email and password');
+        setError('Please enter both your email address and password');
         setLoading(false);
         return;
       }
 
-      // Save for "Remember Me"
+      // Save or remove Remember Me credentials
       if (formData.rememberMe) {
         localStorage.setItem('saved_login_credentials', JSON.stringify({
           email,
@@ -190,18 +181,18 @@ const Login = () => {
         localStorage.removeItem('saved_login_credentials');
       }
 
-      // Authenticate via AuthContext
-      const result = await login(email, password, selectedRole);
-      if (result) {
+      // Authenticate
+      const userResult = await login(email, password, selectedRole);
+      if (userResult) {
         navigate('/dashboard');
       }
     } catch (err) {
       console.error("Login attempt error:", err);
       const msg = err.message || '';
       if (msg.toLowerCase().includes('invalid')) {
-        setError("Invalid email or password. Check your details or use 1-Click Demo Login above.");
+        setError("Invalid credentials. Try using 'Quick Demo Autofill' below or reset your password.");
       } else {
-        setError(msg || 'Sign in failed. Please try again.');
+        setError(msg || 'Authentication failed. Please check your credentials.');
       }
     } finally {
       setLoading(false);
@@ -211,7 +202,7 @@ const Login = () => {
   const handlePasswordReset = async (e) => {
     e.preventDefault();
     if (!formData.email) {
-      setError('Please enter your email address in the field above');
+      setError('Please enter your email address in the field above to reset password');
       return;
     }
     try {
@@ -224,127 +215,90 @@ const Login = () => {
     }
   };
 
-  const handleResendConfirmation = async (e) => {
-    e.preventDefault();
-    if (!formData.email) {
-      setError('Please enter your email address in the field above');
-      return;
-    }
-    try {
-      await resendEmailConfirmation(formData.email.trim());
-      setSuccess('Confirmation email resent! Please check your inbox.');
-      setError('');
-    } catch (err) {
-      setError(err.message || 'Failed to resend confirmation email');
-      setSuccess('');
-    }
-  };
-
   const isCurrentAdmin = selectedRole === 'admin';
 
   return (
-    <div className="auth-container">
+    <div className="auth-login-page">
       <div className="auth-background">
         <div className="grid-lines"></div>
         <div className="particles"></div>
       </div>
 
-      <div className={`auth-card unified-card ${isCurrentAdmin ? 'role-admin' : 'role-user'}`}>
+      <div className={`auth-login-card ${isCurrentAdmin ? 'role-admin' : 'role-user'}`}>
         
-        {/* Top Header */}
-        <div className="auth-header">
+        {/* Brand Header */}
+        <div className="auth-login-header">
           <Link to="/" className="brand-logo-link" title="Return to Home">
-            <img src="/logo.jpg" alt="SecureNet IDS Logo" className="login-logo-img" />
+            <img src="/logo.jpg" alt="SecureNet IDS Logo" className="auth-login-logo" />
           </Link>
           <h2>SecureNet <span className="text-cyan">IDS</span></h2>
           <p>Enterprise Intrusion Detection & Threat Telemetry</p>
         </div>
 
-        {/* Interactive Role Switcher */}
-        <div className="login-role-tabs">
+        {/* Role Switcher Tabs */}
+        <div className="auth-login-tabs">
           <button
             type="button"
-            className={`role-tab-btn user-tab ${!isCurrentAdmin ? 'active' : ''}`}
+            className={`auth-login-tab-btn user-tab ${!isCurrentAdmin ? 'active' : ''}`}
             onClick={() => handleRoleChange('user')}
           >
             <User size={15} /> Analyst / Operator
           </button>
           <button
             type="button"
-            className={`role-tab-btn admin-tab ${isCurrentAdmin ? 'active' : ''}`}
+            className={`auth-login-tab-btn admin-tab ${isCurrentAdmin ? 'active' : ''}`}
             onClick={() => handleRoleChange('admin')}
           >
             <Shield size={15} /> Security Admin
           </button>
         </div>
 
-        {/* Role Summary & 1-Click Demo Quick Bar */}
-        <div className={`demo-quick-banner ${isCurrentAdmin ? 'admin-banner' : 'user-banner'}`}>
-          <div className="demo-badge-info">
-            <div className="demo-role-title">
-              {isCurrentAdmin ? <Shield size={14} color="#ef4444" /> : <User size={14} color="#00f5ff" />}
-              <span>{demoAccounts[selectedRole].label}</span>
-            </div>
-            <div className="demo-sub-text">{demoAccounts[selectedRole].desc}</div>
-          </div>
-          
-          <div className="demo-action-buttons">
+        {/* Quick Demo Autofill Toolbar */}
+        <div className="auth-login-quickstrip">
+          <span className="auth-login-quickstrip-label">
+            <Zap size={13} /> Quick Demo:
+          </span>
+          <div className="auth-login-quickstrip-chips">
             <button
               type="button"
-              className="btn-demo-fill"
-              onClick={handleQuickFillDemo}
-              title={`Autofill ${demoAccounts[selectedRole].email}`}
+              className="auth-quick-chip chip-cyan"
+              onClick={() => handleQuickAutofill('user')}
+              title="Autofill user@securenet.com"
             >
-              Fill Credentials
+              Analyst
             </button>
             <button
               type="button"
-              className="btn-demo-instant"
-              onClick={handleInstantDemoLogin}
-              disabled={loading}
-              title={`Instant access as ${selectedRole}`}
+              className="auth-quick-chip chip-red"
+              onClick={() => handleQuickAutofill('admin')}
+              title="Autofill admin@securenet.com"
             >
-              <Zap size={13} /> 1-Click Access
+              Admin
             </button>
           </div>
         </div>
 
-        {/* Saved Accounts Drawer Toggle */}
+        {/* Older Saved Accounts Dropdown (if any exist) */}
         {savedAccounts.length > 0 && (
-          <div className="saved-accounts-accordion">
-            <button
-              type="button"
-              className="btn-toggle-saved"
-              onClick={() => setShowSavedList(!showSavedList)}
+          <div className="auth-saved-select-box">
+            <select
+              className="auth-saved-select"
+              onChange={handleSavedSelect}
+              defaultValue=""
             >
-              <History size={13} />
-              <span>Saved & Demo Accounts ({savedAccounts.length})</span>
-              <span className="accordion-chevron">{showSavedList ? '▲' : '▼'}</span>
-            </button>
-
-            {showSavedList && (
-              <div className="saved-accounts-dropdown">
-                {savedAccounts.map((acc, idx) => (
-                  <div
-                    key={idx}
-                    className="saved-account-row"
-                    onClick={() => handleApplySavedCredential(acc)}
-                  >
-                    <div className="saved-row-info">
-                      <span className="saved-row-email">{acc.email}</span>
-                      <span className={`saved-row-tag ${acc.role}`}>{acc.label}</span>
-                    </div>
-                    <span className="saved-row-action">Use →</span>
-                  </div>
-                ))}
-              </div>
-            )}
+              <option value="" disabled>Saved Accounts ({savedAccounts.length})</option>
+              {savedAccounts.map((acc, idx) => (
+                <option key={idx} value={acc.email}>
+                  {acc.label}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
-        {/* Main Sign In Form */}
-        <form onSubmit={handleSubmit} className="auth-form" autoComplete="on">
-          <div className="form-group">
+        {/* Sign In Form */}
+        <form onSubmit={handleSubmit} className="auth-login-form" autoComplete="on">
+          <div className="auth-login-field">
             <label htmlFor="email">Email Address</label>
             <input
               type="email"
@@ -353,85 +307,103 @@ const Login = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder={isCurrentAdmin ? "admin@securenet.com" : "user@securenet.com"}
-              className="auth-input"
+              className="auth-login-input"
               autoComplete="username email"
               required
             />
           </div>
 
-          <div className="form-group">
-            <div className="form-label-row">
-              <label htmlFor="password">Password</label>
-            </div>
-            <div className="password-input-wrapper">
+          <div className="auth-login-field">
+            <label htmlFor="password">Password</label>
+            <div className="auth-login-password-wrap">
               <input
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Enter account password"
-                className="auth-input password-input"
+                placeholder="Enter password"
+                className="auth-login-input"
                 autoComplete="current-password"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="password-toggle-btn"
+                className="auth-login-eye-btn"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          <div className="form-options-row">
-            <label className="checkbox-label">
+          {/* Options Row */}
+          <div className="auth-login-options">
+            <label className="auth-login-checkbox-label">
               <input
                 type="checkbox"
                 id="rememberMe"
                 name="rememberMe"
                 checked={formData.rememberMe}
                 onChange={handleChange}
-                className="auth-checkbox"
+                className="auth-login-checkbox"
               />
               <span>Remember me</span>
             </label>
-            <a href="#forgot" onClick={handlePasswordReset} className="forgot-password-link">
+            <a href="#forgot" onClick={handlePasswordReset} className="auth-login-forgot-link">
               Forgot password?
             </a>
           </div>
 
+          {/* Error & Success Messages */}
           {error && (
-            <div className="error-message fade-in">
+            <div className="auth-login-error">
               {error}
             </div>
           )}
           
           {success && (
-            <div className="success-message fade-in">
-              <CheckCircle2 size={14} /> {success}
+            <div className="auth-login-success">
+              <CheckCircle2 size={15} /> {success}
             </div>
           )}
 
+          {/* Primary Submit Button */}
           <button 
             type="submit" 
-            className={`btn-auth-submit ${isCurrentAdmin ? 'admin-submit' : 'user-submit'}`}
+            className={`auth-login-submit-btn ${isCurrentAdmin ? 'admin-btn' : 'user-btn'}`}
             disabled={loading}
           >
-            {loading ? 'Authenticating...' : `Sign In as ${isCurrentAdmin ? 'Administrator' : 'Analyst'} →`}
+            {loading ? 'Authenticating...' : (
+              <>
+                Sign In as {isCurrentAdmin ? 'Security Admin' : 'SOC Analyst'} <ArrowRight size={16} />
+              </>
+            )}
+          </button>
+
+          {/* Secondary 1-Click Instant Demo Button */}
+          <button
+            type="button"
+            className="auth-login-instant-btn"
+            onClick={handleInstantDemoLogin}
+            disabled={loading}
+          >
+            <Zap size={14} /> Instant Demo Access (1-Click)
           </button>
         </form>
 
         {/* Footer */}
-        <div className="auth-footer">
+        <div className="auth-login-footer">
           <p>
             Don't have an organization account?{' '}
             <Link to="/signup" className="auth-link">
               Register Organization
             </Link>
           </p>
+          <Link to="/" className="auth-login-back-home">
+            ← Return to Homepage
+          </Link>
         </div>
 
       </div>
