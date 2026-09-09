@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AlertTriangle, Settings, Info, Bell, Check, Trash2 } from 'lucide-react';
 import Card from '../ui/Card';
 import { supabase } from '../../api/supabase';
+import { getDeviceId, fetchRemoteNotificationState, pushRemoteNotificationState } from '../../api/notificationSync';
 import toast from 'react-hot-toast';
 import '../../styles/pages/notifications.css';
 
 const USER_NOTIF_KEY = 'securenet_user_notifications_v3';
 const READ_NOTIF_KEY = 'securenet_read_notifications_ids';
 const DELETED_NOTIF_KEY = 'securenet_deleted_notifications_ids';
+const SYNC_KEY = 'user_notifications_sync';
 
 const BASELINE_USER_NOTIFICATIONS = [
   {
@@ -113,6 +115,9 @@ const UserNotifications = () => {
     }
   });
 
+  const myDeviceId = useMemo(() => getDeviceId(), []);
+  const syncChannelRef = useRef(null);
+
   // Save helper to persist state changes
   const saveNotifications = (newList) => {
     setNotifications(newList);
@@ -123,9 +128,54 @@ const UserNotifications = () => {
     }
   };
 
-  // 2. Ingest alerts from Supabase
+  // 2. Ingest alerts & synchronize cross-device state via Supabase
   useEffect(() => {
     let isMounted = true;
+
+    // Fetch remote sync state from Supabase
+    const syncWithRemoteState = async () => {
+      try {
+        const remote = await fetchRemoteNotificationState(SYNC_KEY);
+        if (!isMounted) return;
+
+        let changed = false;
+        const localRead = new Set(JSON.parse(localStorage.getItem(READ_NOTIF_KEY) || '[]'));
+        const localDeleted = new Set(JSON.parse(localStorage.getItem(DELETED_NOTIF_KEY) || '[]'));
+
+        remote.readIds.forEach(id => {
+          if (!localRead.has(id)) {
+            localRead.add(id);
+            changed = true;
+          }
+        });
+
+        remote.deletedIds.forEach(id => {
+          if (!localDeleted.has(id)) {
+            localDeleted.add(id);
+            changed = true;
+          }
+        });
+
+        if (changed) {
+          localStorage.setItem(READ_NOTIF_KEY, JSON.stringify(Array.from(localRead)));
+          localStorage.setItem(DELETED_NOTIF_KEY, JSON.stringify(Array.from(localDeleted)));
+          setNotifications(prev => {
+            const updated = prev
+              .filter(n => !localDeleted.has(String(n.id)))
+              .map(n => ({
+                ...n,
+                read: localRead.has(String(n.id)) ? true : Boolean(n.read)
+              }));
+            try {
+              localStorage.setItem(USER_NOTIF_KEY, JSON.stringify(updated));
+            } catch (e) {}
+            return updated;
+          });
+        }
+      } catch (err) {}
+    };
+
+    syncWithRemoteState();
 
     const fetchLiveAlerts = async () => {
       try {
@@ -168,9 +218,10 @@ const UserNotifications = () => {
 
     fetchLiveAlerts();
 
-    let channel = null;
+    // Supabase alert table changes
+    let alertChannel = null;
     try {
-      channel = supabase
+      alertChannel = supabase
         .channel('public:alerts:user-notifs')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alerts' }, (payload) => {
           if (payload?.new && isMounted) {
@@ -197,11 +248,82 @@ const UserNotifications = () => {
         .subscribe();
     } catch (e) {}
 
+    // Supabase Real-time Cross-Device Broadcast Channel
+    let syncChannel = null;
+    try {
+      syncChannel = supabase.channel('securenet-notifications-sync-channel', {
+        config: { broadcast: { self: false } }
+      });
+
+      syncChannel.on('broadcast', { event: 'NOTIF_ACTION' }, ({ payload }) => {
+        if (!payload || payload.deviceId === myDeviceId || payload.targetRole !== 'user' || !isMounted) return;
+
+        if (payload.action === 'MARK_READ') {
+          const targetId = String(payload.id);
+          try {
+            const currentRead = new Set(JSON.parse(localStorage.getItem(READ_NOTIF_KEY) || '[]'));
+            currentRead.add(targetId);
+            localStorage.setItem(READ_NOTIF_KEY, JSON.stringify(Array.from(currentRead)));
+          } catch (e) {}
+
+          setNotifications(prev => {
+            const updated = prev.map(n => String(n.id) === targetId ? { ...n, read: true } : n);
+            try {
+              localStorage.setItem(USER_NOTIF_KEY, JSON.stringify(updated));
+            } catch (e) {}
+            return updated;
+          });
+        } else if (payload.action === 'MARK_ALL_READ') {
+          try {
+            const currentRead = new Set(JSON.parse(localStorage.getItem(READ_NOTIF_KEY) || '[]'));
+            (payload.allIds || []).forEach(id => currentRead.add(String(id)));
+            localStorage.setItem(READ_NOTIF_KEY, JSON.stringify(Array.from(currentRead)));
+          } catch (e) {}
+
+          setNotifications(prev => {
+            const updated = prev.map(n => ({ ...n, read: true }));
+            try {
+              localStorage.setItem(USER_NOTIF_KEY, JSON.stringify(updated));
+            } catch (e) {}
+            return updated;
+          });
+        } else if (payload.action === 'DELETE') {
+          const targetId = String(payload.id);
+          try {
+            const currentDel = new Set(JSON.parse(localStorage.getItem(DELETED_NOTIF_KEY) || '[]'));
+            currentDel.add(targetId);
+            localStorage.setItem(DELETED_NOTIF_KEY, JSON.stringify(Array.from(currentDel)));
+          } catch (e) {}
+
+          setNotifications(prev => {
+            const updated = prev.filter(n => String(n.id) !== targetId);
+            try {
+              localStorage.setItem(USER_NOTIF_KEY, JSON.stringify(updated));
+            } catch (e) {}
+            return updated;
+          });
+        } else if (payload.action === 'CLEAR_ALL') {
+          try {
+            const currentDel = new Set(JSON.parse(localStorage.getItem(DELETED_NOTIF_KEY) || '[]'));
+            (payload.allIds || []).forEach(id => currentDel.add(String(id)));
+            localStorage.setItem(DELETED_NOTIF_KEY, JSON.stringify(Array.from(currentDel)));
+            localStorage.setItem(USER_NOTIF_KEY, JSON.stringify([]));
+          } catch (e) {}
+
+          setNotifications([]);
+        }
+      });
+
+      syncChannel.subscribe();
+      syncChannelRef.current = syncChannel;
+    } catch (e) {}
+
     return () => {
       isMounted = false;
-      if (channel) supabase.removeChannel(channel);
+      if (alertChannel) supabase.removeChannel(alertChannel);
+      if (syncChannel) supabase.removeChannel(syncChannel);
     };
-  }, []);
+  }, [myDeviceId]);
 
   const handleToggleExpand = (id) => {
     setExpandedId(prev => (prev === id ? null : id));
@@ -226,6 +348,149 @@ const UserNotifications = () => {
   const alertCount = useMemo(() => {
     return notifications.filter(n => n.type === 'alert').length;
   }, [notifications]);
+
+  // Persist "Mark As Read" & Sync Across Devices
+  const markAsRead = (id, e) => {
+    if (e) e.stopPropagation();
+    const targetId = String(id);
+    let updatedReadIds = [];
+    try {
+      const readIds = new Set(JSON.parse(localStorage.getItem(READ_NOTIF_KEY) || '[]'));
+      readIds.add(targetId);
+      updatedReadIds = Array.from(readIds);
+      localStorage.setItem(READ_NOTIF_KEY, JSON.stringify(updatedReadIds));
+    } catch (err) {}
+
+    const updated = notifications.map(n => 
+      String(n.id) === targetId ? { ...n, read: true } : n
+    );
+    saveNotifications(updated);
+    toast.success('Marked as read');
+
+    // Real-time broadcast to other devices
+    if (syncChannelRef.current) {
+      syncChannelRef.current.send({
+        type: 'broadcast',
+        event: 'NOTIF_ACTION',
+        payload: {
+          action: 'MARK_READ',
+          id: targetId,
+          targetRole: 'user',
+          deviceId: myDeviceId
+        }
+      });
+    }
+
+    // Persist to Supabase
+    try {
+      const deletedIds = JSON.parse(localStorage.getItem(DELETED_NOTIF_KEY) || '[]');
+      pushRemoteNotificationState(SYNC_KEY, updatedReadIds, deletedIds);
+    } catch (err) {}
+  };
+
+  // Persist "Mark All As Read" & Sync Across Devices
+  const markAllAsRead = () => {
+    const allIds = notifications.map(n => String(n.id));
+    let updatedReadIds = [];
+    try {
+      const readIds = new Set(JSON.parse(localStorage.getItem(READ_NOTIF_KEY) || '[]'));
+      allIds.forEach(id => readIds.add(id));
+      updatedReadIds = Array.from(readIds);
+      localStorage.setItem(READ_NOTIF_KEY, JSON.stringify(updatedReadIds));
+    } catch (err) {}
+
+    const updated = notifications.map(n => ({ ...n, read: true }));
+    saveNotifications(updated);
+    toast.success('All notifications marked as read');
+
+    if (syncChannelRef.current) {
+      syncChannelRef.current.send({
+        type: 'broadcast',
+        event: 'NOTIF_ACTION',
+        payload: {
+          action: 'MARK_ALL_READ',
+          allIds,
+          targetRole: 'user',
+          deviceId: myDeviceId
+        }
+      });
+    }
+
+    try {
+      const deletedIds = JSON.parse(localStorage.getItem(DELETED_NOTIF_KEY) || '[]');
+      pushRemoteNotificationState(SYNC_KEY, updatedReadIds, deletedIds);
+    } catch (err) {}
+  };
+
+  // Persist "Clear All" & Sync Across Devices
+  const clearAll = () => {
+    if (window.confirm('Are you sure you want to clear all notifications?')) {
+      const allIds = notifications.map(n => String(n.id));
+      let updatedDeletedIds = [];
+      try {
+        const deletedIds = new Set(JSON.parse(localStorage.getItem(DELETED_NOTIF_KEY) || '[]'));
+        allIds.forEach(id => deletedIds.add(id));
+        updatedDeletedIds = Array.from(deletedIds);
+        localStorage.setItem(DELETED_NOTIF_KEY, JSON.stringify(updatedDeletedIds));
+      } catch (err) {}
+
+      saveNotifications([]);
+      toast.success('All notifications cleared');
+
+      if (syncChannelRef.current) {
+        syncChannelRef.current.send({
+          type: 'broadcast',
+          event: 'NOTIF_ACTION',
+          payload: {
+            action: 'CLEAR_ALL',
+            allIds,
+            targetRole: 'user',
+            deviceId: myDeviceId
+          }
+        });
+      }
+
+      try {
+        const readIds = JSON.parse(localStorage.getItem(READ_NOTIF_KEY) || '[]');
+        pushRemoteNotificationState(SYNC_KEY, readIds, updatedDeletedIds);
+      } catch (err) {}
+    }
+  };
+
+  // Persist "Delete" & Sync Across Devices
+  const deleteNotification = (id, e) => {
+    if (e) e.stopPropagation();
+    const targetId = String(id);
+    let updatedDeletedIds = [];
+    try {
+      const deletedIds = new Set(JSON.parse(localStorage.getItem(DELETED_NOTIF_KEY) || '[]'));
+      deletedIds.add(targetId);
+      updatedDeletedIds = Array.from(deletedIds);
+      localStorage.setItem(DELETED_NOTIF_KEY, JSON.stringify(updatedDeletedIds));
+    } catch (err) {}
+
+    const updated = notifications.filter(n => String(n.id) !== targetId);
+    saveNotifications(updated);
+    toast.success('Notification removed');
+
+    if (syncChannelRef.current) {
+      syncChannelRef.current.send({
+        type: 'broadcast',
+        event: 'NOTIF_ACTION',
+        payload: {
+          action: 'DELETE',
+          id: targetId,
+          targetRole: 'user',
+          deviceId: myDeviceId
+        }
+      });
+    }
+
+    try {
+      const readIds = JSON.parse(localStorage.getItem(READ_NOTIF_KEY) || '[]');
+      pushRemoteNotificationState(SYNC_KEY, readIds, updatedDeletedIds);
+    } catch (err) {}
+  };
 
 
   const getPriorityColor = (priority) => {
