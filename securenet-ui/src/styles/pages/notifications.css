@@ -42,6 +42,57 @@
   border-radius: 6px;
 }
 
+.meta-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.quick-read-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 245, 255, 0.12);
+  border: 1px solid rgba(0, 245, 255, 0.35);
+  color: #00f5ff;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-read-btn:hover {
+  background: rgba(0, 245, 255, 0.25);
+  border-color: #00f5ff;
+  transform: translateY(-1px);
+}
+
+body.admin .quick-read-btn {
+  background: rgba(255, 51, 102, 0.12);
+  border: 1px solid rgba(255, 51, 102, 0.35);
+  color: #ff3366;
+}
+
+body.admin .quick-read-btn:hover {
+  background: rgba(255, 51, 102, 0.25);
+  border-color: #ff3366;
+}
+
+.read-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: #94a3b8;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.12);
+  font-weight: 500;
+}
+
 /* Role-based Notification Styling */
 
 /* Admin Notifications - Red Theme */
