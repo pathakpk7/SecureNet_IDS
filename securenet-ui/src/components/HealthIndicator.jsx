@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 /**
  * HealthIndicator Component
@@ -17,7 +18,7 @@ const HealthIndicator = () => {
 
   const fetchHealthStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/health/');
+      const response = await fetch('${API_V1}/health/');
       if (response.ok) {
         const data = await response.json();
         setHealthStatus(data);

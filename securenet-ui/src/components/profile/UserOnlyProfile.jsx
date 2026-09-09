@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { Edit3, Key, Download, HelpCircle, X, Lock, Shield, Activity, Clock, Zap, Server } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import '../../styles/pages/profile.css';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 const UserOnlyProfile = () => {
   const [userData, setUserData] = useState({
@@ -77,7 +78,7 @@ const UserOnlyProfile = () => {
     // Fetch stats from backend
     const fetchStats = async () => {
       try {
-        const res = await fetch('http://localhost:8000/stats');
+        const res = await fetch('${API_BASE}/stats');
         if (res.ok) {
           const json = await res.json();
           const data = json.data || json;
@@ -94,7 +95,7 @@ const UserOnlyProfile = () => {
     // Fetch recent activity from logs
     const fetchActivity = async () => {
       try {
-        const res = await fetch('http://localhost:8000/logs?limit=4');
+        const res = await fetch('${API_BASE}/logs?limit=4');
         if (res.ok) {
           const json = await res.json();
           const list = Array.isArray(json) ? json : (json.data || []);

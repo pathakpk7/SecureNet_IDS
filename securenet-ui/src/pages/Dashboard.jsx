@@ -9,6 +9,7 @@ import Card from "../components/ui/Card";
 import AnimatedCounter from "../components/ui/AnimatedCounter";
 import toast from 'react-hot-toast';
 import '../styles/pages/dashboard.css';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 // Overview component connected to live backend metrics
 function Overview({ monitoringActive, onToggleMonitoring }) {
@@ -26,7 +27,7 @@ function Overview({ monitoringActive, onToggleMonitoring }) {
     // Fetch initial status & stats from backend
     const fetchStats = async () => {
       try {
-        const res = await fetch('http://localhost:8000/status');
+        const res = await fetch('${API_BASE}/status');
         if (res.ok) {
           const json = await res.json();
           const data = json.data || json;
@@ -42,7 +43,7 @@ function Overview({ monitoringActive, onToggleMonitoring }) {
         }
 
         try {
-          const healthRes = await fetch('http://localhost:8000/health');
+          const healthRes = await fetch('${API_BASE}/health');
           if (healthRes.ok) {
             const healthData = await healthRes.json();
             const h = healthData.data || healthData;
@@ -66,7 +67,7 @@ function Overview({ monitoringActive, onToggleMonitoring }) {
     // Also connect to WebSocket stream for instantaneous packet counters
     let ws = null;
     try {
-      ws = new WebSocket('ws://localhost:8000/ws');
+      ws = new WebSocket('${WS_URL}');
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
@@ -185,7 +186,7 @@ function AdvancedStats() {
   useEffect(() => {
     const fetchTelemetry = async () => {
       try {
-        const res = await fetch('http://localhost:8000/stats');
+        const res = await fetch('${API_BASE}/stats');
         if (res.ok) {
           const json = await res.json();
           const data = json.data || json;
@@ -238,7 +239,7 @@ function UserActivity() {
   useEffect(() => {
     const fetchActivity = async () => {
       try {
-        const res = await fetch('http://localhost:8000/logs?limit=5');
+        const res = await fetch('${API_BASE}/logs?limit=5');
         if (res.ok) {
           const json = await res.json();
           const list = Array.isArray(json) ? json : (json.data || []);
@@ -299,7 +300,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     // Check initial monitoring state
-    fetch('http://localhost:8000/status')
+    fetch('${API_BASE}/status')
       .then(res => res.json())
       .then(json => {
         const data = json.data || json;
@@ -311,7 +312,7 @@ export default function Dashboard() {
   }, []);
 
   const handleToggleMonitoring = async () => {
-    const endpoint = monitoringActive ? 'http://localhost:8000/stop-monitoring' : 'http://localhost:8000/start-monitoring';
+    const endpoint = monitoringActive ? '${API_BASE}/stop-monitoring' : '${API_BASE}/start-monitoring';
     try {
       const res = await fetch(endpoint, { method: 'POST' });
       if (res.ok) {

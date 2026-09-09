@@ -6,6 +6,7 @@ import PieChart from '../Charts/PieChart';
 import toast from 'react-hot-toast';
 import useRealtimeAlerts from '../../hooks/useRealtimeAlerts';
 import '../../styles/pages/analysis.css';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 const AdminAttackAnalysis = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('24h');
@@ -15,7 +16,7 @@ const AdminAttackAnalysis = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('http://localhost:8000/stats');
+        const res = await fetch('${API_BASE}/stats');
         if (res.ok) {
           const body = await res.json();
           const s = body.data || body;

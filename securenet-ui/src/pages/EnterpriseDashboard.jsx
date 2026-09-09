@@ -5,6 +5,7 @@ import MonitoringControl from '../components/MonitoringControl';
 import HealthIndicator from '../components/HealthIndicator';
 import RoleGuard from '../components/RoleGuard';
 import { useRealtimeAlerts } from '../hooks/useRealtimeAlerts';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 /**
  * Enterprise SOC Dashboard
@@ -21,7 +22,7 @@ const EnterpriseDashboard = () => {
   useEffect(() => {
     const fetchHealth = async () => {
       try {
-        const res = await fetch('http://localhost:8000/health');
+        const res = await fetch('${API_BASE}/health');
         if (res.ok) {
           const json = await res.json();
           const data = json.data || json;

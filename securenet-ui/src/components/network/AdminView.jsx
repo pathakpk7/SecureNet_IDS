@@ -5,6 +5,7 @@ import PieChart from '../Charts/PieChart';
 import toast from 'react-hot-toast';
 import useRealtimeAlerts from '../../hooks/useRealtimeAlerts';
 import '../../styles/pages/network.css';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 const AdminNetworkMonitor = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('24h');
@@ -22,7 +23,7 @@ const AdminNetworkMonitor = () => {
     // Connect to WebSocket for live packets
     const connectWs = () => {
       try {
-        const ws = new WebSocket('ws://localhost:8000/ws');
+        const ws = new WebSocket('${WS_URL}');
         wsRef.current = ws;
         ws.onmessage = (event) => {
           try {
@@ -64,7 +65,7 @@ const AdminNetworkMonitor = () => {
 
     const fetchStats = async () => {
       try {
-        const res = await fetch('http://localhost:8000/status');
+        const res = await fetch('${API_BASE}/status');
         if (res.ok) {
           const body = await res.json();
           const d = body.data || body;
@@ -90,7 +91,7 @@ const AdminNetworkMonitor = () => {
   const handleGlobalMonitorToggle = async () => {
     const endpoint = monitoringEnabled ? '/api/v1/monitoring/stop' : '/api/v1/monitoring/start';
     try {
-      const res = await fetch(`http://localhost:8000${endpoint}`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}${endpoint}`, { method: 'POST' });
       if (res.ok) {
         setMonitoringEnabled(!monitoringEnabled);
         toast.success(`Monitoring ${monitoringEnabled ? 'stopped' : 'started'}`);

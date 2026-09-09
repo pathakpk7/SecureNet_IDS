@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import RoleGuard from '../components/RoleGuard';
 import { RoleWrapper } from '../components/RoleGuard';
+import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 /**
  * Enhanced Admin Panel
@@ -45,7 +46,7 @@ const EnhancedAdminPanel = () => {
   const fetchOrganizations = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/v1/organizations/', {
+      const response = await fetch('${API_V1}/organizations/', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }
@@ -69,7 +70,7 @@ const EnhancedAdminPanel = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/v1/users/', {
+      const response = await fetch('${API_V1}/users/', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }
@@ -92,7 +93,7 @@ const EnhancedAdminPanel = () => {
 
   const createOrganization = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/organizations/', {
+      const response = await fetch('${API_V1}/organizations/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -117,7 +118,7 @@ const EnhancedAdminPanel = () => {
 
   const createUser = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/users/', {
+      const response = await fetch('${API_V1}/users/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +143,7 @@ const EnhancedAdminPanel = () => {
 
   const suspendOrganization = async (orgId) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/organizations/${orgId}/suspend`, {
+      const response = await fetch(`${API_V1}/organizations/${orgId}/suspend`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -164,7 +165,7 @@ const EnhancedAdminPanel = () => {
 
   const activateOrganization = async (orgId) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/organizations/${orgId}/activate`, {
+      const response = await fetch(`${API_V1}/organizations/${orgId}/activate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
@@ -184,7 +185,7 @@ const EnhancedAdminPanel = () => {
 
   const updateUserRole = async (userId, newRole) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/users/${userId}`, {
+      const response = await fetch(`${API_V1}/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -205,7 +206,7 @@ const EnhancedAdminPanel = () => {
 
   const toggleUserStatus = async (userId, isActive) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/users/${userId}`, {
+      const response = await fetch(`${API_V1}/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
