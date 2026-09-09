@@ -1,12 +1,15 @@
 /* Auth Container */
 .auth-container {
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  overflow: hidden;
-  padding: 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 24px 16px;
+  box-sizing: border-box;
 }
 
 /* Auth Content Wrapper */
@@ -490,11 +493,43 @@ textarea.auth-input {
 }
 
 /* Responsive Design */
+@media (max-width: 860px) {
+  .auth-card.landscape-card {
+    flex-direction: column;
+    max-width: 500px;
+    width: 100%;
+    margin: 16px auto;
+  }
+  
+  .signup-hero-panel {
+    flex: none;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 24px 20px;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 245, 255, 0.2);
+  }
+  
+  .signup-form-panel {
+    padding: 24px 20px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  
+  .signup-grid-landscape {
+    grid-template-columns: 1fr;
+  }
+  
+  .signup-grid-landscape .span-2 {
+    grid-column: span 1;
+  }
+}
+
 @media (max-width: 480px) {
   .auth-card {
-    width: 90%;
-    max-width: 320px;
-    padding: var(--spacing-lg);
+    width: 95%;
+    max-width: 360px;
+    padding: var(--spacing-md);
   }
   
   .auth-header h2 {

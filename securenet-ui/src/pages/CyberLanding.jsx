@@ -9,7 +9,11 @@ const CyberLanding = () => {
 
   const handleLaunchDashboard = (e) => {
     if (e) e.preventDefault();
-    navigate('/login');
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
   };
 
   return (
@@ -17,18 +21,28 @@ const CyberLanding = () => {
       {/* Top Header / Navigation */}
       <nav className="cl-nav">
         <div className="cl-brand">
-          <Link to="/dashboard" onClick={handleLaunchDashboard} style={{ display: 'flex', alignItems: 'center' }}>
+          <Link to={user ? "/dashboard" : "/login"} onClick={handleLaunchDashboard} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
             <img src="/logo.jpg" alt="SecureNet IDS Logo" className="cl-logo-img" />
+            <span className="cl-brand-title">SecureNet <span className="cl-brand-tag">IDS</span></span>
           </Link>
         </div>
 
         <div className="cl-nav-actions">
-          <Link to="/login" className="cl-btn-text">
-            Sign In
-          </Link>
-          <button onClick={handleLaunchDashboard} className="cl-btn-primary" style={{ cursor: 'pointer', border: 'none' }}>
-            Launch Dashboard →
-          </button>
+          {user ? (
+            <Link to="/dashboard" className="cl-btn-primary" style={{ textDecoration: 'none' }}>
+              SOC Dashboard →
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" className="cl-btn-text">
+                Sign In
+              </Link>
+              <button onClick={handleLaunchDashboard} className="cl-btn-primary" style={{ cursor: 'pointer', border: 'none' }}>
+                <span className="cl-btn-text-full">Launch Dashboard →</span>
+                <span className="cl-btn-text-short">Dashboard →</span>
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
@@ -58,7 +72,7 @@ const CyberLanding = () => {
       </section>
 
       {/* Key System Metrics */}
-      <section id="metrics" className="cl-section">
+      <section id="metrics" className="cl-section cl-metrics-section">
         <div className="cl-grid-4-metrics">
           <div className="cl-metric-card">
             <span className="cl-metric-value">99.4%</span>

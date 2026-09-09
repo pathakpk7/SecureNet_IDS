@@ -7,7 +7,7 @@ import './DashboardLayout.css';
 
 function DashboardLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth <= 1024 : false);
   const location = useLocation();
 
   useEffect(() => {

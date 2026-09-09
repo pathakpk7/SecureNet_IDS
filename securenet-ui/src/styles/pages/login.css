@@ -1,11 +1,15 @@
 /* Auth Container */
 .auth-container {
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 24px 16px;
+  box-sizing: border-box;
 }
 
 /* Auth Background */
