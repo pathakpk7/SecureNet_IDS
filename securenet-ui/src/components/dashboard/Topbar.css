@@ -1,14 +1,15 @@
-.navbar {
+.dashboard-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 58px;
   min-height: 58px;
+  width: 100%;
   padding: 0 24px;
   background: rgba(10, 15, 30, 0.95);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(0, 255, 255, 0.15);
-  position: relative;
+  position: sticky;
   top: 0;
   z-index: 1000;
   box-sizing: border-box;
@@ -47,7 +48,7 @@
 
 /* SHOW ONLY ON MOBILE & TABLET (<= 1024px) */
 @media (max-width: 1024px) {
-  .navbar {
+  .dashboard-topbar {
     padding: 0 16px;
     height: 54px;
     min-height: 54px;

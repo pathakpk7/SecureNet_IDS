@@ -97,7 +97,7 @@ function Navbar({ toggleMenu, menuOpen }) {
   }, []);
 
   return (
-    <div className="navbar">
+    <header className="dashboard-topbar">
       
       <div className="logo">
         <Link to="/dashboard" onClick={closeMenu} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
@@ -171,7 +171,7 @@ function Navbar({ toggleMenu, menuOpen }) {
         <span></span>
       </button>
 
-    </div>
+    </header>
   );
 }
 
