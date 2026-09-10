@@ -162,7 +162,13 @@ function LineChart({ data, title, height = "100%", options: customOptions }) {
         ticks: {
           color: "#64748b",
           font: { size: 11, family: "Inter, system-ui, sans-serif" },
-          callback: (value) => `${value} Mbps`
+          callback: (value) => {
+            if (customOptions?.unit === '' || customOptions?.scales?.y?.ticks?.callback) {
+              return value;
+            }
+            const unit = customOptions?.unit ?? "Mbps";
+            return `${value} ${unit}`.trim();
+          }
         },
         grid: {
           color: "rgba(255, 255, 255, 0.04)"
