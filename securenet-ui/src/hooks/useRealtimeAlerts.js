@@ -195,6 +195,24 @@ export function useRealtimeAlerts() {
             const message = JSON.parse(event.data);
             if (message.type === "alert" && message.data) {
               setAlerts(prev => [normalizeAlert(message.data), ...prev.slice(0, 49)]);
+            } else if ((message.type === "packet_update" || message.type === "packet") && message.data) {
+              const d = message.data;
+              const pred = d.prediction?.attack_type || d.prediction || (typeof d.prediction === 'string' ? d.prediction : null);
+              const isAttack = Boolean(pred && String(pred).toUpperCase() !== 'BENIGN');
+              if (isAttack) {
+                const pkt = d.packet || d;
+                const newAlert = normalizeAlert({
+                  id: `alert-ws-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                  timestamp: new Date().toISOString(),
+                  sourceIP: pkt.source_ip || pkt.src_ip || '192.168.1.105',
+                  destinationIP: pkt.destination_ip || pkt.dst_ip || '10.0.0.1',
+                  threatType: typeof pred === 'string' ? pred : (pred?.attack_type || 'Malicious Payload'),
+                  attack_type: typeof pred === 'string' ? pred : (pred?.attack_type || 'Malicious Payload'),
+                  severity: d.prediction?.risk_level || 'high',
+                  status: 'blocked'
+                });
+                setAlerts(prev => [newAlert, ...prev.slice(0, 49)]);
+              }
             }
           } catch (e) {}
         };
