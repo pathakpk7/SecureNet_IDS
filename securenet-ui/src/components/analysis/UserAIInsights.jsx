@@ -21,17 +21,17 @@ const USER_PRESETS = [
   {
     id: 'session_safety',
     label: '🛡️ Session Safety Audit',
-    answer: 'Your current connection origin, browser agent, and TLS encryption level meet all corporate enterprise security requirements. No session hijacking or anomalous credential reuse detected.'
+    answer: 'Your current login session is fully secure. Your browser connection uses strong TLS 1.3 encryption, and no unauthorized location switches, token theft, or suspicious session hijack attempts have been detected.'
   },
   {
     id: 'password_strength',
     label: '🔑 Credential Hardening',
-    answer: 'Your password was verified against known breach databases (HaveIBeenPwned). No compromises found. We recommend enabling hardware key or 2-factor authentication for higher security clearance.'
+    answer: 'Your account password has been checked against known compromised credential lists and was not found in any public security breach. For maximum safety, avoid reusing passwords across multiple services.'
   },
   {
     id: 'recent_locations',
     label: '📍 Location Anomalies',
-    answer: 'Your account was accessed from 1 verified IP address in the past 7 days. Geographic location: New Delhi region. No suspicious concurrent logins detected.'
+    answer: 'Your account was accessed only from your verified IP address and device over the past 7 days. There are no suspicious concurrent sign-ins or unfamiliar geographic logins.'
   }
 ];
 
@@ -39,24 +39,53 @@ const UserAIInsights = () => {
   const [appliedActions, setAppliedActions] = useState(new Set());
   const [customQuestion, setCustomQuestion] = useState('');
   const [isThinking, setIsThinking] = useState(false);
-  const messagesEndRef = React.useRef(null);
+  const chatContainerRef = React.useRef(null);
 
-  const [messages, setMessages] = useState([
-    {
-      id: 'msg-init',
-      sender: 'ai',
-      title: USER_PRESETS[0].label,
-      summary: USER_PRESETS[0].answer,
-      time: 'Just now'
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem('securenet_copilot_user_chat');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading stored user copilot chat:', e);
     }
-  ]);
+    return [
+      {
+        id: 'msg-init',
+        sender: 'ai',
+        title: USER_PRESETS[0].label,
+        summary: USER_PRESETS[0].answer,
+        time: 'Just now'
+      }
+    ];
+  });
+
+  // Persist messages to device storage
+  React.useEffect(() => {
+    try {
+      if (messages && messages.length > 0) {
+        localStorage.setItem('securenet_copilot_user_chat', JSON.stringify(messages));
+      } else {
+        localStorage.removeItem('securenet_copilot_user_chat');
+      }
+    } catch (e) {
+      console.warn('Error saving user copilot chat:', e);
+    }
+  }, [messages]);
 
   const securityScore = 96;
 
-  // Auto-scroll on new messages
+  // Auto-scroll ONLY within the chat container to prevent mobile page jumping
   React.useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
     }
   }, [messages, isThinking]);
 
@@ -125,16 +154,13 @@ const UserAIInsights = () => {
   };
 
   const handleClearChat = () => {
-    setMessages([
-      {
-        id: 'msg-init',
-        sender: 'ai',
-        title: USER_PRESETS[0].label,
-        summary: USER_PRESETS[0].answer,
-        time: 'Just now'
-      }
-    ]);
-    toast.success('Conversation reset');
+    setMessages([]);
+    try {
+      localStorage.removeItem('securenet_copilot_user_chat');
+    } catch (e) {
+      console.warn('Error clearing user copilot chat from storage:', e);
+    }
+    toast.success('Recent copilot chat deleted from device');
   };
 
   const userTrendData = useMemo(() => ({
@@ -239,7 +265,17 @@ const UserAIInsights = () => {
           ))}
         </div>
 
-        <div className="copilot-output-container chat-scroll-container">
+        <div ref={chatContainerRef} className="copilot-output-container chat-scroll-container">
+          {messages.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '36px 16px', color: '#94a3b8' }}>
+              <Zap size={32} style={{ margin: '0 auto 12px', opacity: 0.6, color: '#00f5ff' }} />
+              <p style={{ margin: 0, fontWeight: 500, color: '#e2e8f0' }}>Chat history cleared</p>
+              <span style={{ fontSize: '13px', opacity: 0.75 }}>
+                Click any of the security audit chips above or ask a question below.
+              </span>
+            </div>
+          )}
+
           {messages.map((msg) => {
             if (msg.sender === 'user') {
               return (
@@ -269,8 +305,6 @@ const UserAIInsights = () => {
               <span>Analyzing security telemetry...</span>
             </div>
           )}
-
-          <div ref={messagesEndRef} />
         </div>
 
         <form className="copilot-query-form" onSubmit={handleCustomSubmit}>

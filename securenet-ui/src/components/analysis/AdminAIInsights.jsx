@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import '../../styles/pages/ai.css';
+import '../../styles/pages/notifications.css';
 import { API_BASE } from '@/config/api';
 
 const COPILOT_PRESETS = [
@@ -36,17 +37,17 @@ const COPILOT_PRESETS = [
     label: '⚡ Threat Vector Analysis',
     prompt: 'Analyze active threat vectors and calculate blast radius.',
     answer: {
-      title: 'Current Threat Vector Analysis & Root Cause',
-      summary: 'High density of inbound anomalous traffic detected across ports 443 (Web/API) and 22 (SSH Management). Primary signature matches SQL Injection probes from external subnet 203.0.113.0/24 alongside automated credential stuffing against authentication endpoints.',
+      title: 'Active Threat Vector & Risk Breakdown',
+      summary: 'Our intrusion detection system has detected an influx of automated attacks targeting two specific entry points: Web APIs (Port 443) and Administrative Remote Access (SSH Port 22). Attackers are testing login forms with database query tricks (SQL Injection) and attempting automated passwords. Our perimeter defenses are actively absorbing and deflecting these probes.',
       metrics: [
-        { name: 'Primary Vector', value: 'Web API Exploitation (SQLi)' },
-        { name: 'Secondary Vector', value: 'Brute Force SSH (Port 22)' },
-        { name: 'Estimated Blast Radius', value: '1 Subnet / 156 Endpoints' }
+        { name: 'Primary Vector', value: 'Web Login APIs (SQL Injection)' },
+        { name: 'Secondary Vector', value: 'SSH Remote Access (Password Brute Force)' },
+        { name: 'Blast Radius Risk', value: 'Contained to DMZ (Zero Data Leak)' }
       ],
       actions: [
-        'Apply strict parameterized query filters at WAF layer.',
-        'Enforce progressive rate-limiting on /api/v1/auth/login.',
-        'Immediately quarantine repeated failed authentication origins.'
+        'Block offending external IP subnet (203.0.113.0/24) at the border firewall.',
+        'Enforce rate limiting: restrict clients to maximum 5 login attempts per minute.',
+        'Ensure input sanitization and parameterized queries are active across all web forms.'
       ]
     }
   },
@@ -56,15 +57,16 @@ const COPILOT_PRESETS = [
     prompt: 'Suggest optimized firewall rules based on recent anomalous traffic patterns.',
     answer: {
       title: 'Recommended Adaptive Firewall Rules',
-      summary: 'Based on recent traffic analysis, the IDS model recommends deploying 3 adaptive perimeter rules to mitigate high-frequency SYN floods and untrusted external administrative probing.',
+      summary: 'Based on network traffic patterns observed over the last hour, the AI engine recommends 3 immediate firewall adjustments to keep traffic clean and reduce server CPU load by filtering out fake connection requests.',
       metrics: [
-        { name: 'Rule 1', value: 'DROP TCP SYN > 100 req/s from external WAN' },
-        { name: 'Rule 2', value: 'BLOCK IP range 203.0.113.0/24 for 24h' },
-        { name: 'Rule 3', value: 'RESTRICT Port 22 SSH to internal VPN gateway' }
+        { name: 'Rule 1 (SYN Flood)', value: 'Drop connections if a single IP sends > 100 requests/sec' },
+        { name: 'Rule 2 (IP Ban)', value: 'Block malicious subnet 203.0.113.0/24 for 24 hours' },
+        { name: 'Rule 3 (SSH Access)', value: 'Allow SSH (Port 22) logins ONLY from approved internal VPN IPs' }
       ],
       actions: [
-        'Push rule #2 to perimeter iptables / cloud security group.',
-        'Enable SYN cookie fallback in kernel networking.'
+        'Deploy the 24-hour subnet block to perimeter IPTables / cloud security group.',
+        'Enable SYN cookies in network settings to prevent denial-of-service connection pileups.',
+        'Review and remove unused port forwarding rules.'
       ]
     }
   },
@@ -73,16 +75,17 @@ const COPILOT_PRESETS = [
     label: '🎯 Vulnerable Port Inspection',
     prompt: 'Inspect most targeted open ports and service vulnerabilities.',
     answer: {
-      title: 'Vulnerable Port & Attack Surface Assessment',
-      summary: 'Telemetry shows port 443 (HTTPS) received 68% of malicious payloads, followed by port 22 (SSH) at 22%, and port 3306 (MySQL) at 10%. Database port 3306 is currently exposed to subnet inspection and should be bound strictly to localhost.',
+      title: 'Targeted Port & Exposure Assessment',
+      summary: 'Port traffic inspection reveals that 68% of unwanted traffic is hitting Port 443 (HTTPS Web Services), 22% is probing Port 22 (SSH Management), and 10% is attempting to find database services on Port 3306 (MySQL). While Web and SSH are protected, the internal database port should never be visible to external internet traffic.',
       metrics: [
-        { name: 'Port 443 (HTTPS)', value: '68% of probes (SQLi, XSS)' },
-        { name: 'Port 22 (SSH)', value: '22% of probes (Brute Force)' },
-        { name: 'Port 3306 (DB)', value: '10% of probes (Exposed Subnet)' }
+        { name: 'Port 443 (Web APIs)', value: '68% of probes (Defended by WAF)' },
+        { name: 'Port 22 (SSH)', value: '22% of probes (Brute-force attempts)' },
+        { name: 'Port 3306 (Database)', value: '10% of probes (Needs localhost lock)' }
       ],
       actions: [
-        'Bind MySQL port 3306 exclusively to 127.0.0.1.',
-        'Implement fail2ban with a 5-minute ban on 5 invalid SSH attempts.'
+        'Bind MySQL database (Port 3306) strictly to 127.0.0.1 (internal localhost only).',
+        'Enable fail2ban to lock out any IP that fails SSH login 5 consecutive times.',
+        'Keep HTTPS TLS certificates and web server packages updated.'
       ]
     }
   },
@@ -91,16 +94,17 @@ const COPILOT_PRESETS = [
     label: '📋 Executive Incident Briefing',
     prompt: 'Draft an executive threat intelligence summary for the Security Director.',
     answer: {
-      title: 'Executive Cybersecurity Threat Briefing',
-      summary: 'In the current reporting window, the SecureNet IDS autonomous pipeline inspected over 140,000 packets with an accuracy rating of 98.4%. 12 high-severity threats were identified and isolated before compromising critical infrastructure. Overall enterprise security posture remains RESILIENT.',
+      title: 'Executive Security Health & Threat Summary',
+      summary: 'Over the current operational cycle, SecureNet IDS analyzed 140,000+ incoming network packets with 98.4% model accuracy. 12 high-priority threats were flagged, analyzed, and successfully mitigated before any unauthorized access or data exposure occurred. The network perimeter remains healthy, resilient, and fully compliant.',
       metrics: [
-        { name: 'Attacks Intercepted', value: '12 Incidents Contained' },
-        { name: 'Autonomous Interception', value: '96.4% Success Rate' },
-        { name: 'Compliance Status', value: 'SOC 2 / ISO 27001 Aligned' }
+        { name: 'Attacks Intercepted', value: '12 Incidents Neutralized' },
+        { name: 'Autonomous Defense', value: '96.4% Handled Without Human Delay' },
+        { name: 'Security Posture', value: 'RESILIENT • High Compliance' }
       ],
       actions: [
-        'Schedule weekly definitions sync.',
-        'Export briefing as official audit document.'
+        'All primary services operating normally with zero downtime.',
+        'Export this briefing report for weekly executive security audit review.',
+        'Keep automated behavioral anomaly detection enabled.'
       ]
     }
   }
@@ -161,23 +165,49 @@ const AdminAIInsights = () => {
   const [appliedActions, setAppliedActions] = useState(new Set());
   const [blockedIps, setBlockedIps] = useState(new Set());
   const [investigatingAnomaly, setInvestigatingAnomaly] = useState(null);
-  const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
 
-  // Conversational thread history
-  const [messages, setMessages] = useState([
-    {
-      id: 'msg-init',
-      sender: 'ai',
-      presetId: 'threat_vectors',
-      title: COPILOT_PRESETS[0].answer.title,
-      summary: COPILOT_PRESETS[0].answer.summary,
-      metrics: COPILOT_PRESETS[0].answer.metrics,
-      actions: COPILOT_PRESETS[0].answer.actions,
-      actionBtnText: 'Quarantine Inbound Subnet (203.0.113.0/24)',
-      actionKey: 'quarantine_subnet',
-      time: 'Just now'
+  // Conversational thread history loaded from device localStorage
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem('securenet_copilot_admin_chat');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading stored copilot chat:', e);
     }
-  ]);
+    return [
+      {
+        id: 'msg-init',
+        sender: 'ai',
+        presetId: 'threat_vectors',
+        title: COPILOT_PRESETS[0].answer.title,
+        summary: COPILOT_PRESETS[0].answer.summary,
+        metrics: COPILOT_PRESETS[0].answer.metrics,
+        actions: COPILOT_PRESETS[0].answer.actions,
+        actionBtnText: 'Quarantine Inbound Subnet (203.0.113.0/24)',
+        actionKey: 'quarantine_subnet',
+        time: 'Just now'
+      }
+    ];
+  });
+
+  // Persist messages to device storage
+  useEffect(() => {
+    try {
+      if (messages && messages.length > 0) {
+        localStorage.setItem('securenet_copilot_admin_chat', JSON.stringify(messages));
+      } else {
+        localStorage.removeItem('securenet_copilot_admin_chat');
+      }
+    } catch (e) {
+      console.warn('Error saving copilot chat:', e);
+    }
+  }, [messages]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -200,10 +230,13 @@ const AdminAIInsights = () => {
     return () => clearInterval(int);
   }, []);
 
-  // Auto-scroll conversation smoothly on new messages
+  // Auto-scroll ONLY inside the chat container (prevents whole page mobile jumping)
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
     }
   }, [messages, isThinking]);
 
@@ -276,21 +309,51 @@ const AdminAIInsights = () => {
     setMessages(prev => [...prev, userMsg]);
 
     setTimeout(() => {
+      const lowerQuery = query.toLowerCase();
+      let title = `Security Investigation: "${query}"`;
+      let summary = `Our automated diagnostic engine analyzed your inquiry regarding "${query}". Correlating active firewall logs and traffic behavior indicates no critical breach has succeeded. Perimeter rules and real-time packet inspection are actively operating.`;
+      let primaryMetric = 'Zero Active Breaches';
+      let secMetric = '98.4% Confidence';
+      let actions = [
+        'Real-time packet inspection is continuously screening all traffic.',
+        'Review recent entries in Logs and Alerts for any correlated suspicious events.',
+        'Ensure system authentication credentials and passwords remain strong.'
+      ];
+
+      if (lowerQuery.includes('port') || lowerQuery.includes('443') || lowerQuery.includes('22') || lowerQuery.includes('80')) {
+        title = `Port & Surface Inspection: "${query}"`;
+        summary = `Analysis of target ports shows typical external automated scanning. Port 443 (HTTPS) is shielded by the Web Application Firewall, and Port 22 (SSH) is guarded against password brute-forcing. No exposed unauthenticated services were found.`;
+        primaryMetric = 'Shielded by WAF';
+        secMetric = 'Low Exposure';
+        actions = [
+          'Keep administrative ports (SSH/RDP) bound strictly behind a private VPN.',
+          'Verify TLS certificates and renew before expiration.',
+          'Close or filter any ports not actively needed by public applications.'
+        ];
+      } else if (lowerQuery.includes('ip') || lowerQuery.includes('blacklist') || lowerQuery.includes('block') || lowerQuery.includes('attack')) {
+        title = `Threat & IP Origin Analysis: "${query}"`;
+        summary = `Cross-referencing global threat intelligence lists: Identified suspicious IP origins are primarily automated bot scanners attempting generic exploit payloads. The autonomous blacklist has isolated high-frequency offenders to prevent server disruption.`;
+        primaryMetric = 'Automated Botnets';
+        secMetric = 'Perimeter Filtered';
+        actions = [
+          'Suspicious source IPs are automatically throttled or temporarily blacklisted.',
+          'Check the Live Behavioral Anomalies table below to inspect or permanently block IPs.',
+          'Enable geo-blocking if you do not expect international traffic.'
+        ];
+      }
+
       const aiMsg = {
         id: 'msg_ai_' + Date.now(),
         sender: 'ai',
         presetId: 'custom',
-        title: `AI Security Assessment: "${query}"`,
-        summary: `Heuristic evaluation for "${query}". The CICIDS2017 inference pipeline analyzed recent network flows and telemetry. All detected packets match guarded baseline thresholds. Active containment is operational across all perimeter interfaces.`,
+        title,
+        summary,
         metrics: [
-          { name: 'Target Query', value: query.substring(0, 20) },
-          { name: 'Inference Status', value: 'Guarded / Secure' },
-          { name: 'Model Confidence', value: '98.6%' }
+          { name: 'Investigation Subject', value: query.length > 24 ? query.substring(0, 24) + '...' : query },
+          { name: 'System Posture', value: primaryMetric },
+          { name: 'Inference Confidence', value: secMetric }
         ],
-        actions: [
-          'Continuous real-time packet monitoring active.',
-          'Verify matched telemetry in Logs and Network Monitor.'
-        ],
+        actions,
         actionBtnText: 'Log Security Inquiry to Audit Trail',
         actionKey: 'audit_inquiry_' + Date.now(),
         time: 'Just now'
@@ -307,21 +370,13 @@ const AdminAIInsights = () => {
   };
 
   const handleClearChat = () => {
-    setMessages([
-      {
-        id: 'msg-init',
-        sender: 'ai',
-        presetId: 'threat_vectors',
-        title: COPILOT_PRESETS[0].answer.title,
-        summary: COPILOT_PRESETS[0].answer.summary,
-        metrics: COPILOT_PRESETS[0].answer.metrics,
-        actions: COPILOT_PRESETS[0].answer.actions,
-        actionBtnText: 'Quarantine Inbound Subnet (203.0.113.0/24)',
-        actionKey: 'quarantine_subnet',
-        time: 'Just now'
-      }
-    ]);
-    toast.success('Copilot conversation cleared');
+    setMessages([]);
+    try {
+      localStorage.removeItem('securenet_copilot_admin_chat');
+    } catch (e) {
+      console.warn('Error clearing copilot chat from storage:', e);
+    }
+    toast.success('Recent copilot chat deleted from device');
   };
 
   const handleBlockIp = (ip) => {
@@ -510,7 +565,17 @@ SecureNet Autonomous Security Framework`;
         </div>
 
         {/* CONVERSATION THREAD CONTAINER */}
-        <div className="copilot-output-container chat-scroll-container">
+        <div ref={chatContainerRef} className="copilot-output-container chat-scroll-container">
+          {messages.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '36px 16px', color: '#94a3b8' }}>
+              <Cpu size={32} style={{ margin: '0 auto 12px', opacity: 0.6, color: '#00f5ff' }} />
+              <p style={{ margin: 0, fontWeight: 500, color: '#e2e8f0' }}>Chat history cleared</p>
+              <span style={{ fontSize: '13px', opacity: 0.75 }}>
+                Click any of the quick prompt chips above or ask a security question below to start a new analysis.
+              </span>
+            </div>
+          )}
+
           {messages.map((msg) => {
             if (msg.sender === 'user') {
               return (
@@ -604,8 +669,6 @@ SecureNet Autonomous Security Framework`;
               <span>Analyzing live network telemetry and querying heuristic models...</span>
             </div>
           )}
-
-          <div ref={messagesEndRef} />
         </div>
 
         {/* CUSTOM QUERY BAR */}
