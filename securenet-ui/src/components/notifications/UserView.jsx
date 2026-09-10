@@ -6,6 +6,7 @@ import { getDeviceId, fetchRemoteNotificationState, pushRemoteNotificationState 
 import toast from 'react-hot-toast';
 import InvestigationModal from './InvestigationModal';
 import '../../styles/pages/notifications.css';
+import { WS_URL } from '@/config/api';
 
 const USER_NOTIF_KEY = 'securenet_user_notifications_v3';
 const READ_NOTIF_KEY = 'securenet_read_notifications_ids';
@@ -73,6 +74,7 @@ const UserNotifications = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [investigatingNotification, setInvestigatingNotification] = useState(null);
+  const [showAll, setShowAll] = useState(false);
 
   const formatTime = (timestamp) => {
     try {
@@ -188,7 +190,7 @@ const UserNotifications = () => {
           .from('alerts')
           .select('*')
           .order('detected_at', { ascending: false })
-          .limit(6);
+          .limit(50);
 
         if (!error && dbAlerts && dbAlerts.length > 0 && isMounted) {
           setNotifications(prev => {
@@ -219,6 +221,36 @@ const UserNotifications = () => {
     };
 
     fetchLiveAlerts();
+
+    // WebSocket live stream ingestion for instant user notices
+    let ws = null;
+    try {
+      ws = new WebSocket(WS_URL);
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'packet_update' && msg.data && msg.data.prediction && isMounted) {
+            const pkt = msg.data;
+            const newNotif = {
+              id: `ws-user-alert-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+              type: 'alert',
+              title: `Security Notice: ${pkt.prediction || 'Unusual Flow'}`,
+              message: `Inspection detected packet anomaly from ${pkt.src_ip || 'network node'}:${pkt.src_port || '80'}.`,
+              time: new Date().toISOString(),
+              read: false,
+              priority: 'medium'
+            };
+            setNotifications(prev => {
+              const updated = [newNotif, ...prev];
+              try {
+                localStorage.setItem(USER_NOTIF_KEY, JSON.stringify(updated));
+              } catch (e) {}
+              return updated;
+            });
+          }
+        } catch (e) {}
+      };
+    } catch (e) {}
 
     // Supabase alert table changes
     let alertChannel = null;
@@ -571,7 +603,7 @@ const UserNotifications = () => {
 
       {/* 3 NOTIFICATIONS IN ONE ROW GRID */}
       <div className="notifications-list user-list">
-        {filteredNotifications.map((notification) => {
+        {(showAll ? filteredNotifications : filteredNotifications.slice(0, 9)).map((notification) => {
           const isExpanded = expandedId === notification.id;
 
           return (
@@ -654,6 +686,31 @@ const UserNotifications = () => {
           );
         })}
       </div>
+
+      {filteredNotifications.length > 9 && (
+        <div className="show-more-container" style={{ textAlign: 'center', margin: '24px 0 10px 0' }}>
+          <button 
+            className="btn btn-outline show-more-toggle-btn"
+            onClick={() => setShowAll(prev => !prev)}
+            style={{
+              padding: '10px 24px',
+              fontSize: '14px',
+              fontWeight: 600,
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            {showAll ? (
+              <>Showing All {filteredNotifications.length} Notifications • Show Less ▲</>
+            ) : (
+              <>Show All Notifications ({filteredNotifications.length} Total) ▼</>
+            )}
+          </button>
+        </div>
+      )}
 
       {filteredNotifications.length === 0 && (
         <Card className="empty-state user-empty">

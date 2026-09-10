@@ -96,28 +96,37 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
-  overflow: hidden;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+  overflow: visible;
 }
 
 .stat-card .stat-value {
   font-size: 1.85rem;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.15;
   font-family: 'JetBrains Mono', monospace, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .stat-card .stat-label {
   font-size: 0.825rem;
   font-weight: 600;
   color: #f1f5f9;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-height: 1.25;
 }
 
 .stat-card .stat-sublabel {
   font-size: 0.725rem;
   color: #94a3b8;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-height: 1.25;
 }
 
 /* Control Bar */
@@ -480,33 +489,37 @@
   }
 
   .db-stats-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
   }
 
   .stat-card.db-card-clickable {
-    padding: 1rem 1.1rem;
-    gap: 0.9rem;
-    min-height: 98px;
+    padding: 1rem 1rem;
+    gap: 0.85rem;
+    min-height: 102px;
   }
 
   .stat-icon-wrapper {
-    width: 44px;
-    height: 44px;
-    font-size: 20px;
+    width: 42px;
+    height: 42px;
+    font-size: 19px;
     border-radius: 10px;
+    flex-shrink: 0;
   }
 
   .stat-card .stat-value {
-    font-size: 1.65rem;
+    font-size: 1.5rem;
+    line-height: 1.2;
   }
 
   .stat-card .stat-label {
     font-size: 0.775rem;
+    line-height: 1.25;
   }
 
   .stat-card .stat-sublabel {
     font-size: 0.7rem;
+    line-height: 1.25;
   }
 
   .db-main-grid {
@@ -550,9 +563,23 @@
 }
 
 @media (max-width: 640px) {
+  .db-stats-grid,
   .db-kpi-grid {
     grid-template-columns: 1fr;
     gap: 0.75rem;
+  }
+  .stat-card.db-card-clickable {
+    padding: 0.9rem 1rem;
+    min-height: auto;
+  }
+  .stat-card .stat-value {
+    font-size: 1.5rem;
+  }
+  .stat-card .stat-label {
+    font-size: 0.8rem;
+  }
+  .stat-card .stat-sublabel {
+    font-size: 0.72rem;
   }
   .db-banner {
     flex-direction: column;

@@ -9,10 +9,42 @@ const AdminView = () => {
   const [loading, setLoading] = useState(true);
   const [filterLevel, setFilterLevel] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     fetchLogs();
   }, [filterLevel]);
+
+  // Connect WebSocket to stream live packet capture events into logs
+  useEffect(() => {
+    let ws = null;
+    try {
+      ws = new WebSocket(WS_URL);
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'packet_update' && msg.data) {
+            const p = msg.data;
+            const isAttack = Boolean(p.prediction && p.prediction !== 'BENIGN');
+            const newLog = {
+              id: `log-live-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+              timestamp: new Date().toISOString(),
+              level: isAttack ? 'ERROR' : 'INFO',
+              source: isAttack ? 'ids_classifier' : 'deep_packet_flow',
+              message: isAttack
+                ? `[ANOMALY INTERCEPTED] Class: ${p.prediction} detected from ${p.src_ip || '192.168.1.105'}:${p.src_port || '80'} -> ${p.dst_ip || '10.0.0.1'}:${p.dst_port || '80'}`
+                : `Packet processed: ${p.src_ip || '192.168.1.50'} -> ${p.dst_ip || '10.0.0.1'} [Protocol: ${p.protocol || 'TCP'}] Length: ${p.length || 64}B`
+            };
+            setLogs(prev => [newLog, ...prev.slice(0, 199)]);
+          }
+        } catch (e) {}
+      };
+    } catch (e) {}
+
+    return () => {
+      if (ws) ws.close();
+    };
+  }, []);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -49,7 +81,13 @@ const AdminView = () => {
     { id: 'log-106', timestamp: new Date(Date.now() - 450000).toISOString(), level: 'ERROR', message: 'SQL Injection signature intercepted from IP 185.220.101.5', source: 'waf_service' },
     { id: 'log-107', timestamp: new Date(Date.now() - 600000).toISOString(), level: 'WARNING', message: 'Abnormal DNS query rate detected from workstation-04', source: 'dns_inspector' },
     { id: 'log-108', timestamp: new Date(Date.now() - 750000).toISOString(), level: 'CRITICAL', message: 'Ransomware beacon communication blocked to domain evil-c2.net', source: 'endpoint_agent' },
-    { id: 'log-109', timestamp: new Date(Date.now() - 900000).toISOString(), level: 'INFO', message: 'System security audit telemetry verified across all worker nodes', source: 'audit_service' }
+    { id: 'log-109', timestamp: new Date(Date.now() - 900000).toISOString(), level: 'INFO', message: 'System security audit telemetry verified across all worker nodes', source: 'audit_service' },
+    { id: 'log-110', timestamp: new Date(Date.now() - 1050000).toISOString(), level: 'INFO', message: 'TLS 1.3 handshake session renegotiation finalized for core edge ingress', source: 'gateway' },
+    { id: 'log-111', timestamp: new Date(Date.now() - 1200000).toISOString(), level: 'WARNING', message: 'Repeated SSL certificate validation mismatch on internal node 10.0.4.12', source: 'crypto_monitor' },
+    { id: 'log-112', timestamp: new Date(Date.now() - 1350000).toISOString(), level: 'INFO', message: 'Automated snapshot backup generated and replicated to secondary vault', source: 'backup_service' },
+    { id: 'log-113', timestamp: new Date(Date.now() - 1500000).toISOString(), level: 'ERROR', message: 'XSS script injection attempt detected and scrubbed on API route /api/v1/query', source: 'waf_service' },
+    { id: 'log-114', timestamp: new Date(Date.now() - 1650000).toISOString(), level: 'INFO', message: 'AI heuristic scoring model weights refreshed from trained dataset pipeline', source: 'ml_engine' },
+    { id: 'log-115', timestamp: new Date(Date.now() - 1800000).toISOString(), level: 'WARNING', message: 'Port scanning sequence sweep flagged on TCP ports 1024-2048 from external subnet', source: 'ids_detector' }
   ];
 
   const filteredLogs = logs.filter(log => {
@@ -187,7 +225,7 @@ const AdminView = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredLogs.map((log) => (
+                {(showAll ? filteredLogs : filteredLogs.slice(0, 10)).map((log) => (
                   <tr key={log.id}>
                     <td className="text-gray-400">
                       {log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}
@@ -207,6 +245,31 @@ const AdminView = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {filteredLogs.length > 10 && (
+          <div className="logs-show-more" style={{ textAlign: 'center', padding: '16px', borderTop: '1px solid #1e293b' }}>
+            <button
+              onClick={() => setShowAll(prev => !prev)}
+              className="btn btn-outline"
+              style={{
+                padding: '8px 20px',
+                fontSize: '13px',
+                fontWeight: 600,
+                borderRadius: '6px',
+                cursor: 'pointer',
+                background: 'rgba(56, 189, 248, 0.08)',
+                border: '1px solid rgba(56, 189, 248, 0.3)',
+                color: '#38bdf8'
+              }}
+            >
+              {showAll ? (
+                <>Showing All {filteredLogs.length} Logs • Show Less ▲</>
+              ) : (
+                <>Show All Logs ({filteredLogs.length} Total Events) ▼</>
+              )}
+            </button>
           </div>
         )}
       </Card>
