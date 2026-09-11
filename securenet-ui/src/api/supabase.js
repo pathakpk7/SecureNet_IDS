@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { API_BASE, API_V1 } from '../config/api'
 
 const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || 'https://hegixktbwgbmnsszlrqm.supabase.co'
 const supabaseKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlZ2l4a3Rid2dibW5zc3pscnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NTk4MDgsImV4cCI6MjA5MTAzNTgwOH0.Wc3NiXjGwkMyBkcG6F6rpsxRW2yxcUttvvSriVt8TZU'
@@ -349,7 +350,7 @@ export const guidanceService = {
     if (status) params.append('status', status);
 
     try {
-      const response = await fetch(`/api/v1/guidance/requests?${params.toString()}`);
+      const response = await fetch(`${API_V1}/guidance/requests?${params.toString()}`);
       if (response.ok) {
         const res = await response.json();
         if (res.data) return res.data;
@@ -385,7 +386,7 @@ export const guidanceService = {
     };
 
     try {
-      const response = await fetch('/api/v1/guidance/requests', {
+      const response = await fetch(`${API_V1}/guidance/requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newReq)
@@ -413,7 +414,7 @@ export const guidanceService = {
 
   async volunteerForRequest(requestId, adminId, adminName) {
     try {
-      const response = await fetch(`/api/v1/guidance/requests/${requestId}/volunteer`, {
+      const response = await fetch(`${API_V1}/guidance/requests/${requestId}/volunteer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ admin_id: adminId, admin_name: adminName })
@@ -442,7 +443,7 @@ export const guidanceService = {
 
   async respondToRequest(requestId, guidanceNotes, status = 'resolved') {
     try {
-      const response = await fetch(`/api/v1/guidance/requests/${requestId}/respond`, {
+      const response = await fetch(`${API_V1}/guidance/requests/${requestId}/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guidance_notes: guidanceNotes, status })
@@ -471,7 +472,7 @@ export const guidanceService = {
 
   async logUserActivity(activityData) {
     try {
-      await fetch('/api/v1/user-activities', {
+      await fetch(`${API_V1}/user-activities`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(activityData)
@@ -488,8 +489,9 @@ export const guidanceService = {
       const params = new URLSearchParams();
       if (orgId) params.append('org_id', orgId);
       if (userId) params.append('user_id', userId);
-      params.append('limit', limit);
-      const response = await fetch(`/api/v1/user-activities?${params.toString()}`);
+      params.append('limit', limit.toString());
+
+      const response = await fetch(`${API_V1}/user-activities?${params.toString()}`);
       if (response.ok) {
         const res = await response.json();
         if (res.data) return res.data;

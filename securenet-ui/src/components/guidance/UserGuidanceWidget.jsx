@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   HelpCircle, Send, CheckCircle2, Clock, AlertTriangle, 
-  MessageSquare, User, Shield, ChevronRight, X, Sparkles, RefreshCw, Key
+  MessageSquare, User, Shield, ChevronRight, X, Sparkles, RefreshCw, Key,
+  ShieldCheck, HandHeart, Check, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { guidanceService, organizationService } from '../../api/supabase';
+import toast from 'react-hot-toast';
 
 const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [orgAdmins, setOrgAdmins] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [adminResponseText, setAdminResponseText] = useState('');
+  const [responding, setResponding] = useState(false);
+
+  const isAdmin = user?.role === 'admin';
 
   const [formData, setFormData] = useState({
     title: relatedAlert ? `Help with Alert: ${relatedAlert.attack_type || 'Threat'} (${relatedAlert.source_ip || ''})` : '',
@@ -24,20 +32,24 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
   });
 
   const orgId = user?.org_id || user?.organization?.id || 'demo-org-id';
-  const orgName = user?.organization?.name || 'SecureNet SOC Enterprise';
-  const joinKey = user?.organization?.join_key || 'SEC789';
+  const orgName = user?.organization?.name || user?.name ? `${user.name}'s Org` : 'SecureNet SOC Enterprise';
+  const joinKey = user?.organization?.join_key || localStorage.getItem('securenet_org_key') || 'SEC789';
 
   const fetchRequests = async () => {
     if (!user) return;
     try {
       setLoading(true);
-      const data = await guidanceService.getRequests({
-        orgId: orgId,
-        userId: user.id
-      });
+      // For admins: fetch all tickets across the organization
+      // For standard users: fetch their own tickets
+      const filterParams = { orgId };
+      if (!isAdmin) {
+        filterParams.userId = user.id;
+      }
+      
+      const data = await guidanceService.getRequests(filterParams);
       setRequests(data || []);
     } catch (err) {
-      console.warn("Could not fetch user guidance requests:", err);
+      console.warn("Could not fetch guidance requests:", err);
     } finally {
       setLoading(false);
     }
@@ -50,7 +62,7 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
         setOrgAdmins(admins || []);
       });
     }
-  }, [user, orgId]);
+  }, [user, orgId, isAdmin]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -74,7 +86,7 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
         related_alert_id: relatedAlert?.id || null
       });
 
-      // Log user activity
+      // Log user activity to Supabase and backend
       await guidanceService.logUserActivity({
         org_id: orgId,
         user_id: user.id,
@@ -85,6 +97,7 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
         details: { title: formData.title, category: formData.category, priority: formData.priority }
       });
 
+      toast.success('Guidance ticket submitted and saved to Supabase!');
       setFormData({
         title: '',
         category: 'threat_analysis',
@@ -95,9 +108,64 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
       setShowModal(false);
       fetchRequests();
     } catch (err) {
+      toast.error('Error submitting guidance request');
       console.error("Error submitting guidance request:", err);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Volunteer to guide a user request (for admins)
+  const handleVolunteer = async (requestId, e) => {
+    e.stopPropagation();
+    try {
+      const adminName = user?.name || user?.email?.split('@')[0] || 'Security Administrator';
+      await guidanceService.volunteerForRequest(requestId, user.id, adminName);
+      
+      await guidanceService.logUserActivity({
+        org_id: orgId,
+        user_id: user.id,
+        email: user.email,
+        action: 'admin_volunteered_guidance',
+        resource_type: 'guidance_ticket',
+        resource_id: requestId,
+        details: { admin: adminName }
+      });
+
+      toast.success('Volunteered as mentor for this ticket!');
+      fetchRequests();
+    } catch (err) {
+      toast.error('Failed to volunteer for ticket');
+    }
+  };
+
+  // Submit Admin Guidance Response
+  const handleAdminResponseSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedRequest || !adminResponseText.trim()) return;
+
+    try {
+      setResponding(true);
+      await guidanceService.respondToRequest(selectedRequest.id, adminResponseText, 'resolved');
+      
+      await guidanceService.logUserActivity({
+        org_id: orgId,
+        user_id: user.id,
+        email: user.email,
+        action: 'guidance_ticket_resolved',
+        resource_type: 'guidance_ticket',
+        resource_id: selectedRequest.id,
+        details: { target_user: selectedRequest.user_name || selectedRequest.user_email }
+      });
+
+      toast.success('Guidance response sent & saved to Supabase!');
+      setSelectedRequest(null);
+      setAdminResponseText('');
+      fetchRequests();
+    } catch (err) {
+      toast.error('Failed to submit guidance response');
+    } finally {
+      setResponding(false);
     }
   };
 
@@ -112,13 +180,13 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
       case 'in_progress':
         return (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
-            <Clock size={12} /> Guided in Progress
+            <Clock size={12} /> In Progress
           </span>
         );
       default:
         return (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600' }}>
-            <AlertTriangle size={12} /> Open Request
+            <AlertTriangle size={12} /> Open
           </span>
         );
     }
@@ -126,76 +194,143 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
 
   return (
     <div style={{
-      background: 'rgba(15, 23, 42, 0.65)',
+      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(10, 15, 30, 0.8) 100%)',
       border: '1px solid rgba(0, 245, 255, 0.2)',
       borderRadius: '12px',
-      padding: compact ? '14px' : '20px',
-      backdropFilter: 'blur(10px)',
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)'
+      padding: '20px',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      {/* HEADER */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      
+      {/* TOP HEADER */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
-            width: '36px', height: '36px', borderRadius: '8px',
-            background: 'rgba(0, 245, 255, 0.12)', border: '1px solid rgba(0, 245, 255, 0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00f5ff'
+            background: isAdmin ? 'rgba(168, 85, 247, 0.1)' : 'rgba(0, 245, 255, 0.1)',
+            padding: '10px',
+            borderRadius: '10px',
+            color: isAdmin ? '#a855f7' : '#00f5ff'
           }}>
-            <HelpCircle size={20} />
+            {isAdmin ? <ShieldCheck size={22} /> : <HelpCircle size={22} />}
           </div>
           <div>
-            <h4 style={{ margin: 0, fontSize: '15px', color: '#f8fafc', fontWeight: '600' }}>
-              SOC Guidance & Admin Help Hub
-            </h4>
-            <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-              {orgName} • Key: <strong style={{ color: '#00f5ff' }}>{joinKey}</strong>
-            </span>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isAdmin ? 'Admin Mentorship & User Guidance Hub' : 'SOC Guidance & Admin Help Hub'}
+              {isAdmin && (
+                <span style={{
+                  background: 'rgba(168, 85, 247, 0.2)',
+                  color: '#c084fc',
+                  border: '1px solid rgba(168, 85, 247, 0.4)',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  fontSize: '10px',
+                  fontWeight: '700',
+                  textTransform: 'uppercase'
+                }}>
+                  Admin View
+                </span>
+              )}
+            </h3>
+            <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
+              {orgName} • Key: <strong style={{ color: '#00f5ff', letterSpacing: '1px' }}>{joinKey}</strong>
+            </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             onClick={fetchRequests}
-            title="Refresh Requests"
             style={{
-              background: 'rgba(255, 255, 255, 0.05)',
+              background: 'transparent',
               border: '1px solid rgba(255, 255, 255, 0.1)',
               borderRadius: '6px',
-              padding: '6px 8px',
+              padding: '6px',
               color: '#94a3b8',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
+            title="Refresh Tickets"
           >
             <RefreshCw size={14} className={loading ? 'spin' : ''} />
           </button>
-          
-          <button
-            onClick={() => setShowModal(true)}
-            style={{
-              background: 'linear-gradient(135deg, #00f5ff, #0ea5e9)',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '6px 14px',
-              color: '#030712',
-              fontWeight: '700',
-              fontSize: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              cursor: 'pointer'
-            }}
-          >
-            <MessageSquare size={14} />
-            <span>Ask for Guidance</span>
-          </button>
+
+          {isAdmin ? (
+            <button
+              onClick={() => navigate('/admin-panel')}
+              style={{
+                background: 'rgba(168, 85, 247, 0.15)',
+                color: '#c084fc',
+                border: '1px solid rgba(168, 85, 247, 0.35)',
+                borderRadius: '8px',
+                padding: '7px 14px',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <span>Guidance Center</span>
+              <ArrowRight size={14} />
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowModal(true)}
+              style={{
+                background: '#00f5ff',
+                color: '#030712',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 14px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 0 12px rgba(0, 245, 255, 0.4)'
+              }}
+            >
+              <MessageSquare size={14} />
+              <span>Ask for Guidance</span>
+            </button>
+          )}
+
+          {/* Test Guidance button for admin to easily verify persistence */}
+          {isAdmin && (
+            <button
+              onClick={() => setShowModal(true)}
+              style={{
+                background: 'rgba(0, 245, 255, 0.1)',
+                color: '#00f5ff',
+                border: '1px solid rgba(0, 245, 255, 0.3)',
+                borderRadius: '8px',
+                padding: '7px 12px',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              title="Submit test guidance request"
+            >
+              <MessageSquare size={14} />
+              <span>+ New Ticket</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* AVAILABLE ADMINS BANNER */}
+      {/* AVAILABLE ADMINS ROSTER STRIP */}
       {orgAdmins.length > 0 && (
         <div style={{
-          background: 'rgba(0, 245, 255, 0.04)',
-          border: '1px solid rgba(0, 245, 255, 0.15)',
+          background: 'rgba(0, 0, 0, 0.3)',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
           borderRadius: '8px',
           padding: '8px 12px',
           marginBottom: '14px',
@@ -206,7 +341,7 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#cbd5e1' }}>
             <Shield size={14} color="#00f5ff" />
-            <span><strong>Available Admins:</strong> {orgAdmins.map(a => `${a.name || a.email.split('@')[0]} (${a.specialty_role || 'Admin'})`).join(' • ')}</span>
+            <span><strong>Available Admins & Mentors:</strong> {orgAdmins.map(a => `${a.name || a.email.split('@')[0]} (${a.specialty_role || 'Admin'})`).join(' • ')}</span>
           </div>
         </div>
       )}
@@ -214,14 +349,18 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
       {/* REQUESTS LIST */}
       {loading && requests.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '24px', color: '#64748b', fontSize: '13px' }}>
-          Loading guidance tickets...
+          Loading guidance tickets from Supabase...
         </div>
       ) : requests.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '24px 16px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px dashed rgba(255,255,255,0.1)' }}>
           <Sparkles size={24} color="#00f5ff" style={{ margin: '0 auto 8px', opacity: 0.7 }} />
-          <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#e2e8f0', fontWeight: '500' }}>No Open Help Requests</p>
+          <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#e2e8f0', fontWeight: '500' }}>
+            {isAdmin ? 'No Open Help Requests in Organization' : 'No Open Help Requests'}
+          </p>
           <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-            Have a question on an alert or need mentorship? Click "Ask for Guidance" to request assistance from your organization admins.
+            {isAdmin 
+              ? 'All user questions and threat escalations have been attended to, or no user has submitted one yet. You can click "+ New Ticket" to create a sample request.' 
+              : 'Have a question on an alert or need mentorship? Click "Ask for Guidance" to request assistance from your organization admins.'}
           </span>
         </div>
       ) : (
@@ -234,32 +373,66 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
                 background: 'rgba(15, 23, 42, 0.5)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '8px',
-                padding: '10px 14px',
+                padding: '12px 14px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
+                gap: '12px'
               }}
               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(0, 245, 255, 0.4)'}
               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
             >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <span style={{ fontWeight: '600', fontSize: '13px', color: '#f8fafc' }}>
                     {req.title}
                   </span>
                   {getStatusBadge(req.status)}
+                  <span style={{
+                    fontSize: '10px',
+                    color: req.priority === 'urgent' ? '#ef4444' : req.priority === 'high' ? '#f59e0b' : '#38bdf8',
+                    textTransform: 'uppercase',
+                    fontWeight: 'bold'
+                  }}>
+                    [{req.priority || 'medium'}]
+                  </span>
                 </div>
-                <div style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', gap: '12px' }}>
+
+                <div style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <span>User: <strong style={{ color: '#cbd5e1' }}>{req.user_name || req.user_email}</strong></span>
                   <span>Category: <strong>{req.category?.replace('_', ' ')}</strong></span>
                   {req.admin_name && (
-                    <span style={{ color: '#00f5ff' }}>Admin Guide: <strong>{req.admin_name}</strong></span>
+                    <span style={{ color: '#00f5ff' }}>Guided by: <strong>{req.admin_name}</strong></span>
                   )}
                   <span>{new Date(req.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
-              <ChevronRight size={16} color="#64748b" />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isAdmin && req.status === 'open' && (
+                  <button
+                    onClick={(e) => handleVolunteer(req.id, e)}
+                    style={{
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      color: '#f59e0b',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <HandHeart size={12} /> Volunteer
+                  </button>
+                )}
+                <ChevronRight size={16} color="#64748b" />
+              </div>
             </div>
           ))}
         </div>
@@ -348,7 +521,7 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
 
               {orgAdmins.length > 0 && (
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px' }}>Direct to Specific Admin (Optional)</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px' }}>Assign to Specific Admin (Optional)</label>
                   <select
                     value={formData.adminId}
                     onChange={(e) => setFormData(p => ({ ...p, adminId: e.target.value }))}
@@ -357,10 +530,10 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
                       border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#fff', fontSize: '13px'
                     }}
                   >
-                    <option value="">Any Available Admin (Broadcast to SOC Leads)</option>
-                    {orgAdmins.map(admin => (
-                      <option key={admin.id} value={admin.id}>
-                        {admin.name || admin.email} - {admin.specialty_role || 'Admin'}
+                    <option value="">Any Available Admin</option>
+                    {orgAdmins.map(a => (
+                      <option key={a.id} value={a.id}>
+                        {a.name || a.email} ({a.specialty_role || 'Admin'})
                       </option>
                     ))}
                   </select>
@@ -368,12 +541,12 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
               )}
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px' }}>Detailed Question / Incident Summary</label>
+                <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px' }}>Description & Questions</label>
                 <textarea
                   rows={4}
                   value={formData.description}
                   onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))}
-                  placeholder="Describe what you observed, suspect IPs, or the security guidance you need..."
+                  placeholder="Describe what you observed, what rules you tried to configure, or where you need guidance..."
                   required
                   style={{
                     width: '100%', padding: '8px 12px', background: 'rgba(0,0,0,0.4)',
@@ -387,8 +560,8 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
                   type="button"
                   onClick={() => setShowModal(false)}
                   style={{
-                    padding: '8px 16px', background: 'rgba(255,255,255,0.1)',
-                    border: 'none', borderRadius: '6px', color: '#fff', cursor: 'pointer', fontSize: '13px'
+                    background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#94a3b8', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer'
                   }}
                 >
                   Cancel
@@ -397,13 +570,13 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
                   type="submit"
                   disabled={submitting}
                   style={{
-                    padding: '8px 20px', background: 'linear-gradient(135deg, #00f5ff, #0ea5e9)',
-                    border: 'none', borderRadius: '6px', color: '#030712', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px',
-                    display: 'flex', alignItems: 'center', gap: '6px'
+                    background: '#00f5ff', color: '#030712', border: 'none',
+                    padding: '8px 18px', borderRadius: '6px', fontSize: '13px', fontWeight: '700',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
                   }}
                 >
                   <Send size={14} />
-                  <span>{submitting ? 'Submitting...' : 'Send Request'}</span>
+                  {submitting ? 'Submitting to Supabase...' : 'Submit Request'}
                 </button>
               </div>
             </form>
@@ -411,7 +584,7 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
         </div>
       )}
 
-      {/* DETAIL MODAL: VIEW TICKET & ADMIN RESPONSE */}
+      {/* MODAL: VIEW TICKET DETAILS & ADMIN RESPONSE */}
       {selectedRequest && (
         <div style={{
           position: 'fixed',
@@ -428,12 +601,13 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
             padding: '24px',
             maxWidth: '540px',
             width: '100%',
-            color: '#fff',
             boxShadow: '0 0 40px rgba(0, 245, 255, 0.2)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ margin: 0, fontSize: '16px', color: '#f8fafc' }}>{selectedRequest.title}</h3>
+                <h3 style={{ margin: 0, fontSize: '16px', color: '#f8fafc' }}>
+                  {selectedRequest.title}
+                </h3>
                 {getStatusBadge(selectedRequest.status)}
               </div>
               <button onClick={() => setSelectedRequest(null)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
@@ -441,11 +615,17 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
               </button>
             </div>
 
-            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', color: '#cbd5e1' }}>
-              <strong style={{ color: '#00f5ff', display: 'block', marginBottom: '4px' }}>Your Inquiry:</strong>
-              {selectedRequest.description}
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '12px' }}>
+              <div style={{ color: '#94a3b8', marginBottom: '8px', lineHeight: '1.5' }}>
+                {selectedRequest.description}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: '11px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+                <span>From: <b>{selectedRequest.user_name || selectedRequest.user_email}</b></span>
+                <span>Category: <b>{selectedRequest.category?.replace('_', ' ')}</b></span>
+              </div>
             </div>
 
+            {/* If Admin Guidance Provided */}
             {selectedRequest.guidance_notes ? (
               <div style={{
                 background: 'rgba(16, 185, 129, 0.08)',
@@ -454,35 +634,62 @@ const UserGuidanceWidget = ({ compact = false, relatedAlert = null }) => {
                 borderRadius: '8px',
                 marginBottom: '16px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontWeight: 'bold', fontSize: '13px', marginBottom: '6px' }}>
-                  <CheckCircle2 size={16} />
-                  <span>Admin Guidance from {selectedRequest.admin_name || 'SOC Lead'}:</span>
+                <div style={{ color: '#10b981', fontWeight: '700', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                  <ShieldCheck size={16} /> Admin Guidance & Remediation:
                 </div>
-                <div style={{ fontSize: '13px', color: '#f1f5f9', whiteSpace: 'pre-line' }}>
+                <div style={{ color: '#e2e8f0', fontSize: '13px', lineHeight: '1.5' }}>
                   {selectedRequest.guidance_notes}
                 </div>
               </div>
+            ) : isAdmin ? (
+              <form onSubmit={handleAdminResponseSubmit} style={{ marginTop: '12px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '6px', fontWeight: '600' }}>
+                  Provide Mentorship Guidance & Resolve Ticket:
+                </label>
+                <textarea
+                  rows={3}
+                  value={adminResponseText}
+                  onChange={(e) => setAdminResponseText(e.target.value)}
+                  placeholder="Type guidance recommendations, firewall rules, or troubleshooting steps..."
+                  required
+                  style={{
+                    width: '100%', padding: '10px', background: 'rgba(0,0,0,0.4)',
+                    border: '1px solid rgba(0,245,255,0.3)', borderRadius: '6px', color: '#fff', fontSize: '13px', resize: 'vertical'
+                  }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                  <button
+                    type="submit"
+                    disabled={responding}
+                    style={{
+                      background: '#10b981', color: '#fff', border: 'none', padding: '8px 16px',
+                      borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '6px'
+                    }}
+                  >
+                    <Check size={14} />
+                    {responding ? 'Saving to Supabase...' : 'Save & Resolve Ticket'}
+                  </button>
+                </div>
+              </form>
             ) : (
-              <div style={{
-                background: 'rgba(234, 179, 8, 0.08)',
-                border: '1px solid rgba(234, 179, 8, 0.2)',
-                padding: '12px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                color: '#eab308',
-                marginBottom: '16px'
-              }}>
-                An admin is reviewing your request and will provide guidance shortly.
+              <div style={{ textAlign: 'center', padding: '12px', color: '#f59e0b', fontSize: '12px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '6px' }}>
+                <Clock size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
+                Awaiting response from an assigned admin mentor.
               </div>
             )}
 
-            <button
-              onClick={() => setSelectedRequest(null)}
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '10px', fontSize: '13px', fontWeight: '600' }}
-            >
-              Close
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <button
+                onClick={() => setSelectedRequest(null)}
+                style={{
+                  background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#94a3b8', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
