@@ -22,7 +22,8 @@ function Navbar({ toggleMenu, menuOpen }) {
       name: "Monitoring",
       children: [
         { name: "Network Monitor", path: "/network-monitor" },
-        { name: "Logs", path: "/logs" },
+        { name: "System Logs", path: "/logs" },
+        { name: "System Audit Trail", path: "/audit-logs" },
         { name: "Notifications", path: "/notifications" }
       ]
     },
@@ -39,7 +40,11 @@ function Navbar({ toggleMenu, menuOpen }) {
     {
       name: currentRole,
       children: [
-        ...(currentRole === 'ADMIN' ? [{ name: "Admin Panel", path: "/admin-panel" }] : []),
+        ...(currentRole === 'ADMIN' ? [
+          { name: "Admin Panel", path: "/admin-panel" },
+          { name: "System Audit Trail", path: "/audit-logs" },
+          { name: "SIEM Export", path: "/siem-export" }
+        ] : []),
         { name: "User Profile", path: "/user-profile" }
       ]
     },

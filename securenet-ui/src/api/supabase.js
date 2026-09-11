@@ -5,80 +5,219 @@ const supabaseKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
+// Generate a random 6-character uppercase alphanumeric join key
+export const generateJoinKey = () => {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let key = '';
+  for (let i = 0; i < 6; i++) {
+    key += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return key;
+};
+
 // Organization Management Functions
 export const organizationService = {
   // Create organization for admin signup
   async createOrganization(userId, email) {
-    try {
-      console.log("Creating organization for user:", userId, email);
-      
-      const { data: org, error: orgError } = await supabase
-        .from("organizations")
-        .insert([
-          {
-            name: `${email.split("@")[0]}'s Org`,
-            owner_id: userId
-          }
-        ])
-        .select()
-        .single();
-
-      if (orgError) {
-        console.error("Organization creation error:", orgError);
-        throw orgError;
-      }
-
-      console.log("Organization created:", org);
-      return org;
-    } catch (error) {
-      console.error("Create organization error:", error);
-      throw error;
-    }
+    return this.createOrganizationWithDetails(userId, `${email.split("@")[0]}'s Org`, 'Primary Security Operations Center');
   },
 
   // Create organization with provided details for admin signup
-  async createOrganizationWithDetails(userId, orgName, orgDescription) {
+  async createOrganizationWithDetails(userId, orgName, orgDescription = '', joinKeyCustom = null) {
     try {
-      console.log("Creating organization with details:", { userId, orgName, orgDescription });
+      const joinKey = (joinKeyCustom || generateJoinKey()).toUpperCase();
+      console.log("Creating organization with details:", { userId, orgName, orgDescription, joinKey });
       
-      const { data: org, error: orgError } = await supabase
-        .from("organizations")
-        .insert([
-          {
-            name: orgName,
-            owner_id: userId
-          }
-        ])
-        .select()
-        .single();
+      let orgData = {
+        name: orgName,
+        join_key: joinKey,
+        owner_id: userId,
+        description: orgDescription,
+        plan: 'enterprise',
+        is_active: true
+      };
 
-      if (orgError) {
-        console.error("Organization creation error:", orgError);
-        throw orgError;
+      try {
+        const { data: org, error: orgError } = await supabase
+          .from("organizations")
+          .insert([orgData])
+          .select()
+          .single();
+
+        if (!orgError && org) {
+          console.log("Organization created in Supabase:", org);
+          return org;
+        }
+      } catch (sbErr) {
+        console.warn("Supabase organization insert notice:", sbErr.message);
       }
 
-      console.log("Organization created with details:", org);
-      return org;
+      // Try Backend API fallback
+      try {
+        const response = await fetch('/api/v1/organizations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orgData)
+        });
+        if (response.ok) {
+          const resJson = await response.json();
+          if (resJson.data) return resJson.data;
+        }
+      } catch (apiErr) {
+        console.debug("Backend API organization creation fallback:", apiErr);
+      }
+
+      const localOrg = {
+        id: `org-${Date.now()}`,
+        name: orgName,
+        join_key: joinKey,
+        description: orgDescription,
+        owner_id: userId,
+        is_active: true
+      };
+      return localOrg;
     } catch (error) {
       console.error("Create organization with details error:", error);
       throw error;
     }
   },
 
-  // Create profile for user
-  async createProfile(userId, email, role, orgId, permissions = {}) {
+  // Lookup organization by 6-letter join key
+  async getOrgByJoinKey(joinKey) {
+    const cleanKey = (joinKey || '').trim().toUpperCase();
+    if (!cleanKey) return null;
+
+    // 1. Try Backend API first
     try {
-      console.log("Creating profile:", { userId, email, role, orgId });
+      const response = await fetch(`/api/v1/organizations/verify-key/${cleanKey}`);
+      if (response.ok) {
+        const res = await response.json();
+        if (res.data) return res.data;
+      }
+    } catch (e) {
+      console.debug("Backend verify-key fetch notice:", e);
+    }
+
+    // 2. Try Supabase
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('*')
+        .ilike('join_key', cleanKey)
+        .maybeSingle();
+
+      if (!error && data) {
+        // Fetch admins
+        const { data: admins } = await supabase
+          .from('profiles')
+          .select('id, name, email, role, specialty_role')
+          .eq('org_id', data.id)
+          .eq('role', 'admin');
+        
+        data.admins = admins || [];
+        return data;
+      }
+    } catch (e) {
+      console.debug("Supabase join key fetch notice:", e);
+    }
+
+    // 3. Fallback to hardcoded demo org key
+    if (cleanKey === 'SEC789' || cleanKey === 'DEMO01' || cleanKey === 'DEMO-ORG-ID') {
+      return {
+        id: 'demo-org-id',
+        name: 'SecureNet Enterprise',
+        join_key: 'SEC789',
+        description: 'Primary security operations center',
+        admins: [
+          { id: 'demo-admin-id', name: 'Security Administrator', email: 'admin@securenet.com', role: 'admin', specialty_role: 'Network & Threat Defense Lead' }
+        ]
+      };
+    }
+
+    return null;
+  },
+
+  // Regenerate 6-letter join key for an organization
+  async regenerateJoinKey(orgId) {
+    const newKey = generateJoinKey();
+    try {
+      await fetch(`/api/v1/organizations/${orgId}/regenerate-key`, { method: 'POST' });
+    } catch (e) {}
+
+    try {
+      await supabase
+        .from('organizations')
+        .update({ join_key: newKey })
+        .eq('id', orgId);
+    } catch (e) {}
+
+    return newKey;
+  },
+
+  // Get admins in an organization
+  async getOrgAdmins(orgId) {
+    if (!orgId) return [];
+    try {
+      const response = await fetch(`/api/v1/organizations/${orgId}/admins`);
+      if (response.ok) {
+        const res = await response.json();
+        if (res.data) return res.data;
+      }
+    } catch (e) {}
+
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, name, email, role, specialty_role, is_active, created_at')
+        .eq('org_id', orgId)
+        .eq('role', 'admin');
+      if (data && data.length > 0) return data;
+    } catch (e) {}
+
+    return [
+      { id: 'demo-admin-id', name: 'Security Administrator', email: 'admin@securenet.com', role: 'admin', specialty_role: 'Network & Threat Defense Lead', users_guided_count: 1 }
+    ];
+  },
+
+  // Assign user to a specific admin
+  async assignUserAdmin(userId, adminId) {
+    try {
+      await fetch(`/api/v1/users/${userId}/assign-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_id: adminId })
+      });
+    } catch (e) {}
+
+    try {
+      await supabase
+        .from('profiles')
+        .update({ assigned_admin_id: adminId })
+        .eq('id', userId);
+    } catch (e) {}
+
+    return true;
+  },
+
+  // Create profile for user
+  async createProfile(userId, email, role = 'user', orgId = null, permissions = {}, specialtyRole = 'General Security', assignedAdminId = null, name = '') {
+    try {
+      console.log("Creating profile:", { userId, email, role, orgId, specialtyRole, assignedAdminId });
       
       const isDummyOrg = !orgId || orgId === "PASTE_ADMIN_ORG_ID_HERE" || orgId === "default-org-id";
       const profileData = {
         id: userId,
         email: email,
-        role: role
+        name: name || email.split('@')[0],
+        role: role,
+        specialty_role: specialtyRole || (role === 'admin' ? 'Network Defense Lead' : 'Tier-1 Security Analyst')
       };
       
       if (!isDummyOrg) {
         profileData.org_id = orgId;
+      }
+      if (assignedAdminId) {
+        profileData.assigned_admin_id = assignedAdminId;
       }
       
       let { data: profile, error: profileError } = await supabase
@@ -89,37 +228,27 @@ export const organizationService = {
 
       if (profileError) {
         console.warn("Profile creation note:", profileError.message);
-        // If org_id foreign key failed, retry without org_id
         if (profileData.org_id) {
           const retry = await supabase
             .from("profiles")
-            .insert([{ id: userId, email: email, role: role }])
+            .insert([{ id: userId, email: email, name: profileData.name, role: role, specialty_role: profileData.specialty_role }])
             .select()
             .single();
           profile = retry.data;
-          profileError = retry.error;
         }
       }
 
-      if (profileError) {
-        console.warn("Falling back to local profile session:", profileError.message);
-        return {
-          id: userId,
-          email: email,
-          role: role,
-          org_id: orgId
-        };
-      }
-
-      console.log("Profile created successfully:", profile);
-      return profile;
+      return profile || profileData;
     } catch (error) {
       console.warn("Profile creation fallback:", error);
       return {
         id: userId,
         email: email,
+        name: name || email.split('@')[0],
         role: role,
-        org_id: orgId
+        specialty_role: specialtyRole,
+        org_id: orgId,
+        assigned_admin_id: assignedAdminId
       };
     }
   },
@@ -136,6 +265,7 @@ export const organizationService = {
           organizations (
             id,
             name,
+            join_key,
             owner_id
           )
         `)
@@ -158,27 +288,45 @@ export const organizationService = {
   // Get all organizations (for testing/debug)
   async getAllOrganizations() {
     try {
+      const response = await fetch('/api/v1/organizations');
+      if (response.ok) {
+        const res = await response.json();
+        if (res.data && res.data.length > 0) return res.data;
+      }
+    } catch (e) {}
+
+    try {
       const { data, error } = await supabase
         .from("organizations")
         .select("*");
 
-      if (error) throw error;
-      return data;
+      if (!error && data) return data;
     } catch (error) {
       console.error("Get organizations error:", error);
-      throw error;
     }
+    return [
+      { id: 'demo-org-id', name: 'SecureNet Enterprise', join_key: 'SEC789', description: 'Primary security operations center' }
+    ];
   },
 
   // Get all profiles (for testing/debug)
   async getAllProfiles() {
+    try {
+      const response = await fetch('/api/v1/users');
+      if (response.ok) {
+        const res = await response.json();
+        if (res.data && res.data.length > 0) return res.data;
+      }
+    } catch (e) {}
+
     try {
       const { data, error } = await supabase
         .from("profiles")
         .select(`
           *,
           organizations (
-            name
+            name,
+            join_key
           )
         `);
 
@@ -190,6 +338,176 @@ export const organizationService = {
     }
   }
 };
+
+// Guidance & Help Requests Service (Admin Volunteer & Help System)
+export const guidanceService = {
+  async getRequests({ orgId, userId, adminId, status } = {}) {
+    const params = new URLSearchParams();
+    if (orgId) params.append('org_id', orgId);
+    if (userId) params.append('user_id', userId);
+    if (adminId) params.append('admin_id', adminId);
+    if (status) params.append('status', status);
+
+    try {
+      const response = await fetch(`/api/v1/guidance/requests?${params.toString()}`);
+      if (response.ok) {
+        const res = await response.json();
+        if (res.data) return res.data;
+      }
+    } catch (e) {
+      console.debug("Backend guidance requests fetch fallback:", e);
+    }
+
+    try {
+      let query = supabase.from('guidance_requests').select('*');
+      if (orgId) query = query.eq('org_id', orgId);
+      if (userId) query = query.eq('user_id', userId);
+      if (status) query = query.eq('status', status);
+      const { data, error } = await query.order('created_at', { ascending: false });
+      if (!error && data) return data;
+    } catch (e) {}
+
+    // Local Storage Fallback
+    try {
+      const local = JSON.parse(localStorage.getItem('securenet_guidance_requests') || '[]');
+      return local.filter(r => (!orgId || r.org_id === orgId) && (!userId || r.user_id === userId) && (!status || r.status === status));
+    } catch {
+      return [];
+    }
+  },
+
+  async createRequest(reqData) {
+    const newReq = {
+      id: `req-${Date.now()}`,
+      ...reqData,
+      status: 'open',
+      created_at: new Date().toISOString()
+    };
+
+    try {
+      const response = await fetch('/api/v1/guidance/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newReq)
+      });
+      if (response.ok) {
+        const res = await response.json();
+        if (res.data) return res.data;
+      }
+    } catch (e) {}
+
+    try {
+      const { data } = await supabase.from('guidance_requests').insert([newReq]).select().single();
+      if (data) return data;
+    } catch (e) {}
+
+    // Save to local storage fallback
+    try {
+      const list = JSON.parse(localStorage.getItem('securenet_guidance_requests') || '[]');
+      list.unshift(newReq);
+      localStorage.setItem('securenet_guidance_requests', JSON.stringify(list));
+    } catch (e) {}
+
+    return newReq;
+  },
+
+  async volunteerForRequest(requestId, adminId, adminName) {
+    try {
+      const response = await fetch(`/api/v1/guidance/requests/${requestId}/volunteer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_id: adminId, admin_name: adminName })
+      });
+      if (response.ok) return true;
+    } catch (e) {}
+
+    try {
+      await supabase
+        .from('guidance_requests')
+        .update({ admin_id: adminId, admin_name: adminName, status: 'in_progress', updated_at: new Date().toISOString() })
+        .eq('id', requestId);
+    } catch (e) {}
+
+    try {
+      const list = JSON.parse(localStorage.getItem('securenet_guidance_requests') || '[]');
+      const idx = list.findIndex(r => r.id === requestId);
+      if (idx >= 0) {
+        list[idx] = { ...list[idx], admin_id: adminId, admin_name: adminName, status: 'in_progress', updated_at: new Date().toISOString() };
+        localStorage.setItem('securenet_guidance_requests', JSON.stringify(list));
+      }
+    } catch (e) {}
+
+    return true;
+  },
+
+  async respondToRequest(requestId, guidanceNotes, status = 'resolved') {
+    try {
+      const response = await fetch(`/api/v1/guidance/requests/${requestId}/respond`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guidance_notes: guidanceNotes, status })
+      });
+      if (response.ok) return true;
+    } catch (e) {}
+
+    try {
+      await supabase
+        .from('guidance_requests')
+        .update({ guidance_notes: guidanceNotes, status, updated_at: new Date().toISOString() })
+        .eq('id', requestId);
+    } catch (e) {}
+
+    try {
+      const list = JSON.parse(localStorage.getItem('securenet_guidance_requests') || '[]');
+      const idx = list.findIndex(r => r.id === requestId);
+      if (idx >= 0) {
+        list[idx] = { ...list[idx], guidance_notes: guidanceNotes, status, updated_at: new Date().toISOString() };
+        localStorage.setItem('securenet_guidance_requests', JSON.stringify(list));
+      }
+    } catch (e) {}
+
+    return true;
+  },
+
+  async logUserActivity(activityData) {
+    try {
+      await fetch('/api/v1/user-activities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(activityData)
+      });
+    } catch (e) {}
+
+    try {
+      await supabase.from('user_activities').insert([activityData]);
+    } catch (e) {}
+  },
+
+  async getUserActivities(orgId, userId = null, limit = 50) {
+    try {
+      const params = new URLSearchParams();
+      if (orgId) params.append('org_id', orgId);
+      if (userId) params.append('user_id', userId);
+      params.append('limit', limit);
+      const response = await fetch(`/api/v1/user-activities?${params.toString()}`);
+      if (response.ok) {
+        const res = await response.json();
+        if (res.data) return res.data;
+      }
+    } catch (e) {}
+
+    try {
+      let query = supabase.from('user_activities').select('*');
+      if (orgId) query = query.eq('org_id', orgId);
+      if (userId) query = query.eq('user_id', userId);
+      const { data } = await query.order('timestamp', { ascending: false }).limit(limit);
+      if (data) return data;
+    } catch (e) {}
+
+    return [];
+  }
+};
+
 
 // Authentication Service with Organization Support and Local Database Fallback
 export const authService = {
@@ -219,19 +537,35 @@ export const authService = {
     }
   },
 
-  // Admin signup with organization creation
-  async adminSignup(email, password, orgName = '', orgDescription = '') {
+  // Admin signup with organization creation or joining existing org via 6-letter key
+  async adminSignup(email, password, orgName = '', orgDescription = '', specialtyRole = 'Network Defense Lead', joinKey = '', existingOrgId = null, name = '') {
     try {
-      console.log("Starting admin signup for:", email);
+      console.log("Starting admin signup for:", email, { orgName, specialtyRole, joinKey, existingOrgId });
       const orgNameFinal = orgName || `${email.split("@")[0]}'s Org`;
+      const resolvedName = name || email.split('@')[0];
       
+      let targetOrg = null;
+
+      // If joining an existing org via 6-letter join key
+      if (joinKey) {
+        targetOrg = await organizationService.getOrgByJoinKey(joinKey);
+      } else if (existingOrgId) {
+        const allOrgs = await organizationService.getAllOrganizations();
+        targetOrg = allOrgs.find(o => o.id === existingOrgId);
+      }
+
+      let finalOrgId = targetOrg?.id || `org-${Date.now()}`;
+      let finalJoinKey = targetOrg?.join_key || generateJoinKey();
+
       const localAdminUser = {
         id: `admin-${Date.now()}`,
+        name: resolvedName,
         email,
         password, // saved locally for zero-config offline auth
         role: 'admin',
-        org_id: `org-${Date.now()}`,
-        organization: { id: `org-${Date.now()}`, name: orgNameFinal, description: orgDescription }
+        specialty_role: specialtyRole || 'Network Defense Lead',
+        org_id: finalOrgId,
+        organization: targetOrg || { id: finalOrgId, name: orgNameFinal, join_key: finalJoinKey, description: orgDescription }
       };
 
       // Try Supabase Auth
@@ -240,9 +574,16 @@ export const authService = {
         if (data?.user) {
           localAdminUser.id = data.user.id;
           try {
-            const org = await organizationService.createOrganizationWithDetails(data.user.id, orgNameFinal, orgDescription);
-            if (org?.id) localAdminUser.org_id = org.id;
-            await organizationService.createProfile(data.user.id, email, "admin", org?.id || null);
+            if (!targetOrg) {
+              const createdOrg = await organizationService.createOrganizationWithDetails(data.user.id, orgNameFinal, orgDescription, finalJoinKey);
+              if (createdOrg?.id) {
+                finalOrgId = createdOrg.id;
+                finalJoinKey = createdOrg.join_key || finalJoinKey;
+                localAdminUser.org_id = finalOrgId;
+                localAdminUser.organization = createdOrg;
+              }
+            }
+            await organizationService.createProfile(data.user.id, email, "admin", finalOrgId, { role: "admin" }, specialtyRole, null, resolvedName);
           } catch (orgErr) {
             console.warn("Supabase organization creation fallback:", orgErr.message);
           }
@@ -260,18 +601,30 @@ export const authService = {
     }
   },
 
-  // User signup with organization joining
-  async userSignup(email, password, orgId) {
+  // User signup with organization joining via 6-letter key or org selection
+  async userSignup(email, password, joinKeyOrOrgId, assignedAdminId = null, name = '') {
     try {
-      console.log("Starting user signup for:", email, "org:", orgId);
+      console.log("Starting user signup for:", email, "key/org:", joinKeyOrOrgId);
+      const resolvedName = name || email.split('@')[0];
       
+      let targetOrg = null;
+      if (joinKeyOrOrgId) {
+        targetOrg = await organizationService.getOrgByJoinKey(joinKeyOrOrgId);
+      }
+
+      const orgId = targetOrg?.id || joinKeyOrOrgId || 'demo-org-id';
+      const orgObj = targetOrg || { id: orgId, name: 'SecureNet Enterprise', join_key: 'SEC789' };
+
       const localUser = {
         id: `user-${Date.now()}`,
+        name: resolvedName,
         email,
         password,
         role: 'user',
-        org_id: orgId || 'demo-org-id',
-        organization: { id: orgId || 'demo-org-id', name: 'Default Organization' }
+        specialty_role: 'Tier-1 Security Analyst',
+        org_id: orgId,
+        assigned_admin_id: assignedAdminId || null,
+        organization: orgObj
       };
 
       // Try Supabase Auth
@@ -280,7 +633,7 @@ export const authService = {
         if (data?.user) {
           localUser.id = data.user.id;
           try {
-            await organizationService.createProfile(data.user.id, email, "user", orgId);
+            await organizationService.createProfile(data.user.id, email, "user", orgId, { role: "user" }, 'Tier-1 Security Analyst', assignedAdminId, resolvedName);
           } catch (profErr) {
             console.warn("Supabase profile creation fallback:", profErr.message);
           }

@@ -18,7 +18,8 @@ import {
   LogOut, 
   ChevronDown, 
   ChevronRight,
-  Radio
+  Radio,
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import './Sidebar.css';
@@ -69,7 +70,8 @@ const Sidebar = ({ isOpen = true, setMenuOpen }) => {
       icon: Activity,
       children: [
         { name: "Network Monitor", path: "/network-monitor", icon: Radio },
-        { name: "Logs", path: "/logs", icon: FileText },
+        { name: "System Logs", path: "/logs", icon: FileText },
+        { name: "System Audit Trail", path: "/audit-logs", icon: ShieldCheck },
         { name: "Notifications", path: "/notifications", icon: Bell }
       ]
     },
@@ -88,7 +90,11 @@ const Sidebar = ({ isOpen = true, setMenuOpen }) => {
       name: currentRole,
       icon: User,
       children: [
-        ...(currentRole === 'ADMIN' ? [{ name: "Admin Panel", path: "/admin-panel", icon: Shield }] : []),
+        ...(currentRole === 'ADMIN' ? [
+          { name: "Admin Panel", path: "/admin-panel", icon: Shield },
+          { name: "System Audit Trail", path: "/audit-logs", icon: ShieldCheck },
+          { name: "SIEM Export", path: "/siem-export", icon: Terminal }
+        ] : []),
         { name: "User Profile", path: "/user-profile", icon: User }
       ]
     },

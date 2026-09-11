@@ -520,14 +520,51 @@ class DatabaseManager:
                 self._supabase_enabled = False
         return self.sqlite.get_organizations()
 
+    async def get_org_by_join_key(self, join_key: str) -> Optional[Dict[str, Any]]:
+        """Get organization by its 6-letter join key"""
+        if self.supabase and self._supabase_enabled:
+            try:
+                clean_k = (join_key or "").strip().upper()
+                table_name = DB_TABLES.get("organizations", "organizations")
+                res = await asyncio.to_thread(
+                    lambda: self.supabase.table(table_name).select("*").ilike("join_key", clean_k).execute()
+                )
+                if res.data and len(res.data) > 0:
+                    org = res.data[0]
+                    # Fetch admins for this org
+                    prof_table = DB_TABLES.get("users", "profiles")
+                    a_res = await asyncio.to_thread(
+                        lambda: self.supabase.table(prof_table).select("id, name, email, role, specialty_role").eq("org_id", org["id"]).eq("role", "admin").execute()
+                    )
+                    org["admins"] = a_res.data if a_res.data else []
+                    return org
+            except Exception as e:
+                logger.debug(f"Supabase get_org_by_join_key fallback: {e}")
+                self._supabase_enabled = False
+        return self.sqlite.get_org_by_join_key(join_key)
+
+    async def regenerate_org_join_key(self, org_id: str) -> str:
+        """Regenerate a new 6-letter join key for an organization"""
+        new_key = self.sqlite.regenerate_org_join_key(org_id)
+        if self.supabase and self._supabase_enabled:
+            try:
+                table_name = DB_TABLES.get("organizations", "organizations")
+                await asyncio.to_thread(
+                    lambda: self.supabase.table(table_name).update({"join_key": new_key, "updated_at": datetime.now().isoformat()}).eq("id", org_id).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase regenerate_org_join_key fallback: {e}")
+                self._supabase_enabled = False
+        return new_key
+
     async def create_organization(self, org_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a new organization"""
+        """Create a new organization with 6-letter join key"""
         res = self.sqlite.create_organization(org_data)
         if self.supabase and self._supabase_enabled:
             try:
                 table_name = DB_TABLES.get("organizations", "organizations")
                 await asyncio.to_thread(
-                    lambda: self.supabase.table(table_name).insert(org_data).execute()
+                    lambda: self.supabase.table(table_name).insert(res).execute()
                 )
             except Exception as e:
                 logger.debug(f"Supabase create_organization fallback: {e}")
@@ -535,7 +572,7 @@ class DatabaseManager:
         return res
 
     # ============================================================
-    # USERS OPERATIONS
+    # USERS & MULTI-ADMIN OPERATIONS
     # ============================================================
 
     async def get_users(self, org_id: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -554,6 +591,35 @@ class DatabaseManager:
                 self._supabase_enabled = False
         return self.sqlite.get_users(org_id=org_id)
 
+    async def get_org_admins(self, org_id: str) -> List[Dict[str, Any]]:
+        """Get all admins in an organization with their specializations"""
+        if self.supabase and self._supabase_enabled:
+            try:
+                table_name = DB_TABLES.get("users", "profiles")
+                res = await asyncio.to_thread(
+                    lambda: self.supabase.table(table_name).select("id, name, email, role, specialty_role, is_active, created_at").eq("org_id", org_id).eq("role", "admin").execute()
+                )
+                if res.data:
+                    return res.data
+            except Exception as e:
+                logger.debug(f"Supabase get_org_admins fallback: {e}")
+                self._supabase_enabled = False
+        return self.sqlite.get_org_admins(org_id)
+
+    async def assign_user_admin(self, user_id: str, admin_id: Optional[str]) -> bool:
+        """Assign or reassign a user to an admin supervisor/mentor"""
+        res = self.sqlite.assign_user_admin(user_id, admin_id)
+        if self.supabase and self._supabase_enabled:
+            try:
+                table_name = DB_TABLES.get("users", "profiles")
+                await asyncio.to_thread(
+                    lambda: self.supabase.table(table_name).update({"assigned_admin_id": admin_id, "updated_at": datetime.now().isoformat()}).eq("id", user_id).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase assign_user_admin fallback: {e}")
+                self._supabase_enabled = False
+        return res
+
     async def create_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create or update a user profile"""
         res = self.sqlite.create_user(user_data)
@@ -561,7 +627,7 @@ class DatabaseManager:
             try:
                 table_name = DB_TABLES.get("users", "profiles")
                 await asyncio.to_thread(
-                    lambda: self.supabase.table(table_name).upsert(user_data).execute()
+                    lambda: self.supabase.table(table_name).upsert(res).execute()
                 )
             except Exception as e:
                 logger.debug(f"Supabase create_user fallback: {e}")
@@ -595,6 +661,129 @@ class DatabaseManager:
                 logger.debug(f"Supabase delete_user fallback: {e}")
                 self._supabase_enabled = False
         return res
+
+    # ============================================================
+    # GUIDANCE & HELP REQUESTS OPERATIONS
+    # ============================================================
+
+    async def get_guidance_requests(
+        self,
+        org_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        admin_id: Optional[str] = None,
+        status: Optional[str] = None,
+        limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """Get guidance and help requests with filtering"""
+        if self.supabase and self._supabase_enabled:
+            try:
+                query = self.supabase.table("guidance_requests").select("*")
+                if org_id:
+                    query = query.eq("org_id", org_id)
+                if user_id:
+                    query = query.eq("user_id", user_id)
+                if admin_id:
+                    query = query.or_(f"admin_id.eq.{admin_id},admin_id.is.null")
+                if status:
+                    query = query.eq("status", status)
+                res = await asyncio.to_thread(
+                    lambda: query.order("created_at", desc=True).limit(limit).execute()
+                )
+                if res.data:
+                    return res.data
+            except Exception as e:
+                logger.debug(f"Supabase get_guidance_requests fallback: {e}")
+                self._supabase_enabled = False
+        return self.sqlite.get_guidance_requests(org_id=org_id, user_id=user_id, admin_id=admin_id, status=status, limit=limit)
+
+    async def create_guidance_request(self, req_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new guidance/help request from a user"""
+        res = self.sqlite.create_guidance_request(req_data)
+        if self.supabase and self._supabase_enabled:
+            try:
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("guidance_requests").insert(res).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase create_guidance_request fallback: {e}")
+                self._supabase_enabled = False
+        return res
+
+    async def volunteer_for_request(self, request_id: str, admin_id: str, admin_name: str) -> bool:
+        """Admin volunteers to guide and take ownership of a help request"""
+        res = self.sqlite.volunteer_for_request(request_id, admin_id, admin_name)
+        if self.supabase and self._supabase_enabled:
+            try:
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("guidance_requests").update({
+                        "admin_id": admin_id,
+                        "admin_name": admin_name,
+                        "status": "in_progress",
+                        "updated_at": datetime.now().isoformat()
+                    }).eq("id", request_id).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase volunteer_for_request fallback: {e}")
+                self._supabase_enabled = False
+        return res
+
+    async def respond_guidance_request(self, request_id: str, guidance_notes: str, status: str = "resolved") -> bool:
+        """Admin sends guidance notes and updates request status"""
+        res = self.sqlite.respond_guidance_request(request_id, guidance_notes, status)
+        if self.supabase and self._supabase_enabled:
+            try:
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("guidance_requests").update({
+                        "guidance_notes": guidance_notes,
+                        "status": status,
+                        "updated_at": datetime.now().isoformat()
+                    }).eq("id", request_id).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase respond_guidance_request fallback: {e}")
+                self._supabase_enabled = False
+        return res
+
+    # ============================================================
+    # USER ACTIVITY TELEMETRY
+    # ============================================================
+
+    async def log_user_activity(self, activity_data: Dict[str, Any]) -> str:
+        """Log a real-time action or telemetry event performed by a user"""
+        act_id = self.sqlite.log_user_activity(activity_data)
+        if self.supabase and self._supabase_enabled:
+            try:
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("user_activities").insert(activity_data).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase log_user_activity fallback: {e}")
+                self._supabase_enabled = False
+        return act_id
+
+    async def get_user_activities(
+        self,
+        org_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """Get live user activity stream for an organization"""
+        if self.supabase and self._supabase_enabled:
+            try:
+                query = self.supabase.table("user_activities").select("*")
+                if org_id:
+                    query = query.eq("org_id", org_id)
+                if user_id:
+                    query = query.eq("user_id", user_id)
+                res = await asyncio.to_thread(
+                    lambda: query.order("timestamp", desc=True).limit(limit).execute()
+                )
+                if res.data:
+                    return res.data
+            except Exception as e:
+                logger.debug(f"Supabase get_user_activities fallback: {e}")
+                self._supabase_enabled = False
+        return self.sqlite.get_user_activities(org_id=org_id, user_id=user_id, limit=limit)
 
     # ============================================================
     # AUDIT LOGS OPERATIONS
@@ -647,3 +836,4 @@ class DatabaseManager:
 
 # Global database manager instance
 db_manager = DatabaseManager()
+

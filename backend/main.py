@@ -645,6 +645,33 @@ async def get_organizations(request: Request) -> JSONResponse:
     return create_json_response(data=orgs, message="Organizations retrieved")
 
 
+@app.get("/api/v1/organizations/verify-key/{key}")
+@app.get("/api/v1/organizations/verify-key/{key}/")
+@limiter.limit("60/minute")
+async def verify_org_key(request: Request, key: str) -> JSONResponse:
+    """Verify and retrieve organization details using its 6-letter join key"""
+    org = await db_manager.get_org_by_join_key(key)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization join key not found or expired")
+    return create_json_response(data=org, message="Organization key verified successfully")
+
+
+@app.post("/api/v1/organizations/{org_id}/regenerate-key")
+@limiter.limit("10/minute")
+async def regenerate_org_key(request: Request, org_id: str) -> JSONResponse:
+    """Regenerate 6-letter join key for an organization"""
+    new_key = await db_manager.regenerate_org_join_key(org_id)
+    return create_json_response(data={"id": org_id, "join_key": new_key}, message="Join key regenerated successfully")
+
+
+@app.get("/api/v1/organizations/{org_id}/admins")
+@limiter.limit("30/minute")
+async def get_org_admins(request: Request, org_id: str) -> JSONResponse:
+    """Get list of administrators in an organization with their specializations"""
+    admins = await db_manager.get_org_admins(org_id)
+    return create_json_response(data=admins, message="Organization admins retrieved")
+
+
 @app.post("/api/v1/organizations/")
 @app.post("/api/v1/organizations")
 @limiter.limit("20/minute")
@@ -657,7 +684,7 @@ async def create_organization(request: Request) -> JSONResponse:
             "action": "organization_created",
             "resource_type": "organization",
             "resource_id": org.get("id"),
-            "details": {"name": org.get("name")},
+            "details": {"name": org.get("name"), "join_key": org.get("join_key")},
             "ip_address": get_client_ip(request)
         })
         return create_json_response(data=org, message="Organization created successfully", status_code=201)
@@ -693,7 +720,7 @@ async def activate_organization(request: Request, org_id: str) -> JSONResponse:
 
 
 # ============================================================
-# API ENDPOINTS - USERS & PROFILES
+# API ENDPOINTS - USERS & MULTI-ADMIN
 # ============================================================
 
 @app.get("/api/v1/users/")
@@ -723,6 +750,20 @@ async def create_user(request: Request) -> JSONResponse:
         return create_json_response(data=user, message="User created successfully", status_code=201)
     except Exception as e:
         logger.error(f"Error creating user: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/users/{user_id}/assign-admin")
+@limiter.limit("20/minute")
+async def assign_user_admin(request: Request, user_id: str) -> JSONResponse:
+    """Assign or reassign a user to a specific admin mentor/guide"""
+    try:
+        body = await request.json()
+        admin_id = body.get("admin_id")
+        success = await db_manager.assign_user_admin(user_id, admin_id)
+        return create_json_response(data={"user_id": user_id, "admin_id": admin_id, "assigned": success}, message="User assigned to admin successfully")
+    except Exception as e:
+        logger.error(f"Error assigning user to admin: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -763,6 +804,109 @@ async def delete_user(request: Request, user_id: str) -> JSONResponse:
     except Exception as e:
         logger.error(f"Error deleting user {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================
+# API ENDPOINTS - GUIDANCE & HELP REQUESTS
+# ============================================================
+
+@app.get("/api/v1/guidance/requests")
+@app.get("/api/v1/guidance/requests/")
+@limiter.limit("60/minute")
+async def get_guidance_requests(
+    request: Request,
+    org_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    admin_id: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 100
+) -> JSONResponse:
+    """Get list of guidance/help requests"""
+    requests = await db_manager.get_guidance_requests(
+        org_id=org_id, user_id=user_id, admin_id=admin_id, status=status, limit=limit
+    )
+    return create_json_response(data=requests, message="Guidance requests retrieved")
+
+
+@app.post("/api/v1/guidance/requests")
+@app.post("/api/v1/guidance/requests/")
+@limiter.limit("30/minute")
+async def create_guidance_request(request: Request) -> JSONResponse:
+    """Create a new guidance/help request from a user"""
+    try:
+        body = await request.json()
+        req = await db_manager.create_guidance_request(body)
+        return create_json_response(data=req, message="Guidance request created successfully", status_code=201)
+    except Exception as e:
+        logger.error(f"Error creating guidance request: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/guidance/requests/{request_id}/volunteer")
+@limiter.limit("30/minute")
+async def volunteer_for_request(request: Request, request_id: str) -> JSONResponse:
+    """Admin volunteers to guide and resolve a user request"""
+    try:
+        body = await request.json()
+        admin_id = body.get("admin_id")
+        admin_name = body.get("admin_name", "Admin")
+        if not admin_id:
+            raise HTTPException(status_code=400, detail="Missing admin_id")
+        success = await db_manager.volunteer_for_request(request_id, admin_id, admin_name)
+        return create_json_response(data={"id": request_id, "success": success}, message="Volunteered for guidance request successfully")
+    except Exception as e:
+        logger.error(f"Error volunteering for guidance request: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/guidance/requests/{request_id}/respond")
+@limiter.limit("30/minute")
+async def respond_guidance_request(request: Request, request_id: str) -> JSONResponse:
+    """Admin writes guidance response instructions and resolves request"""
+    try:
+        body = await request.json()
+        guidance_notes = body.get("guidance_notes", "")
+        status = body.get("status", "resolved")
+        success = await db_manager.respond_guidance_request(request_id, guidance_notes, status)
+        return create_json_response(data={"id": request_id, "success": success, "status": status}, message="Guidance response submitted successfully")
+    except Exception as e:
+        logger.error(f"Error responding to guidance request: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================
+# API ENDPOINTS - USER ACTIVITIES TELEMETRY
+# ============================================================
+
+@app.get("/api/v1/user-activities")
+@app.get("/api/v1/user-activities/")
+@limiter.limit("60/minute")
+async def get_user_activities(
+    request: Request,
+    org_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    limit: int = 100
+) -> JSONResponse:
+    """Get real-time user activity feed for an organization"""
+    activities = await db_manager.get_user_activities(org_id=org_id, user_id=user_id, limit=limit)
+    return create_json_response(data=activities, message="User activities retrieved")
+
+
+@app.post("/api/v1/user-activities")
+@app.post("/api/v1/user-activities/")
+@limiter.limit("120/minute")
+async def log_user_activity(request: Request) -> JSONResponse:
+    """Log an activity event for a user"""
+    try:
+        body = await request.json()
+        if not body.get("ip_address"):
+            body["ip_address"] = get_client_ip(request)
+        act_id = await db_manager.log_user_activity(body)
+        return create_json_response(data={"id": act_id}, message="User activity logged", status_code=201)
+    except Exception as e:
+        logger.error(f"Error logging user activity: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 # ============================================================

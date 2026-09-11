@@ -7,6 +7,7 @@ import IncidentPanel from "../components/security/IncidentPanel";
 import useRealtimeAlerts from "../hooks/useRealtimeAlerts";
 import Card from "../components/ui/Card";
 import AnimatedCounter from "../components/ui/AnimatedCounter";
+import UserGuidanceWidget from "../components/guidance/UserGuidanceWidget";
 import toast from 'react-hot-toast';
 import '../styles/pages/dashboard.css';
 import { API_BASE, API_V1, WS_URL } from '@/config/api';
@@ -397,6 +398,11 @@ export default function Dashboard() {
           {can("VIEW_ADVANCED_ANALYTICS") && <AdvancedStats />}
           <UserActivity />
         </div>
+      </div>
+
+      {/* User Mentorship & Guidance Hub */}
+      <div style={{ marginTop: '20px' }}>
+        <UserGuidanceWidget />
       </div>
     </div>
   );

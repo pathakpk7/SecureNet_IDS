@@ -135,10 +135,10 @@ export const AuthProvider = ({ children }) => {
     return userWithPermissions;
   };
 
-  const adminSignup = async (email, password) => {
+  const adminSignup = async (email, password, orgName = '', orgDescription = '', specialtyRole = 'Network Defense Lead', joinKey = '', existingOrgId = null, name = '') => {
     try {
       console.log("AuthContext: Starting admin signup for:", email);
-      const result = await authService.adminSignup(email, password);
+      const result = await authService.adminSignup(email, password, orgName, orgDescription, specialtyRole, joinKey, existingOrgId, name);
       
       // DEBUG LOGS
       console.log("ADMIN SIGNUP RESULT:", result);
@@ -151,14 +151,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const userSignup = async (email, password, orgId) => {
+  const userSignup = async (email, password, joinKeyOrOrgId, assignedAdminId = null, name = '') => {
     try {
-      console.log("AuthContext: Starting user signup for:", email, "org:", orgId);
-      const result = await authService.userSignup(email, password, orgId);
+      console.log("AuthContext: Starting user signup for:", email, "org/key:", joinKeyOrOrgId);
+      const result = await authService.userSignup(email, password, joinKeyOrOrgId, assignedAdminId, name);
       
       // DEBUG LOGS
       console.log("USER SIGNUP RESULT:", result);
-      console.log("USER JOINED ORG:", orgId);
       
       return result;
     } catch (error) {
