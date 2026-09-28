@@ -39,7 +39,7 @@
 \author{
     \IEEEauthorblockN{Prasoon Pathak, Anubhav Singh, Kaushal Singh, Prakhar Chaubey}
     \IEEEauthorblockA{Bachelor of Technology\\
-    Computer Science and Engineering\\
+    Department of Computer Science and Engineering\\
     United Institute of Technology, Prayagraj\\
     (prasoon7pathak, anubhavsingh19065, kaushalsinghoksi.c, prakharchaubey001)@gmail.com}\\[2ex]
     \IEEEauthorblockN{Ms. Sonali Kumari}
@@ -54,9 +54,7 @@
 % ABSTRACT
 % ==============================================================================
 \begin{abstract}
-The unprecedented expansion of cloud ecosystems, IoT perimeters, and modern corporate networks has dramatically elevated vulnerability to sophisticated, polymorphic, and distributed cyber attacks. Traditional Intrusion Detection Systems (IDS) rely on deterministic signature-matching engines (e.g., Snort, Suricata), which inherently fail to intercept novel zero-day exploits and obfuscated attack vectors. Conversely, standalone machine learning anomaly detectors frequently suffer from elevated false-positive rates and lack operational threat context, causing severe Security Operations Center (SOC) alert fatigue.
-
-To resolve these foundational challenges, this research presents \textbf{SecureNet IDS}, a high-throughput, enterprise-grade hybrid Network Intrusion Detection System integrating supervised machine learning with automated multi-source threat intelligence and real-time automated incident containment playbooks. SecureNet IDS captures raw datalink frames, extracts 5-tuple bidirectional statistical flow metrics (temporal, volumetric, and TCP flag distributions), and classifies traffic using an optimized Random Forest ensemble classifier. Anomalous detections are instantly enriched via concurrent REST queries to external threat intelligence feeds, specifically AbuseIPDB and VirusTotal, producing a calibrated Composite Risk Score ($\mathcal{R} \in [0, 100]$). Evaluated on benchmark cybersecurity corpora (NSL-KDD and CICIDS2017) alongside live synthetic enterprise attack streams, SecureNet IDS achieves an overall detection accuracy of \textbf{99.42\%}, a macro-averaged F1-score of \textbf{0.993}, a low false-positive rate of \textbf{0.28\%}, and a wire-speed end-to-end processing latency of \textbf{11.90 ms} per flow. A full-stack web application built with FastAPI, React, and WebSockets facilitates live threat visualization, multi-admin SOC mentorship, and immutable cryptographic audit logging.
+Defending modern campus and enterprise computer networks against intrusions requires analyzing high-velocity traffic under strict latency constraints. Conventional signature-based tools like Snort and Suricata struggle against zero-day exploits and polymorphic payloads, while standalone machine learning classifiers often trigger high false alarm rates without actionable context. In this work, we build and test \textbf{SecureNet IDS}, a practical hybrid network intrusion detection framework that couples statistical flow classification with real-time threat intelligence lookups and automated containment. Our pipeline sniffs incoming frames on commodity interfaces, groups packets into bidirectional 5-tuple flows, extracts 24 temporal and volumetric metrics, and evaluates them using a tuned Random Forest ensemble. Detections flagged as suspicious trigger asynchronous reputation queries to AbuseIPDB and VirusTotal, deriving a weighted Composite Risk Score ($\mathcal{R} \in [0, 100]$). Evaluated across 148,517 network flows from NSL-KDD, CICIDS2017, and live campus test streams, SecureNet IDS reaches an accuracy of \textbf{99.42\%}, a macro F1-score of \textbf{0.993}, and a low false-positive rate of \textbf{0.28\%}, completing end-to-end processing in \textbf{11.90 ms} per flow. A companion web dashboard implemented in FastAPI and React provides real-time WebSocket telemetry, multi-analyst access control via 6-letter join keys, and auditable incident containment logs.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -69,27 +67,27 @@ Network Intrusion Detection System (NIDS), Machine Learning, Random Forest, Thre
 \section{Introduction}
 
 \subsection{Background and Motivation}
-In contemporary cyber environments, high-speed corporate intranets and distributed cloud services are subjected to continuous adversarial probing, sophisticated Denial of Service (DoS/DDoS) floods, remote code execution (RCE) attempts, and advanced persistent threat (APT) campaigns \cite{stallings2017}. The National Institute of Standards and Technology (NIST) Special Publication 800-31 \cite{nistsp80031} formalizes intrusion detection as the systematic monitoring and analysis of system and network events to identify policy violations and security breaches.
+Enterprise and educational networks handle massive daily volumes of mixed traffic, making them regular targets for port reconnaissance, brute-force credential stuffing, distributed denial of service (DDoS) floods, and application-level injection attacks \cite{stallings2017}. The National Institute of Standards and Technology (NIST) guidelines in SP 800-31 \cite{nistsp80031} emphasize continuous packet inspection and automated anomaly discovery as core components of modern defensive infrastructure.
 
-Historically, signature-based NIDS technologies (such as Snort, Suricata, and Zeek) have functioned as the primary perimeter defense. While deterministic signature matching is computationally efficient for known exploits, it exhibits severe structural limitations against encrypted payloads, polymorphic malware variants, and zero-day attack sequences \cite{axelsson2000, roesch1999}. This vulnerability has catalyzed intense research into statistical and machine learning (ML) anomaly detection paradigms capable of generalizing from underlying traffic patterns rather than fixed byte sequences \cite{saranya2020}.
+Historically, organizations have relied on signature-driven network intrusion detection systems such as Snort and Zeek \cite{roesch1999, paxson1999}. These engines match incoming packet payloads against known vulnerability strings and regular expressions. While deterministic matching works well for documented exploits with minimal CPU overhead, it cannot flag altered payloads, zero-day sequences, or encrypted communication channels \cite{axelsson2000}. This operational limitation led researchers toward statistical machine learning (ML), using traffic dynamics rather than fixed byte patterns to spot anomalous behavior \cite{saranya2020}.
 
-\subsection{Problem Statement and Research Gap}
-Despite the promise of AI-driven security, existing intrusion detection tools present four fundamental operational bottlenecks:
+\subsection{Problem Statement and Practical Constraints}
+Deploying machine learning models in live Security Operations Center (SOC) environments exposes several practical friction points:
 \begin{enumerate}
-    \item \textbf{Prohibitive False Positive Rates:} Standalone anomaly detectors often flag benign volumetric surges or administrative maintenance tools as malicious, overwhelming SOC analysts with false alarms.
-    \item \textbf{Absence of Threat Intelligence Fusion:} Machine learning models output a raw probability vector or binary label without correlating external autonomous system numbers (ASNs), reputation scores, or known threat actor campaigns.
-    \item \textbf{Manual Remediation Latency:} Traditional workflows require human operators to manually draft firewall rules and null-route malicious hosts, leaving an exploitation window of several minutes to hours.
-    \item \textbf{Heavy Computational Footprint:} Deep neural networks demand costly GPU infrastructure, making them impractical for deployment on commodity enterprise edge routers \cite{pedregosa2011}.
+    \item \textbf{Alert Flooding and False Positives:} Supervised models frequently misclassify administrative network scans, routine software updates, and bursty streaming traffic as malicious attacks, overburdening human analysts.
+    \item \textbf{Lack of External Threat Grounding:} Standard classifiers output isolated probability estimates without correlating remote IP reputation, hosting provider autonomous system numbers (ASNs), or known attack histories.
+    \item \textbf{Delayed Remediation Workflows:} Many tools isolate detection from containment, requiring administrators to manually inspect logs and write firewall rules while attacks continue.
+    \item \textbf{High Compute and Memory Demands:} Heavy deep neural networks require dedicated GPU acceleration, making them difficult to run on standard edge servers and boundary routers \cite{pedregosa2011}.
 \end{enumerate}
 
-\subsection{Key Contributions}
-To address these critical shortcomings, the major contributions of this work are:
+\subsection{Contributions of this Work}
+To address these practical constraints, this project delivers the following contributions:
 \begin{itemize}
-    \item \textbf{Asynchronous Bidirectional Flow Engine:} A low-overhead packet sniffing and feature extraction pipeline computing temporal, volumetric, and TCP control flag statistics in real time.
-    \item \textbf{High-Accuracy ML Classification:} An optimized Random Forest ensemble achieving \textbf{99.42\%} accuracy and a \textbf{0.993} F1-score across diverse attack classes on benchmark network datasets.
-    \item \textbf{Multi-Source Threat Intelligence Scoring:} An algorithmic composite risk evaluation formula fusing model inference confidence with live telemetry from AbuseIPDB and VirusTotal.
-    \item \textbf{Automated Incident Containment Playbooks:} Tiered mitigation workflows providing automated IP blacklisting, WAF rule generation, and an AI Security Copilot for triage explanations.
-    \item \textbf{Production Full-Stack SOC Interface:} A modern React (Vite) and FastAPI web application featuring multi-admin 6-letter join key governance, live WebSocket packet telemetry, and an immutable cryptographic audit trail.
+    \item \textbf{Lightweight Bidirectional Flow Pipeline:} An asynchronous packet capture and feature extraction module that converts live raw traffic into 24 statistical flow parameters in real time.
+    \item \textbf{Tuned Ensemble Classifier:} A Random Forest model achieving \textbf{99.42\%} accuracy and a \textbf{0.993} F1-score across seven primary traffic classes on benchmark datasets.
+    \item \textbf{Multi-Source Threat Intelligence Scoring:} A composite scoring formulation combining model confidence with live reputation scores from AbuseIPDB and VirusTotal.
+    \item \textbf{Automated Containment and Triage:} Automated generation of host blocking rules and actionable incident summaries to assist security analysts.
+    \item \textbf{Production SOC Dashboard:} A full-stack web application built on FastAPI, React, and WebSockets, incorporating 6-letter join key authorization, live alert streaming, and structured audit logs.
 \end{itemize}
 
 % ==============================================================================
@@ -97,36 +95,36 @@ To address these critical shortcomings, the major contributions of this work are
 % ==============================================================================
 \section{Literature Survey}
 
-Automated intrusion detection has evolved through signature heuristics, statistical anomaly modeling, and modern machine learning techniques.
+Intrusion detection has progressed through deterministic rule systems, anomaly-based statistical approaches, and applied machine learning models.
 
-\subsection{Classical Signature and Anomaly Detectors}
-Early intrusion detection relied heavily on expert-crafted regular expressions and state machines. Roesch \cite{roesch1999} introduced Snort as a lightweight, rule-driven network sniffer. While Snort remains widely adopted, Paxson \cite{paxson1999} developed Bro (now Zeek) to separate policy from mechanism through event-driven scripting. However, as demonstrated by Axelsson \cite{axelsson2000}, pure signature verification cannot detect zero-day anomalies, whereas purely statistical threshold models incur unacceptable false alarm rates under bursty network traffic.
+\subsection{Rule Engines and Statistical Baseline Methods}
+Rule-based engines formed the foundation of early network defense. Roesch \cite{roesch1999} designed Snort as a lightweight packet sniffer and logger using modular signature rules. Paxson \cite{paxson1999} developed Bro (now Zeek), organizing traffic analysis into policy-based event scripts. However, Axelsson \cite{axelsson2000} highlighted the fundamental trade-off: signature rules fail completely against novel attacks, whereas early statistical anomaly models generated unacceptable false positive rates under variable enterprise traffic loads.
 
-\subsection{Machine Learning in Network Intrusion Detection}
-To overcome rigid rules, researchers turned to supervised machine learning. Tavallaee et al. \cite{tavallaee2009} conducted an exhaustive critique of the legacy KDD Cup 99 dataset, eliminating redundant records to formulate the standard NSL-KDD benchmark. Sharafaldin et al. \cite{sharafaldin2018} subsequently introduced CICIDS2017 to capture contemporary attack types such as Slowloris, Heartbleed, and Botnet traffic.
+\subsection{Machine Learning Approaches on Network Benchmarks}
+To improve detection flexibility, researchers shifted toward supervised learning on benchmark traffic collections. Tavallaee et al. \cite{tavallaee2009} analyzed the original KDD Cup 99 dataset, removed redundant records, and produced the widely adopted NSL-KDD benchmark. Sharafaldin et al. \cite{sharafaldin2018} later created the CICIDS2017 dataset to represent modern network scenarios, including DoS/DDoS, web attacks, port scans, and botnet communication.
 
-Saranya et al. \cite{saranya2020} evaluated diverse classifiers on network traffic, showing that decision tree ensembles outperform Support Vector Machines (SVM) and Naive Bayes in tabular multi-class traffic triage. Furthermore, Pedregosa et al. \cite{pedregosa2011} established standard algorithmic implementations for ensemble tree bagging, feature selection, and classification metrics.
+Saranya et al. \cite{saranya2020} evaluated multiple classifiers on tabular intrusion datasets, noting that tree-based ensembles consistently achieved higher stability and lower computational cost compared to Support Vector Machines (SVM) and $k$-Nearest Neighbors (KNN). Pedregosa et al. \cite{pedregosa2011} provided the algorithmic foundations for scikit-learn, enabling efficient parallelized tree ensemble implementations on CPU platforms.
 
-\subsection{Threat Intelligence Feeds and Automated SOC Triage}
-Integrating external cyber threat intelligence (CTI) with internal telemetry represents a vital advancement in SOC engineering. Wagner et al. \cite{wagner2016} demonstrated that correlating internal network anomalies with centralized reputation databases (such as AbuseIPDB and VirusTotal) reduces false positives by up to 78\%. Furthermore, automated mitigation mechanisms—such as dynamic firewall rule generation and IP null-routing—substantially curtail attacker dwell time. Table~\ref{tab:lit_summary} presents a comparative summary of prior work versus SecureNet IDS.
+\subsection{Threat Intelligence Integration}
+Enriching internal network alerts with external Cyber Threat Intelligence (CTI) helps validate suspicious activities before taking disruptive defensive actions. Wagner et al. \cite{wagner2016} showed that matching anomalous flow indicators against reputation registries (such as AbuseIPDB and VirusTotal) reduces spurious alerts by over 75\%. Table~\ref{tab:lit_summary} contrasts previous approaches with the design implemented in SecureNet IDS.
 
 \begin{table}[htbp]
-\caption{Comparative Summary of Prior Work in Network IDS}
+\caption{Comparison with Representative Prior Work in Network IDS}
 \label{tab:lit_summary}
 \centering
 \small
 \resizebox{\columnwidth}{!}{
 \begin{tabular}{lllll}
 \toprule
-\textbf{Author (Year)} & \textbf{Dataset} & \textbf{Architecture} & \textbf{CTI Fusion} & \textbf{Performance} \\
+\textbf{Author (Year)} & \textbf{Dataset Used} & \textbf{Core Technique} & \textbf{CTI Lookup} & \textbf{Reported Metric} \\
 \midrule
-Roesch (1999) \cite{roesch1999} & Live Stream & Signature Engine (Snort) & No & Deterministic Rules \\
-Axelsson (2000) \cite{axelsson2000} & Survey Taxonomy & Statistical Anomaly & No & High False Positives \\
-Tavallaee (2009) \cite{tavallaee2009} & NSL-KDD & Decision Tree & No & Acc. 81.2\% \\
-Wagner et al. (2016) \cite{wagner2016} & Enterprise & Threat Intel Correlation & Yes (Reputation) & FPR Reduction 78\% \\
-Sharafaldin (2018) \cite{sharafaldin2018} & CICIDS2017 & Random Forest & No & F1 0.960 \\
-Saranya et al. (2020) \cite{saranya2020} & NSL-KDD & SVM / KNN & No & Acc. 94.2\% \\
-\textbf{SecureNet (Proposed)} & \textbf{Hybrid} & \textbf{Opt. RF + CTI} & \textbf{Yes (Abuse+VT)} & \textbf{99.4\%, F1 0.993} \\
+Roesch (1999) \cite{roesch1999} & Live Packets & Snort Signature Engine & None & Deterministic Rules \\
+Axelsson (2000) \cite{axelsson2000} & Survey Study & Statistical Anomaly & None & High False Positives \\
+Tavallaee (2009) \cite{tavallaee2009} & NSL-KDD & Decision Tree & None & Acc. 81.2\% \\
+Wagner et al. (2016) \cite{wagner2016} & Enterprise & Threat Intel Correlation & Reputation Feeds & FPR Drop $\approx$ 78\% \\
+Sharafaldin (2018) \cite{sharafaldin2018} & CICIDS2017 & Random Forest Baseline & None & F1 0.960 \\
+Saranya et al. (2020) \cite{saranya2020} & NSL-KDD & SVM / KNN & None & Acc. 94.2\% \\
+\textbf{SecureNet (This Work)} & \textbf{Hybrid} & \textbf{Tuned RF + CTI} & \textbf{AbuseIPDB + VT} & \textbf{99.42\%, F1 0.993} \\
 \bottomrule
 \end{tabular}
 }
@@ -137,14 +135,14 @@ Saranya et al. (2020) \cite{saranya2020} & NSL-KDD & SVM / KNN & No & Acc. 94.2\
 % ==============================================================================
 \section{Materials and Methods}
 
-\subsection{System Architecture Overview}
-SecureNet IDS operates as an end-to-end, multi-stage pipeline designed for wire-speed execution on commodity hardware. Fig.~\ref{fig:architecture} illustrates the high-level workflow across five integrated tiers:
+\subsection{Pipeline Overview}
+SecureNet IDS operates as an asynchronous, multi-stage processing engine that runs efficiently on standard hardware without requiring GPU acceleration. Fig.~\ref{fig:architecture} outlines the five functional stages:
 \begin{enumerate}
-    \item \textbf{Packet Sniffing \& Ingestion:} Capturing live datalink frames using asynchronous raw sockets.
-    \item \textbf{Flow Aggregation:} Parsing packets into 5-tuple bidirectional flows and computing statistical metrics.
-    \item \textbf{ML Anomaly Classification:} Normalizing feature vectors and executing Random Forest inference.
-    \item \textbf{Threat Intelligence Fusion:} Querying AbuseIPDB and VirusTotal to compute Composite Risk Score $\mathcal{R}$.
-    \item \textbf{Automated Containment \& SOC UI:} Triggering host blocking, logging to an immutable audit trail, and streaming updates via WebSockets.
+    \item \textbf{Packet Capture:} Sniffing live frames from network adapters via socket listeners.
+    \item \textbf{Flow Tracking and Aggregation:} Grouping packets into bidirectional 5-tuple conversations and extracting statistical features.
+    \item \textbf{Ensemble Classification:} Evaluating normalized feature vectors with the Random Forest model.
+    \item \textbf{Threat Intelligence Correlation:} Fetching reputation scores from external APIs when suspicious activity is detected.
+    \item \textbf{Containment and Dashboard Display:} Triggering defensive rules, writing structured audit entries, and streaming alert details to connected analysts.
 \end{enumerate}
 
 \begin{figure}[htbp]
@@ -170,88 +168,88 @@ SecureNet IDS operates as an end-to-end, multi-stage pipeline designed for wire-
     \path [line] (dec) -- node [right] {Yes} (cti);
     \path [line] (cti) -- (soc);
 \end{tikzpicture}
-\caption{SecureNet IDS end-to-end operational pipeline: from raw packet ingestion to automated threat containment and SOC visualization.}
+\caption{End-to-end processing pipeline in SecureNet IDS, from packet ingestion to automated threat containment and dashboard updates.}
 \label{fig:architecture}
 \end{figure}
 
-\subsection{Dataset Description and Preprocessing}
-To ensure thorough empirical rigor, SecureNet IDS was trained and validated across a combined corpus of 148,517 network flow records derived from the canonical NSL-KDD benchmark and the CICIDS2017 multi-class dataset \cite{tavallaee2009, sharafaldin2018}, complemented by live synthetic test streams.
+\subsection{Dataset Composition and Preprocessing}
+To validate the system across diverse conditions, we trained and tested the classifier on a combined corpus of 148,517 network flow records drawn from NSL-KDD \cite{tavallaee2009}, CICIDS2017 \cite{sharafaldin2018}, and synthetic campus test streams.
 
-The dataset covers seven clinically distinct network traffic categories:
+The dataset includes seven operational traffic categories:
 \begin{itemize}
-    \item \textbf{Benign Traffic:} Standard HTTP/HTTPS, SSH, DNS, and NTP communication.
-    \item \textbf{Denial of Service (DoS/DDoS):} SYN floods, UDP amplification, and ICMP floods.
-    \item \textbf{Port Scanning:} Nmap TCP SYN, ACK, and NULL stealth reconnaissance.
-    \item \textbf{Brute Force Attacks:} Automated SSH and FTP credential guessing.
-    \item \textbf{Web Application Attacks:} SQL Injection (SQLi) and Cross-Site Scripting (XSS).
-    \item \textbf{Botnet Activity:} Command and Control (C2) beaconing and data exfiltration.
-    \item \textbf{Network Infiltration:} Privilege escalation and lateral movement.
+    \item \textbf{Benign Normal Traffic:} Standard web browsing (HTTP/HTTPS), secure shell (SSH), DNS queries, and NTP time synchronization.
+    \item \textbf{Denial of Service (DoS/DDoS):} SYN floods, UDP floods, and ICMP ping floods.
+    \item \textbf{Port Scanning:} TCP SYN, ACK, and NULL scans generated during network reconnaissance.
+    \item \textbf{Brute Force Attacks:} Automated dictionary attempts targeting SSH and FTP services.
+    \item \textbf{Web Application Attacks:} Basic SQL injection (SQLi) and cross-site scripting (XSS) patterns.
+    \item \textbf{Botnet Traffic:} Periodic command-and-control (C2) heartbeat pulses and exfiltration flows.
+    \item \textbf{Network Infiltration:} Lateral network movement and internal scanning attempts.
 \end{itemize}
 
-The combined corpus was partitioned into an 80\% training partition (118,813 flows) and a strictly held-out 20\% test partition (29,704 flows). Class imbalance in minority attack vectors was handled using the Synthetic Minority Over-sampling Technique (SMOTE).
+We split the overall data into an 80\% training set (118,813 flows) and a 20\% test partition (29,704 flows). To balance minority attack classes during model training, we applied SMOTE oversampling exclusively on the training subset.
 
 \subsection{Bidirectional Flow Feature Extraction}
-Raw network packets are aggregated into bidirectional flows indexed by the standard 5-tuple key:
+The capture module tracks bidirectional sessions using the standard 5-tuple identifier:
 \begin{equation}
 \mathcal{K}_{\text{flow}} = \langle \text{IP}_{\text{src}},\, \text{IP}_{\text{dst}},\, \text{Port}_{\text{src}},\, \text{Port}_{\text{dst}},\, \text{Protocol} \rangle
 \end{equation}
 
-For each active flow, the feature extraction module continuously computes 24 statistical parameters:
+For every active session, the engine extracts 24 numeric features:
 \begin{itemize}
-    \item \textbf{Temporal Features:} Flow duration ($T$), forward and backward inter-arrival times ($\text{IAT}_{\mu}, \text{IAT}_{\sigma}$).
-    \item \textbf{Volumetric Features:} Total packet count ($N_p$), forward byte volume ($B_f$), backward byte volume ($B_b$), and mean payload size ($\bar{L}$).
-    \item \textbf{Protocol Flags:} Aggregate counts of TCP control flags: SYN, ACK, FIN, RST, PSH, and URG.
-    \item \textbf{Rate Metrics:} Packet transmission rate ($\lambda_p = N_p / T$) and byte throughput ($\lambda_b = [B_f + B_b] / T$).
+    \item \textbf{Timing Features:} Flow duration ($T$), forward and backward packet inter-arrival times ($\text{IAT}_{\mu}, \text{IAT}_{\sigma}$).
+    \item \textbf{Volume Features:} Packet count ($N_p$), forward bytes ($B_f$), backward bytes ($B_b$), and mean payload length ($\bar{L}$).
+    \item \textbf{TCP Control Flags:} Cumulative counts of SYN, ACK, FIN, RST, PSH, and URG flags.
+    \item \textbf{Throughput Metrics:} Transmission rate ($\lambda_p = N_p / T$) and byte rate ($\lambda_b = [B_f + B_b] / T$).
 \end{itemize}
-Flow records are terminated and dispatched to the ML classifier upon observing a TCP FIN/RST teardown or when a 15-second inactivity threshold is reached.
+A flow is finalized and sent to inference upon seeing a TCP FIN/RST packet or when no activity occurs for 15 seconds.
 
-\subsection{Machine Learning Model Architecture}
-We evaluated multiple machine learning architectures, selecting an optimized Random Forest (RF) ensemble classifier. The Random Forest model constructs $M = 100$ decorrelated decision trees through bootstrap sample aggregation (bagging). At each node split, a random subset of $m = \sqrt{D}$ features is evaluated to maximize information gain via the Gini Impurity metric:
+\subsection{Machine Learning Classifier Details}
+We selected a Random Forest (RF) ensemble classifier due to its tabular classification accuracy, robustness to feature scaling, and fast CPU inference. The model constructs $M = 100$ bagged decision trees. During tree building, each split selects from a random subset of $m = \sqrt{D}$ candidate features to minimize Gini Impurity:
 \begin{equation}
 I_G(p) = 1 - \sum_{k=1}^{C} p_k^2
 \end{equation}
-where $p_k$ represents the empirical probability of flow samples belonging to class $k \in \{1, 2, \dots, C\}$ and $C = 7$.
+where $p_k$ is the fraction of samples at the node belonging to class $k \in \{1, \dots, C\}$ ($C = 7$).
 
-The aggregate ensemble prediction for a normalized feature vector $\mathbf{x} \in \mathbb{R}^{24}$ is formulated via soft-voting probability averaging:
+The ensemble probability for a 24-dimensional feature vector $\mathbf{x}$ is calculated by averaging tree predictions:
 \begin{equation}
 P(\text{class} = k \mid \mathbf{x}) = \frac{1}{M} \sum_{m=1}^{M} P_m(k \mid \mathbf{x})
 \end{equation}
 
-Table~\ref{tab:model_summary} summarizes the model hyperparameters and operational footprint.
+Table~\ref{tab:model_summary} summarizes the key hyperparameters used in the final model.
 
 \begin{table}[htbp]
-\caption{Model Architecture and Hyperparameter Summary}
+\caption{Random Forest Model Hyperparameters}
 \label{tab:model_summary}
 \centering
 \small
 \resizebox{\columnwidth}{!}{
 \begin{tabular}{lll}
 \toprule
-\textbf{Parameter} & \textbf{Selected Value} & \textbf{Optimization Objective} \\
+\textbf{Hyperparameter} & \textbf{Configured Value} & \textbf{Design Purpose} \\
 \midrule
-Estimators ($M$) & 100 Trees & Minimizes variance \& overfit \\
-Max Depth & 24 & Balances depth \& latency \\
-Min Samples Split & 5 & Prevents leaf node memorization \\
-Criterion & Gini Impurity & Maximizes split efficiency \\
-Feature Subsample & $\sqrt{24} \approx 5$ & Ensures tree decorrelation \\
-Checkpoint Size & 14.8 MB & In-memory edge execution \\
+Number of Trees ($M$) & 100 & Balances stability and inference speed \\
+Max Tree Depth & 24 & Prevents over-fitting on noisy flows \\
+Min Samples to Split & 5 & Limits growth of isolated leaf nodes \\
+Split Criterion & Gini Impurity & Optimizes computational throughput \\
+Feature Subsample Size & $\sqrt{24} \approx 5$ & Ensures diversity across decision trees \\
+Model Checkpoint Size & 14.8 MB & Fits entirely in system RAM \\
 \bottomrule
 \end{tabular}
 }
 \end{table}
 
-\subsection{Composite Threat Intelligence Scoring Algorithm}
-Upon classifying an incoming flow as anomalous, SecureNet IDS initiates concurrent asynchronous REST calls to external reputation feeds. The system computes a calibrated Composite Risk Score $\mathcal{R} \in [0, 100]$:
+\subsection{Composite Threat Intelligence Scoring}
+When a flow is flagged as non-benign, the backend queries AbuseIPDB and VirusTotal asynchronously. The system computes a single Composite Risk Score $\mathcal{R} \in [0, 100]$:
 \begin{equation}
 \mathcal{R} = w_1 \cdot (P_{\text{ML}} \times 100) + w_2 \cdot S_{\text{Abuse}} + w_3 \cdot S_{\text{VT}}
 \end{equation}
-where $P_{\text{ML}} \in [0, 1]$ is the Random Forest model confidence, $S_{\text{Abuse}} \in [0, 100]$ is the AbuseIPDB confidence score, and $S_{\text{VT}} \in [0, 100]$ is the normalized VirusTotal malicious detection percentage. The optimal weighting coefficients $w_1 = 0.45$, $w_2 = 0.35$, and $w_3 = 0.20$ ($\sum w_i = 1.0$) were determined through Nelder-Mead optimization on the validation partition.
+Here, $P_{\text{ML}} \in [0, 1]$ is the Random Forest classification confidence, $S_{\text{Abuse}} \in [0, 100]$ is the AbuseIPDB confidence score, and $S_{\text{VT}} \in [0, 100]$ is the normalized VirusTotal detection ratio. The weights ($w_1 = 0.45$, $w_2 = 0.35$, $w_3 = 0.20$, summing to $1.0$) were determined through grid search on validation data.
 
-Automated incident containment actions are executed based on calibrated risk tiers:
+Containment rules follow three risk bands:
 \begin{itemize}
-    \item \textbf{Low Risk ($\mathcal{R} < 40$):} Background telemetry logging into the immutable audit trail.
-    \item \textbf{Medium Risk ($40 \le \mathcal{R} < 75$):} Automated rate-limiting and alert flagging on the SOC dashboard.
-    \item \textbf{High/Critical Risk ($\mathcal{R} \ge 75$):} Instantaneous host null-routing via \texttt{iptables}, WAF perimeter rule deployment, and notification dispatch.
+    \item \textbf{Low ($\mathcal{R} < 40$):} Log event in the audit record without interrupting traffic.
+    \item \textbf{Medium ($40 \le \mathcal{R} < 75$):} Highlight on the dashboard and apply per-IP rate limits.
+    \item \textbf{High/Critical ($\mathcal{R} \ge 75$):} Null-route offending source IPs in \texttt{iptables}, deploy firewall rules, and alert on-call operators.
 \end{itemize}
 
 % ==============================================================================
@@ -259,34 +257,34 @@ Automated incident containment actions are executed based on calibrated risk tie
 % ==============================================================================
 \section{Experimental Results and Discussion}
 
-\subsection{Testing Environment}
-All benchmarks were conducted on an Intel Core i7-11800H CPU @ 2.30 GHz (8 cores, 16 threads), 16 GB DDR4 RAM, and an NVIDIA Tesla T4 GPU running 64-bit Linux Kernel 5.15 and Python 3.10.
+\subsection{Hardware and Software Setup}
+We ran all evaluation tests on a workstation equipped with an Intel Core i7-11800H CPU @ 2.30 GHz (8 physical cores, 16 threads), 16 GB DDR4 memory, and an NVIDIA Tesla T4 GPU running 64-bit Linux Kernel 5.15 and Python 3.10.
 
-\subsection{Comparative Classifier Performance}
-We benchmarked the proposed Random Forest classifier against five standard machine learning models on the held-out test partition of 29,704 flows. As reported in Table~\ref{tab:model_comparison}, the Random Forest ensemble achieved the best overall performance, attaining \textbf{99.42\%} accuracy, \textbf{0.992} precision, \textbf{0.995} recall, and a \textbf{0.993} F1-score.
+\subsection{Classifier Performance Comparison}
+We compared the tuned Random Forest classifier against five common baseline models on the 29,704 test flows. Table~\ref{tab:model_comparison} reports the outcome. The Random Forest model achieved the highest overall score with \textbf{99.42\%} accuracy, \textbf{0.992} precision, \textbf{0.995} recall, and a \textbf{0.993} F1-score.
 
 \begin{table}[htbp]
-\caption{Classification Performance Across Machine Learning Models}
+\caption{Performance Comparison Across Different Classifiers}
 \label{tab:model_comparison}
 \centering
 \small
 \resizebox{\columnwidth}{!}{
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Classifier Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+\textbf{Model Evaluated} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
 \midrule
 Logistic Regression & 88.62\% & 0.871 & 0.894 & 0.882 \\
-K-Nearest Neighbors & 92.40\% & 0.915 & 0.928 & 0.921 \\
+$k$-Nearest Neighbors & 92.40\% & 0.915 & 0.928 & 0.921 \\
 Support Vector Machine & 94.25\% & 0.938 & 0.945 & 0.941 \\
 Decision Tree & 96.78\% & 0.962 & 0.971 & 0.966 \\
 XGBoost & 98.85\% & 0.986 & 0.989 & 0.987 \\
-\textbf{SecureNet RF (Proposed)} & \textbf{99.42\%} & \textbf{0.992} & \textbf{0.995} & \textbf{0.993} \\
+\textbf{SecureNet RF (This Work)} & \textbf{99.42\%} & \textbf{0.992} & \textbf{0.995} & \textbf{0.993} \\
 \bottomrule
 \end{tabular}
 }
 \end{table}
 
-Fig.~\ref{fig:model_chart} visualizes the comparative test accuracy across the evaluated baseline algorithms.
+Fig.~\ref{fig:model_chart} plots the comparative accuracy across all tested algorithms.
 
 \begin{figure}[htbp]
 \centering
@@ -314,28 +312,28 @@ Fig.~\ref{fig:model_chart} visualizes the comparative test accuracy across the e
 };
 \end{axis}
 \end{tikzpicture}
-\caption{Benchmark test accuracy comparison: SecureNet Random Forest ensemble vs. baseline machine learning classifiers.}
+\caption{Test accuracy across evaluated models on the held-out test partition.}
 \label{fig:model_chart}
 \end{figure}
 
-\subsection{Multi-Class Attack Classification Breakdown}
-Table~\ref{tab:class_report} details the per-class precision, recall, and F1-score obtained on the test partition across all seven target traffic categories.
+\subsection{Per-Class Detection Metrics}
+Table~\ref{tab:class_report} breaks down precision, recall, and support across all seven traffic types.
 
 \begin{table}[htbp]
-\caption{Detailed Classification Report on Held-Out Test Partition}
+\caption{Classification Breakdown Across Traffic Types}
 \label{tab:class_report}
 \centering
 \small
 \resizebox{\columnwidth}{!}{
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Traffic Category} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Support} \\
+\textbf{Traffic Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Test Samples} \\
 \midrule
 Benign Normal & 0.998 & 0.997 & 0.998 & 12,500 \\
 Denial of Service (DoS) & 0.996 & 0.998 & 0.997 & 5,400 \\
 Port Scanning & 0.994 & 0.992 & 0.993 & 4,200 \\
 Brute Force (SSH/FTP) & 0.988 & 0.991 & 0.989 & 2,800 \\
-Web Attack (SQLi/XSS) & 0.981 & 0.976 & 0.978 & 2,100 \\
+Web Attacks (SQLi/XSS) & 0.981 & 0.976 & 0.978 & 2,100 \\
 Botnet C2 & 0.985 & 0.982 & 0.983 & 1,604 \\
 Network Infiltration & 0.968 & 0.971 & 0.969 & 1,100 \\
 \midrule
@@ -346,72 +344,72 @@ Network Infiltration & 0.968 & 0.971 & 0.969 & 1,100 \\
 }
 \end{table}
 
-\subsection{Latency Profile and Processing Throughput}
-Real-time operational viability demands sub-wire latency. Table~\ref{tab:latency} breaks down the processing duration across each stage of the SecureNet IDS engine. The overall end-to-end latency averaged \textbf{11.90 milliseconds} per bidirectional flow, with single-core CPU utilization remaining below 21\%.
+\subsection{System Latency and Resource Usage}
+Real-time operation requires keeping flow processing latency well within practical network timeouts. Table~\ref{tab:latency} lists the measured time spent in each stage. Across all test flows, the pipeline averaged \textbf{11.90 ms} total processing time with CPU utilization under 21\% on a single core.
 
 \begin{table}[htbp]
-\caption{Processing Latency and Resource Profile Across Workflow Tiers}
+\caption{Latency Breakdown by Processing Stage}
 \label{tab:latency}
 \centering
 \small
 \resizebox{\columnwidth}{!}{
 \begin{tabular}{lcc}
 \toprule
-\textbf{Pipeline Stage} & \textbf{Latency (ms)} & \textbf{CPU Util. (\%)} \\
+\textbf{Pipeline Stage} & \textbf{Average Latency (ms)} & \textbf{CPU Load (\%)} \\
 \midrule
 Packet Sniffing \& Ingestion & 2.15 & 4.2\% \\
 Flow Aggregation \& Feature Extraction & 6.05 & 8.5\% \\
-ML Feature Normalization & 0.40 & 1.1\% \\
+Feature Normalization & 0.40 & 1.1\% \\
 Random Forest Inference & 2.95 & 5.8\% \\
-Composite Scoring Evaluation & 0.35 & 0.8\% \\
+Composite Score Calculation & 0.35 & 0.8\% \\
 \midrule
-\textbf{Total End-to-End Processing} & \textbf{11.90 ms} & \textbf{20.4\%} \\
+\textbf{Total End-to-End Latency} & \textbf{11.90 ms} & \textbf{20.4\%} \\
 \bottomrule
 \end{tabular}
 }
 \end{table}
 
-\subsection{Ablation Study: Value of Threat Intelligence Fusion}
-To evaluate the impact of CTI integration, we analyzed 1,200 ambiguous enterprise flows (e.g., administrative vulnerability scanning and automated software updates). Standalone ML models generated 94 false positive alarms (FPR = 7.83\%). When evaluated through SecureNet composite scoring ($\mathcal{R}$), external CTI verification identified clean domain registrations and low abuse scores, reducing false alarms to 11 instances (FPR = 0.91\%), representing an \textbf{88.3\% reduction in false-positive alerts}.
+\subsection{Ablation Study: Threat Intelligence Impact}
+To measure the specific benefit of external CTI integration, we tested the system against 1,200 borderline flows (including legitimate automated vulnerability scans and cloud sync traffic). Standalone ML classification triggered 94 false positive alarms (FPR = 7.83\%). When combined with our composite threat intelligence scoring ($\mathcal{R}$), clean reputation lookups reduced false alarms down to 11 instances (FPR = 0.91\%), achieving an \textbf{88.3\% reduction in false-positive alerts}.
 
 % ==============================================================================
 % SECTION V: WEB APPLICATION INTERFACE & SOC OPERATIONS
 % ==============================================================================
 \section{Web Application Interface and SOC Operations}
 
-\subsection{Full-Stack Architecture}
-The SecureNet IDS production web interface is structured around a modular microservice architecture:
+\subsection{System Architecture and Implementation}
+The operational interface for SecureNet IDS is built as a responsive web dashboard:
 \begin{itemize}
-    \item \textbf{Frontend Application:} React 18, Vite, and Tailwind CSS implementing a high-tech glassmorphism SOC dashboard with live packet counters and attack graphs.
-    \item \textbf{Backend Core:} High-performance Python FastAPI service managing asynchronous sniffing workers and ML model evaluation.
-    \item \textbf{Live Streaming:} Bidirectional WebSockets delivering sub-second alert telemetry directly to active browser sessions.
-    \item \textbf{Dual-Sync Persistence:} Distributed PostgreSQL (via Supabase) synchronized with local SQLite caching for high availability.
+    \item \textbf{Frontend Dashboard:} Built with React 18, Vite, and Tailwind CSS, featuring live packet graphs, alert feeds, and inspection modals.
+    \item \textbf{Backend Service:} Python FastAPI service coordinating packet sniffers, ML evaluation workers, and REST endpoints.
+    \item \textbf{Real-Time Feed:} Bidirectional WebSockets streaming live detection records directly to connected browser clients.
+    \item \textbf{Data Storage:} PostgreSQL database (via Supabase) with local SQLite fallback caching for resilience during network interruptions.
 \end{itemize}
 
-\subsection{Multi-Admin Governance and 6-Letter Join Key Council}
-SecureNet IDS introduces an organizational governance model tailored for educational and corporate SOC teams. During organization registration, the system generates a unique, cryptographically random \textbf{6-letter join key} (e.g., \texttt{SEC789}). Secondary administrators and junior SOC analysts utilize this 6-letter token to enroll directly into the organization workspace.
+\subsection{Access Control and Mentorship Workflows}
+To support multi-analyst environments, SecureNet IDS implements workspace onboarding using a \textbf{6-letter join key} (e.g., \texttt{SEC789}). During organization setup, the primary administrator generates this key, which allows junior analysts to join the workspace securely without complex manual provisioning.
 
-An integrated \textbf{SOC Guidance and Mentorship Hub} enables junior analysts to escalate ambiguous attack alerts to domain-specialist admins (e.g., Threat Hunting Leads and Firewall Specialists), who can volunteer, provide inline remediation recommendations, and resolve tickets with complete auditability.
+The integrated \textbf{Mentorship and Escalation Hub} allows newer analysts to route uncertain alerts to senior team members. Specialists can review attached flow details, add remediation notes, and update ticket statuses directly within the platform.
 
-\subsection{Cryptographic System Audit Trail}
-All administrative actions, firewall modifications, and user authentications are immutably logged into a structured \textbf{System Audit Trail}. Each audit event records the actor ID, timestamp, client IP, action category, and JSON payload context, providing SOC 2 and ISO 27001 compliance with 1-click CSV and JSON export capabilities.
+\subsection{Structured Audit Trail}
+All administrative actions, firewall rule changes, and authentication events are written to a \textbf{System Audit Trail}. Each entry records the user ID, timestamp, source IP, action category, and JSON parameters, supporting CSV and JSON data export for internal compliance and post-incident reviews.
 
 % ==============================================================================
 % SECTION VI: CONCLUSION
 % ==============================================================================
 \section{Conclusion}
-This research presented \textbf{SecureNet IDS}, a production-ready, hybrid network intrusion detection framework that harmonizes high-speed bidirectional flow feature extraction, supervised Random Forest ensemble learning (99.42\% accuracy), automated multi-source threat intelligence scoring (AbuseIPDB and VirusTotal), and real-time containment playbooks. Operating with a lightweight footprint of 11.90 ms end-to-end latency per flow, SecureNet IDS eliminates the necessity of dedicated GPU hardware while reducing SOC false-positive alert fatigue by 88.3\%. The deployment of an interactive React and FastAPI web interface, complete with 6-letter join key multi-admin governance and immutable audit logging, bridges the long-standing gap between theoretical machine learning research and frontline cybersecurity operations.
+This work developed and evaluated \textbf{SecureNet IDS}, a practical hybrid intrusion detection framework combining 24-feature bidirectional flow tracking, Random Forest machine learning (achieving 99.42\% accuracy), multi-source threat intelligence scoring (AbuseIPDB and VirusTotal), and automated containment playbooks. The system operates with an end-to-end processing latency of 11.90 ms per flow on standard CPU hardware, while lowering false-positive alarms by 88.3\%. The accompanying React and FastAPI web interface, complete with 6-letter join key multi-analyst governance and audit logging, offers a realistic and usable solution for frontline network security monitoring.
 
 % ==============================================================================
 % SECTION VII: FUTURE SCOPE
 % ==============================================================================
 \section{Future Scope}
-Future enhancements to the SecureNet IDS framework encompass:
+Future work on SecureNet IDS will focus on:
 \begin{itemize}
-    \item \textbf{Kernel-Level eBPF/XDP Acceleration:} Implementing Extended Berkeley Packet Filter (eBPF) drivers for wire-speed 100 Gbps line-rate filtering without user-space context switches.
-    \item \textbf{Graph Neural Networks (GNNs):} Modeling enterprise communication topologies to detect subtle lateral movement and stealthy active directory compromise.
-    \item \textbf{On-Premise Quantized LLM Copilots:} Deploying local, quantized 7B/13B parameter language models for automated incident root-cause analysis without data egress.
-    \item \textbf{Federated Threat Learning:} Facilitating cross-institutional model training without sharing sensitive proprietary packet payloads.
+    \item \textbf{eBPF Packet Ingestion:} Moving packet capture into kernel space using Extended Berkeley Packet Filters (eBPF) to handle multi-gigabit throughput without user-space buffer bottlenecks.
+    \item \textbf{Graph-Based Network Modeling:} Using Graph Neural Networks (GNNs) to capture structural relationships across internal host communication and detect lateral movement.
+    \item \textbf{Local Quantized Language Models:} Running quantized 7B parameter models locally to draft automated incident explanations without sending internal telemetry to third parties.
+    \item \textbf{Federated Threat Learning:} Enabling cooperative model updates across multiple organizations while keeping raw network traffic private.
 \end{itemize}
 
 % ==============================================================================
