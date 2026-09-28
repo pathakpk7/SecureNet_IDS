@@ -3,14 +3,15 @@ import Card from '../ui/Card';
 import LineChart from '../Charts/LineChart';
 import '../../styles/pages/network.css';
 import { useAuth } from '../../context/AuthContext';
+import { getWebsiteName } from '../../utils/domainHelper';
 import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 const DEFAULT_NETWORK_PACKETS = [
-  { id: 1, source: '192.168.1.105', dest: '10.0.0.1', protocol: 'TCP', size: '1514B', time: 'Just now', status: 'blocked' },
-  { id: 2, source: '10.0.0.15', dest: '172.217.16.206', protocol: 'HTTPS', size: '540B', time: '2s ago', status: 'allowed' },
-  { id: 3, source: '45.33.32.156', dest: '10.0.0.15', protocol: 'SSH', size: '128B', time: '5s ago', status: 'blocked' },
-  { id: 4, source: '10.0.0.22', dest: '1.1.1.1', protocol: 'DNS', size: '78B', time: '9s ago', status: 'allowed' },
-  { id: 5, source: '185.220.101.5', dest: '10.0.0.22', protocol: 'HTTP', size: '2048B', time: '14s ago', status: 'blocked' }
+  { id: 1, source: '192.168.1.105', dest: '10.0.0.1', website: 'Gateway Router (10.0.0.1)', protocol: 'TCP', size: '1514B', time: 'Just now', status: 'blocked' },
+  { id: 2, source: '10.0.0.15', dest: '172.217.16.206', website: 'Google Search (google.com)', protocol: 'HTTPS', size: '540B', time: '2s ago', status: 'allowed' },
+  { id: 3, source: '45.33.32.156', dest: '10.0.0.15', website: 'ScanMe Nmap (scanme.nmap.org)', protocol: 'SSH', size: '128B', time: '5s ago', status: 'blocked' },
+  { id: 4, source: '10.0.0.22', dest: '1.1.1.1', website: 'Cloudflare DNS (1.1.1.1)', protocol: 'DNS', size: '78B', time: '9s ago', status: 'allowed' },
+  { id: 5, source: '185.220.101.5', dest: '10.0.0.22', website: 'Tor Exit Node (tor-exit-node.org)', protocol: 'HTTP', size: '2048B', time: '14s ago', status: 'blocked' }
 ];
 
 const UserNetworkMonitor = () => {
@@ -32,13 +33,19 @@ const UserNetworkMonitor = () => {
             if (msg.type === 'packet' && msg.data) {
               setLivePackets(prev => {
                 const pkt = msg.data.packet || {};
+                const detection = msg.data.detection || {};
                 const pred = msg.data.prediction || {};
-                const isThreat = pred.is_threat || pred.is_attack || pred.threat_type;
+                const isThreat = pred.is_threat || pred.is_attack || pred.threat_type || detection.prediction;
+                
+                const rawDest = pkt.destination_ip || detection.destination_ip || 'Unknown';
+                const siteName = getWebsiteName(rawDest, pkt.website_name || detection.website_name || pkt.target_website);
+
                 const newP = {
                   id: Date.now() + Math.random(),
-                  source: pkt.source_ip || 'Unknown',
-                  dest: pkt.destination_ip || 'Unknown',
-                  protocol: pkt.protocol || 'TCP',
+                  source: pkt.source_ip || detection.source_ip || 'Unknown',
+                  dest: rawDest,
+                  website: siteName,
+                  protocol: pkt.protocol || detection.protocol || 'TCP',
                   size: (pkt.packet_length || pkt.length || 64) + 'B',
                   time: new Date().toLocaleTimeString(),
                   status: isThreat ? 'blocked' : 'allowed'
@@ -107,14 +114,18 @@ const UserNetworkMonitor = () => {
 
   const personalConnections = useMemo(() => {
     if (livePackets.length === 0) return [];
-    const uniqueDests = Array.from(new Set(livePackets.map(p => p.dest))).slice(0, 4);
-    return uniqueDests.map((dest, i) => ({
-      id: i,
-      service: 'Remote Host',
-      address: dest,
-      status: 'connected',
-      duration: 'Active'
-    }));
+    const uniqueDests = Array.from(new Set(livePackets.map(p => p.dest))).slice(0, 6);
+    return uniqueDests.map((dest, i) => {
+      const matchPkt = livePackets.find(p => p.dest === dest);
+      const site = matchPkt?.website || getWebsiteName(dest);
+      return {
+        id: i,
+        service: site,
+        address: dest,
+        status: 'connected',
+        duration: 'Active'
+      };
+    });
   }, [livePackets]);
 
   const personalProtocols = useMemo(() => {

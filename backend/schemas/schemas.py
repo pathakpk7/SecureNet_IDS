@@ -42,6 +42,10 @@ class PacketData(BaseModel):
     timestamp: Union[datetime, str, float] = Field(default_factory=datetime.now)
     tcp_flags: Optional[Any] = None
     payload_size: Optional[int] = None
+    source_domain: Optional[str] = None
+    destination_domain: Optional[str] = None
+    website_name: Optional[str] = None
+    target_website: Optional[str] = None
 
 
 class MLFeatures(BaseModel):
@@ -115,6 +119,9 @@ class Alert(BaseModel):
     risk_level: Union[RiskLevel, str] = RiskLevel.LOW
     confidence: float = 0.0
     description: str = ""
+    source_domain: Optional[str] = None
+    destination_domain: Optional[str] = None
+    website_name: Optional[str] = None
     threat_intel_data: Optional[Any] = None
     packet_data: Optional[Any] = None
     prediction_result: Optional[Any] = None
@@ -128,6 +135,9 @@ class LogEntry(BaseModel):
     source: str = "IDS"
     source_ip: Optional[str] = None
     destination_ip: Optional[str] = None
+    source_domain: Optional[str] = None
+    destination_domain: Optional[str] = None
+    website_name: Optional[str] = None
     protocol: Optional[str] = None
     prediction: Optional[bool] = None
     confidence: Optional[float] = None

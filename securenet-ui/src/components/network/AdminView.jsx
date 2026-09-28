@@ -4,15 +4,16 @@ import LineChart from '../Charts/LineChart';
 import PieChart from '../Charts/PieChart';
 import toast from 'react-hot-toast';
 import useRealtimeAlerts from '../../hooks/useRealtimeAlerts';
+import { getWebsiteName } from '../../utils/domainHelper';
 import '../../styles/pages/network.css';
 import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
 const DEFAULT_ADMIN_PACKETS = [
-  { id: 1, source: '192.168.1.105', dest: '10.0.0.1', protocol: 'TCP', size: '1514B', time: 'Just now', status: 'blocked' },
-  { id: 2, source: '10.0.0.15', dest: '172.217.16.206', protocol: 'HTTPS', size: '540B', time: '2s ago', status: 'allowed' },
-  { id: 3, source: '45.33.32.156', dest: '10.0.0.15', protocol: 'SSH', size: '128B', time: '5s ago', status: 'blocked' },
-  { id: 4, source: '10.0.0.22', dest: '1.1.1.1', protocol: 'DNS', size: '78B', time: '9s ago', status: 'allowed' },
-  { id: 5, source: '185.220.101.5', dest: '10.0.0.22', protocol: 'HTTP', size: '2048B', time: '14s ago', status: 'blocked' }
+  { id: 1, source: '192.168.1.105', dest: '10.0.0.1', website: 'Gateway Router (10.0.0.1)', protocol: 'TCP', size: '1514B', time: 'Just now', status: 'blocked' },
+  { id: 2, source: '10.0.0.15', dest: '172.217.16.206', website: 'Google Search (google.com)', protocol: 'HTTPS', size: '540B', time: '2s ago', status: 'allowed' },
+  { id: 3, source: '45.33.32.156', dest: '10.0.0.15', website: 'ScanMe Nmap (scanme.nmap.org)', protocol: 'SSH', size: '128B', time: '5s ago', status: 'blocked' },
+  { id: 4, source: '10.0.0.22', dest: '1.1.1.1', website: 'Cloudflare DNS (1.1.1.1)', protocol: 'DNS', size: '78B', time: '9s ago', status: 'allowed' },
+  { id: 5, source: '185.220.101.5', dest: '10.0.0.22', website: 'Tor Exit Node (tor-exit-node.org)', protocol: 'HTTP', size: '2048B', time: '14s ago', status: 'blocked' }
 ];
 
 const AdminNetworkMonitor = () => {
@@ -39,13 +40,19 @@ const AdminNetworkMonitor = () => {
             if (msg.type === 'packet' && msg.data) {
               setLivePackets(prev => {
                 const pkt = msg.data.packet || {};
+                const detection = msg.data.detection || {};
                 const pred = msg.data.prediction || {};
-                const isThreat = pred.is_threat || pred.is_attack || pred.threat_type;
+                const isThreat = pred.is_threat || pred.is_attack || pred.threat_type || detection.prediction;
+                
+                const rawDest = pkt.destination_ip || detection.destination_ip || 'Unknown';
+                const siteName = getWebsiteName(rawDest, pkt.website_name || detection.website_name || pkt.target_website);
+
                 const newP = {
                   id: Date.now() + Math.random(),
-                  source: pkt.source_ip || 'Unknown',
-                  dest: pkt.destination_ip || 'Unknown',
-                  protocol: pkt.protocol || 'TCP',
+                  source: pkt.source_ip || detection.source_ip || 'Unknown',
+                  dest: rawDest,
+                  website: siteName,
+                  protocol: pkt.protocol || detection.protocol || 'TCP',
                   size: (pkt.packet_length || pkt.length || 64) + 'B',
                   time: new Date().toLocaleTimeString(),
                   status: isThreat ? 'blocked' : 'allowed'
@@ -164,6 +171,7 @@ const AdminNetworkMonitor = () => {
 
       return {
         ip,
+        website: getWebsiteName(ip),
         status: isBlocked ? 'blocked' : (isCritical ? 'suspicious' : 'active'),
         traffic: trafficText,
         location: isInternal ? 'Internal LAN' : 'External WAN',
@@ -330,7 +338,7 @@ const AdminNetworkMonitor = () => {
           <div className="nm-ip-table-scroll">
             <div className="nm-ip-table">
               <div className="nm-ip-table-header">
-                <span>IP Address</span>
+                <span>IP & Target Website</span>
                 <span>Status</span>
                 <span>Flows</span>
                 <span>Zone</span>
@@ -342,8 +350,15 @@ const AdminNetworkMonitor = () => {
                 {allIPs.length > 0 ? allIPs.map((ipData, index) => (
                   <div key={index} className={`nm-ip-row ${ipData.status}`}>
                     <div className="ip-cell font-mono text-cyan font-bold">
-                      <span className="ip-indicator-dot" style={{ backgroundColor: getStatusBadgeColor(ipData.status) }}></span>
-                      {ipData.ip}
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span className="ip-indicator-dot" style={{ backgroundColor: getStatusBadgeColor(ipData.status) }}></span>
+                        {ipData.ip}
+                      </div>
+                      {ipData.website && (
+                        <div className="ip-website-subtitle">
+                          <span>🌐</span> {ipData.website}
+                        </div>
+                      )}
                     </div>
                     <div className="ip-cell">
                       <span className="nm-status-badge" style={{ backgroundColor: `${getStatusBadgeColor(ipData.status)}18`, color: getStatusBadgeColor(ipData.status), border: `1px solid ${getStatusBadgeColor(ipData.status)}40` }}>
@@ -375,16 +390,24 @@ const AdminNetworkMonitor = () => {
       <div className="nm-bottom-row">
         <Card className="nm-feed-card">
           <div className="nm-card-header">
-            <h3>Live Traffic Feed</h3>
+            <h3>Live Traffic Feed & Website Resolution</h3>
             <span className="nm-badge live">REAL-TIME STREAM</span>
           </div>
           <div className="nm-traffic-stream">
             {livePackets.length > 0 ? livePackets.slice(0, 10).map((traffic) => (
               <div key={traffic.id} className={`nm-stream-item ${traffic.status}`}>
-                <div className="stream-flow">
-                  <span className="src font-mono">{traffic.source}</span>
-                  <span className="arrow">→</span>
-                  <span className="dst font-mono">{traffic.dest}</span>
+                <div className="stream-flow-wrapper">
+                  <div className="stream-flow">
+                    <span className="src font-mono">{traffic.source}</span>
+                    <span className="arrow">→</span>
+                    <span className="dst font-mono">{traffic.dest}</span>
+                  </div>
+                  {traffic.website && (
+                    <div className="stream-website-badge">
+                      <span className="globe-icon">🌐</span>
+                      <span className="website-name font-semibold">{traffic.website}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="stream-details">
                   <span className="proto-badge">{traffic.protocol}</span>

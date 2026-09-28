@@ -4,6 +4,7 @@ import LineChart from '../Charts/LineChart';
 import PieChart from '../Charts/PieChart';
 import AnimatedCounter from '../ui/AnimatedCounter';
 import OrgDebug from '../debug/OrgDebug';
+import { getWebsiteName } from '../../utils/domainHelper';
 import '../../styles/pages/dashboard.css';
 
 const AdminDashboard = () => {
@@ -250,7 +251,12 @@ const AdminDashboard = () => {
               <div key={threat.id} className={`threat-item ${threat.severity}`}>
                 <div className="threat-type">{threat.type}</div>
                 <div className="threat-details">
-                  <div className="threat-source">Source: {threat.source}</div>
+                  <div className="threat-source">
+                    Source: {threat.source}
+                    <span style={{ marginLeft: '6px', color: '#38bdf8', fontSize: '11px', fontWeight: 500 }}>
+                      🌐 {getWebsiteName(threat.source)}
+                    </span>
+                  </div>
                   <div className="threat-target">Target: {threat.target}</div>
                 </div>
                 <div className="threat-time">{threat.time}</div>

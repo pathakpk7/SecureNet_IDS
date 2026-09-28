@@ -13,6 +13,7 @@ from .utils import (
     tcp_flags_dict_to_string,
     tcp_flags_string_to_dict
 )
+from .domain_resolver import domain_resolver, DomainResolver
 
 __all__ = [
     'setup_logging',
@@ -22,5 +23,7 @@ __all__ = [
     'get_system_info',
     'export_data_to_csv',
     'tcp_flags_dict_to_string',
-    'tcp_flags_string_to_dict'
+    'tcp_flags_string_to_dict',
+    'domain_resolver',
+    'DomainResolver'
 ]

@@ -48,7 +48,8 @@ from ml import FeatureEngineering, ml_predictor
 from threat_intelligence import threat_intel_manager
 from utils import (
     setup_logging, validate_ip_address,
-    get_system_info, export_data_to_csv
+    get_system_info, export_data_to_csv,
+    domain_resolver
 )
 
 # Import services
@@ -442,6 +443,40 @@ async def check_ip_reputation(request: Request, ip_address: str) -> JSONResponse
         return create_json_response(
             message="IP reputation check completed (local score)",
             data={"ip_address": ip_address, "is_malicious": False, "confidence": 0.0, "risk_level": "low"}
+        )
+
+
+@app.get("/resolve-ip/{ip_address}")
+@app.get("/api/v1/resolve-ip/{ip_address}")
+@limiter.limit("60/minute")
+async def resolve_ip_address(request: Request, ip_address: str) -> JSONResponse:
+    """Resolve an IP address to a human-readable domain, website name, and category"""
+    if not validate_ip_address(ip_address):
+        raise HTTPException(status_code=400, detail="Invalid IP address")
+    
+    try:
+        resolution = domain_resolver.resolve(ip_address)
+        return create_json_response(
+            message="IP resolved to website/domain successfully",
+            data={
+                "ip_address": ip_address,
+                "domain": resolution.get("domain", ip_address),
+                "website": resolution.get("website", ip_address),
+                "organization": resolution.get("org", "External"),
+                "category": resolution.get("category", "General")
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error resolving IP {ip_address}: {e}")
+        return create_json_response(
+            message="Fallback resolution",
+            data={
+                "ip_address": ip_address,
+                "domain": ip_address,
+                "website": f"Host ({ip_address})",
+                "organization": "Unknown",
+                "category": "General"
+            }
         )
 
 

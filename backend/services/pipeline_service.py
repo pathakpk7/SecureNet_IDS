@@ -98,11 +98,19 @@ class PipelineService:
             attack_str = prediction_result.attack_type.value if hasattr(prediction_result.attack_type, 'value') else str(prediction_result.attack_type).lower()
             risk_str = prediction_result.risk_level.value if hasattr(prediction_result.risk_level, 'value') else str(prediction_result.risk_level).lower()
             
-            # Step 3: Prepare detection payload
+            # Step 3: Prepare detection payload with domain and website intelligence
+            src_domain = getattr(packet, 'source_domain', None) or packet.source_ip
+            dst_domain = getattr(packet, 'destination_domain', None) or packet.destination_ip
+            site_name = getattr(packet, 'website_name', None) or getattr(packet, 'target_website', None) or dst_domain
+
             detection_data = {
                 "timestamp": datetime.now().isoformat(),
                 "source_ip": packet.source_ip,
                 "destination_ip": packet.destination_ip,
+                "source_domain": src_domain,
+                "destination_domain": dst_domain,
+                "website_name": site_name,
+                "target_website": site_name,
                 "protocol": proto_str,
                 "packet_length": getattr(packet, 'packet_length', 64),
                 "prediction": prediction_result.is_attack,
@@ -160,6 +168,9 @@ class PipelineService:
                     timestamp=datetime.now(),
                     source_ip=packet.source_ip,
                     destination_ip=packet.destination_ip,
+                    source_domain=src_domain,
+                    destination_domain=dst_domain,
+                    website_name=site_name,
                     protocol=proto_str,
                     prediction=prediction_result.is_attack,
                     confidence=prediction_result.confidence,
@@ -203,15 +214,22 @@ class PipelineService:
             attack_str = prediction_result.attack_type.value if hasattr(prediction_result.attack_type, 'value') else str(prediction_result.attack_type).lower()
             risk_str = prediction_result.risk_level.value if hasattr(prediction_result.risk_level, 'value') else str(prediction_result.risk_level).lower()
             
+            src_domain = getattr(packet, 'source_domain', None) or packet.source_ip
+            dst_domain = getattr(packet, 'destination_domain', None) or packet.destination_ip
+            site_name = getattr(packet, 'website_name', None) or getattr(packet, 'target_website', None) or dst_domain
+
             alert = Alert(
                 source_ip=packet.source_ip,
                 destination_ip=packet.destination_ip,
+                source_domain=src_domain,
+                destination_domain=dst_domain,
+                website_name=site_name,
                 protocol=proto_str,
                 timestamp=datetime.now(),
                 attack_type=attack_str,
                 risk_level=risk_str,
                 confidence=prediction_result.confidence,
-                description=f"{attack_str.upper()} attack detected from {packet.source_ip} to {packet.destination_ip}",
+                description=f"{attack_str.upper()} attack detected from {src_domain} ({packet.source_ip}) to {dst_domain} ({packet.destination_ip})",
                 threat_intel_data=[r.dict() if hasattr(r, 'dict') else r for r in threat_results],
                 packet_data=packet.dict() if hasattr(packet, 'dict') else {},
                 prediction_result=prediction_result.dict() if hasattr(prediction_result, 'dict') else {}

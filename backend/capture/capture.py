@@ -22,6 +22,7 @@ except ImportError:
 from core.config import settings
 from core.settings import PROTOCOL_MAPPING
 from schemas import PacketData, ProtocolType
+from utils.domain_resolver import domain_resolver
 
 logger = logging.getLogger(__name__)
 
@@ -86,9 +87,19 @@ class PacketCapture:
             elif hasattr(packet, 'icmp'):
                 protocol = "icmp"
             
+            # DNS Snooping via PyShark
+            if hasattr(packet, 'dns'):
+                try:
+                    if hasattr(packet.dns, 'qry_name') and hasattr(packet.dns, 'a'):
+                        domain_resolver.register_dns_mapping(str(packet.dns.a), str(packet.dns.qry_name))
+                except Exception:
+                    pass
+
             packet_length = int(packet.length) if hasattr(packet, 'length') else 64
             payload_size = len(packet.data.data) if hasattr(packet, 'data') and packet.data else 0
             
+            flow_info = domain_resolver.resolve_flow(src_ip, dst_ip)
+
             return PacketData(
                 source_ip=src_ip,
                 destination_ip=dst_ip,
@@ -98,13 +109,17 @@ class PacketCapture:
                 packet_length=packet_length,
                 timestamp=timestamp,
                 tcp_flags=str(tcp_flags) if tcp_flags else None,
-                payload_size=payload_size
+                payload_size=payload_size,
+                source_domain=flow_info["source_domain"],
+                destination_domain=flow_info["destination_domain"],
+                website_name=flow_info["target_website"],
+                target_website=flow_info["target_website"]
             )
         except Exception:
             return None
 
     def _extract_packet_data_scapy(self, packet) -> Optional[PacketData]:
-        """Extract packet data using Scapy"""
+        """Extract packet data using Scapy with passive DNS snooping"""
         try:
             if not packet.haslayer('IP') and not packet.haslayer('IPv6'):
                 return None
@@ -113,6 +128,20 @@ class PacketCapture:
             src_ip = packet['IP'].src if is_ip else packet['IPv6'].src
             dst_ip = packet['IP'].dst if is_ip else packet['IPv6'].dst
             
+            # Passive DNS Snooping
+            if packet.haslayer('DNS'):
+                try:
+                    dns = packet['DNS']
+                    if dns.qr == 1 and dns.ancount > 0:
+                        for i in range(dns.ancount):
+                            an = dns.an[i]
+                            if hasattr(an, 'rdata') and hasattr(an, 'rrname'):
+                                rdata_str = str(an.rdata)
+                                rrname_str = an.rrname.decode('utf-8', errors='ignore') if isinstance(an.rrname, bytes) else str(an.rrname)
+                                domain_resolver.register_dns_mapping(rdata_str, rrname_str)
+                except Exception:
+                    pass
+
             protocol = "other"
             src_port = None
             dst_port = None
@@ -133,6 +162,8 @@ class PacketCapture:
             packet_length = len(packet)
             payload_size = len(packet['Raw'].load) if packet.haslayer('Raw') else 0
             
+            flow_info = domain_resolver.resolve_flow(src_ip, dst_ip)
+
             return PacketData(
                 source_ip=src_ip,
                 destination_ip=dst_ip,
@@ -142,7 +173,11 @@ class PacketCapture:
                 packet_length=packet_length,
                 timestamp=datetime.now(),
                 tcp_flags=tcp_flags,
-                payload_size=payload_size
+                payload_size=payload_size,
+                source_domain=flow_info["source_domain"],
+                destination_domain=flow_info["destination_domain"],
+                website_name=flow_info["target_website"],
+                target_website=flow_info["target_website"]
             )
         except Exception:
             return None
@@ -190,6 +225,8 @@ class PacketCapture:
             dst_port = random.choice([80, 443, 53, 8080])
             pkt_len = random.randint(128, 1460)
             
+        flow_info = domain_resolver.resolve_flow(src_ip, dst_ip)
+
         return PacketData(
             source_ip=src_ip,
             destination_ip=dst_ip,
@@ -199,7 +236,11 @@ class PacketCapture:
             packet_length=pkt_len,
             timestamp=now,
             tcp_flags="SYN,ACK" if proto == ProtocolType.TCP else None,
-            payload_size=max(0, pkt_len - 40)
+            payload_size=max(0, pkt_len - 40),
+            source_domain=flow_info["source_domain"],
+            destination_domain=flow_info["destination_domain"],
+            website_name=flow_info["target_website"],
+            target_website=flow_info["target_website"]
         )
 
     def _capture_worker(self):

@@ -5,6 +5,7 @@ import { processAlert } from '../services/securityEngine';
 import useRealtimeAlerts from '../hooks/useRealtimeAlerts';
 import ThreatIntelligence from '../components/security/ThreatIntelligence';
 import IncidentPanel from '../components/security/IncidentPanel';
+import { getWebsiteName } from '../utils/domainHelper';
 import '../styles/pages/alerts.css';
 import { API_BASE, API_V1, WS_URL } from '@/config/api';
 
@@ -37,6 +38,7 @@ const Alerts = () => {
               status: 'active',
               sourceIP: item.source_ip || item.sourceIP || 'Unknown',
               destinationIP: item.destination_ip || item.destinationIP || 'Unknown',
+              website: item.website_name || item.target_website || getWebsiteName(item.destination_ip || item.source_ip),
               protocol: item.protocol || 'TCP',
               description: item.description || 'Flow anomaly intercepted by SecureNet engine',
               confidence: item.confidence || null,
@@ -71,6 +73,7 @@ const Alerts = () => {
           status: 'active',
           sourceIP: processed.source_ip || processed.sourceIP || '192.168.1.100',
           destinationIP: processed.destination_ip || processed.destinationIP || '10.0.0.1',
+          website: processed.website_name || processed.target_website || getWebsiteName(processed.destination_ip || processed.source_ip),
           protocol: processed.protocol || 'TCP',
           description: processed.description || 'Anomalous flow identified by CICIDS2017 classifier',
           threat: processed.threat || { level: (processed.risk_level || 'LOW').toUpperCase(), color: '#00ffcc' },
@@ -269,7 +272,7 @@ const Alerts = () => {
                   </div>
 
                   <div className="alert-card-sub">
-                    <span>Source: <strong style={{ color: '#38bdf8' }}>{alert.sourceIP}</strong></span>
+                    <span>Source: <strong style={{ color: '#38bdf8' }}>{alert.sourceIP}</strong> <span style={{ color: '#94a3b8', fontSize: '11px' }}>({getWebsiteName(alert.sourceIP)})</span></span>
                     <span>{alert.time}</span>
                   </div>
 
@@ -288,8 +291,10 @@ const Alerts = () => {
 
                     <div className="alert-detail-rows">
                       <div className="alert-detail-row">
-                        <span>Target IP:</span>
-                        <strong>{alert.destinationIP}</strong>
+                        <span>Target Website:</span>
+                        <strong style={{ color: '#38bdf8' }}>
+                          🌐 {alert.website || getWebsiteName(alert.destinationIP)} <span style={{ color: '#94a3b8', fontSize: '11px', marginLeft: '4px' }}>({alert.destinationIP})</span>
+                        </strong>
                       </div>
                       <div className="alert-detail-row">
                         <span>Protocol:</span>
