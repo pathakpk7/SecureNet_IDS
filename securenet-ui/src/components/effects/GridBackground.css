@@ -1,10 +1,10 @@
-.grid-background {
+﻿.grid-background {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: var(--z-background);
+  z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }
@@ -16,10 +16,9 @@
   width: 100%;
   height: 100%;
   background-image: 
-    linear-gradient(rgba(0, 245, 255, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 245, 255, 0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  animation: gridMove 20s linear infinite;
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 80px 80px;
 }
 
 .grid-overlay {
@@ -29,18 +28,9 @@
   width: 100%;
   height: 100%;
   background: radial-gradient(
-    circle at center,
+    circle at 50% 20%,
     transparent 0%,
-    rgba(5, 10, 24, 0.4) 50%,
-    rgba(5, 10, 24, 0.8) 100%
+    rgba(6, 7, 10, 0.6) 60%,
+    rgba(6, 7, 10, 0.95) 100%
   );
-}
-
-@keyframes gridMove {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(50px, 50px);
-  }
 }
