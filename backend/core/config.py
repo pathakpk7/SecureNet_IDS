@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     
+    # JWT & Authentication Settings
+    jwt_secret_key: str = Field("securenet-soc-saas-jwt-secret-key-2026-production", env="JWT_SECRET_KEY")
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 60 * 24  # 24 hours
+    
     # Database Settings (Supabase)
     supabase_url: Optional[str] = Field(None, env="SUPABASE_URL")
     supabase_key: Optional[str] = Field(None, env="SUPABASE_KEY")

@@ -34,49 +34,17 @@
   }
 }
 
-/* Auth Background */
+/* Auth Background - Clean architectural surface, no AI slop grids */
 .auth-background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
+  display: none;
 }
 
 .grid-lines {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    linear-gradient(rgba(0, 245, 255, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 245, 255, 0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  animation: gridMove 20s linear infinite;
+  display: none;
 }
 
 .particles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at 20% 80%, var(--accent-soft) 0%, transparent 50%),
-              radial-gradient(circle at 80% 20%, var(--accent-soft) 0%, transparent 50%),
-              radial-gradient(circle at 40% 40%, var(--accent-soft) 0%, transparent 50%);
-  animation: particleFloat 10s ease-in-out infinite;
-}
-
-@keyframes gridMove {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(50px, 50px); }
-}
-
-@keyframes particleFloat {
-  0%, 100% { opacity: 0.3; transform: translateY(0); }
-  50% { opacity: 0.6; transform: translateY(-20px); }
+  display: none;
 }
 
 /* Auth Card - Landscape Mode */
@@ -88,19 +56,18 @@
   display: flex;
   flex-direction: row;
   overflow: hidden;
-  border-radius: 16px;
-  background: rgba(10, 15, 30, 0.85);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 245, 255, 0.3);
-  box-shadow: 0 0 50px rgba(0, 245, 255, 0.15);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-xl);
   margin: 0 auto;
 }
 
 /* Left Hero Panel (Landscape Branding) */
 .signup-hero-panel {
   flex: 0 0 320px;
-  background: linear-gradient(145deg, rgba(0, 245, 255, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%);
-  border-right: 1px solid rgba(0, 245, 255, 0.2);
+  background: var(--bg-tertiary);
+  border-right: 1px solid var(--border-subtle);
   padding: 36px 24px;
   display: flex;
   flex-direction: column;
@@ -116,16 +83,15 @@
 }
 
 .hero-shield-icon {
-  color: #00f5ff;
-  filter: drop-shadow(0 0 10px rgba(0, 245, 255, 0.5));
+  color: var(--accent);
 }
 
 .hero-brand h2 {
   font-size: 22px;
-  font-weight: 800;
-  color: #fff;
+  font-weight: 700;
+  color: var(--text-primary);
   margin: 0;
-  letter-spacing: 0.5px;
+  letter-spacing: -0.015em;
 }
 
 .hero-badge {

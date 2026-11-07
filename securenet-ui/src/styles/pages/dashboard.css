@@ -13,8 +13,8 @@
 
 .dashboard-title {
   font-size: 1.85rem;
-  font-weight: 800;
-  color: #38bdf8;
+  font-weight: 700;
+  color: var(--text-primary);
   margin: 0 0 0.35rem 0;
   letter-spacing: -0.02em;
 }
@@ -38,9 +38,9 @@
 }
 
 .stat-card.db-card-clickable {
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  border-radius: 0.85rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
   padding: 1.25rem;
   display: flex;
   flex-direction: row;
@@ -48,48 +48,49 @@
   gap: 1.1rem;
   min-height: 105px;
   box-sizing: border-box;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
 }
 
 .stat-card.db-card-clickable:hover {
   transform: translateY(-2px);
-  border-color: #38bdf8;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.18);
+  border-color: var(--border-strong);
+  background-color: var(--bg-tertiary);
+  box-shadow: var(--shadow-md);
 }
 
 .stat-icon-wrapper {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 
 .stat-icon-wrapper.cyan {
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.15);
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-muted);
+  color: var(--accent);
 }
 
 .stat-icon-wrapper.red {
-  background: rgba(248, 113, 113, 0.12);
-  border: 1px solid rgba(248, 113, 113, 0.25);
-  box-shadow: 0 0 14px rgba(248, 113, 113, 0.15);
+  background: var(--status-critical-subtle);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  color: var(--status-critical);
 }
 
 .stat-icon-wrapper.emerald {
-  background: rgba(52, 211, 153, 0.12);
-  border: 1px solid rgba(52, 211, 153, 0.25);
-  box-shadow: 0 0 14px rgba(52, 211, 153, 0.15);
+  background: var(--status-safe-subtle);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: var(--status-safe);
 }
 
 .stat-icon-wrapper.yellow {
-  background: rgba(251, 191, 36, 0.12);
-  border: 1px solid rgba(251, 191, 36, 0.25);
-  box-shadow: 0 0 14px rgba(251, 191, 36, 0.15);
+  background: var(--status-warning-subtle);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: var(--status-warning);
 }
 
 .stat-card .stat-content {

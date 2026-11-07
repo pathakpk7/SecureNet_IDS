@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../components/ui/Card';
 import toast from 'react-hot-toast';
+import { Sparkles, Shield, Cpu, ThumbsUp, ShieldAlert, CheckCircle2, AlertOctagon, Terminal, Flame, Ban } from 'lucide-react';
 import { processAlert } from '../services/securityEngine';
 import useRealtimeAlerts from '../hooks/useRealtimeAlerts';
 import ThreatIntelligence from '../components/security/ThreatIntelligence';
@@ -21,6 +22,20 @@ const Alerts = () => {
   const [showAllCards, setShowAllCards] = useState(false);
   const realtimeAlerts = useRealtimeAlerts();
 
+  // AI Copilot & Feedback State
+  const [triageLoading, setTriageLoading] = useState(false);
+  const [triageData, setTriageData] = useState(null);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+
+  // Sync triage data when selected alert changes
+  useEffect(() => {
+    if (selectedAlert) {
+      setTriageData(selectedAlert.triageData || null);
+    } else {
+      setTriageData(null);
+    }
+  }, [selectedAlert]);
+
   // Fetch persisted alerts on initial mount
   useEffect(() => {
     const fetchPersistedAlerts = async () => {
@@ -36,7 +51,7 @@ const Alerts = () => {
               severity: (item.risk_level || item.severity || 'medium').toLowerCase(),
               risk_level: (item.risk_level || item.severity || 'medium').toUpperCase(),
               time: item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : 'Recent',
-              status: 'active',
+              status: item.status || 'active',
               sourceIP: item.source_ip || item.sourceIP || 'Unknown',
               destinationIP: item.destination_ip || item.destinationIP || 'Unknown',
               website: item.website_name || item.target_website || getWebsiteName(item.destination_ip || item.source_ip),
@@ -44,7 +59,12 @@ const Alerts = () => {
               description: item.description || 'Flow anomaly intercepted by SecureNet engine',
               confidence: item.confidence || null,
               threat: { level: (item.risk_level || 'LOW').toUpperCase(), color: '#00ffcc' },
-              prediction: item.prediction_result || { level: 'NORMAL', message: 'Evaluation complete' }
+              prediction: item.prediction_result || { level: 'NORMAL', message: 'Evaluation complete' },
+              deviceId: item.device_id || null,
+              hostname: item.hostname || null,
+              processName: item.process_name || null,
+              processPid: item.process_pid || null,
+              triageData: item.triage_data ? (typeof item.triage_data === 'string' ? (() => { try { return JSON.parse(item.triage_data); } catch { return null; } })() : item.triage_data) : null,
             }));
             setAlertData(mapped);
           }
@@ -58,7 +78,7 @@ const Alerts = () => {
     fetchPersistedAlerts();
   }, []);
 
-  // Synchronize realtime alerts safely (streams continuously in background)
+  // Synchronize realtime alerts safely
   useEffect(() => {
     if (isStreamPaused) return;
     if (!Array.isArray(realtimeAlerts) || realtimeAlerts.length === 0) return;
@@ -72,19 +92,24 @@ const Alerts = () => {
           severity: (processed.risk_level || processed.severity || 'medium').toLowerCase(),
           risk_level: (processed.risk_level || processed.severity || 'medium').toUpperCase(),
           time: 'Just now',
-          status: 'active',
+          status: processed.status || 'active',
           sourceIP: processed.source_ip || processed.sourceIP || '192.168.1.100',
           destinationIP: processed.destination_ip || processed.destinationIP || '10.0.0.1',
           website: processed.website_name || processed.target_website || getWebsiteName(processed.destination_ip || processed.source_ip),
           protocol: processed.protocol || 'TCP',
           description: processed.description || 'Anomalous flow identified by CICIDS2017 classifier',
           threat: processed.threat || { level: (processed.risk_level || 'LOW').toUpperCase(), color: '#00ffcc' },
-          prediction: processed.prediction || { level: 'NORMAL', message: 'ML pattern evaluation verified' }
+          prediction: processed.prediction || { level: 'NORMAL', message: 'ML pattern evaluation verified' },
+          deviceId: processed.device_id || null,
+          hostname: processed.hostname || null,
+          processName: processed.process_name || null,
+          processPid: processed.process_pid || null,
+          triageData: processed.triage_data ? (typeof processed.triage_data === 'string' ? (() => { try { return JSON.parse(processed.triage_data); } catch { return null; } })() : processed.triage_data) : null,
         };
 
         setAlertData(prev => {
           if (prev.some(a => a.id === normalized.id)) return prev;
-          return [normalized, ...prev.slice(0, 199)]; // Keep latest 200
+          return [normalized, ...prev.slice(0, 199)];
         });
 
         setHighlightedId(normalized.id);
@@ -124,6 +149,126 @@ const Alerts = () => {
     toast.success('Alert marked as resolved');
   };
 
+  // AI Copilot Triage Action
+  const handleRunTriage = async (alertId) => {
+    if (!alertId) return;
+    setTriageLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`${API_V1}/alerts/${alertId}/triage`, {
+        method: 'POST',
+        headers
+      });
+
+      if (!res.ok) {
+        throw new Error(`Triage request failed: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      const triage = data.data?.triage || data.data?.triage_data || data.triage || data.triage_data || data;
+      setTriageData(triage);
+
+      setAlertData(prev => prev.map(a => a.id === alertId ? { ...a, triageData: triage } : a));
+      setSelectedAlert(prev => prev?.id === alertId ? { ...prev, triageData: triage } : prev);
+      toast.success('AI SOC Copilot triage generated!');
+    } catch (err) {
+      console.error('Triage error:', err);
+      toast.error('AI Triage failed. Verify backend service is active.');
+    } finally {
+      setTriageLoading(false);
+    }
+  };
+
+  // Active Learning Feedback Action
+  const handleFeedback = async (alertId, feedbackType) => {
+    if (!alertId) return;
+    setFeedbackLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`${API_V1}/alerts/${alertId}/feedback`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          feedback: feedbackType,
+          reason: feedbackType === 'false_positive' ? 'SOC Analyst marked false positive in drawer' : 'SOC Analyst confirmed security threat',
+          suppress_rule: feedbackType === 'false_positive'
+        })
+      });
+
+      if (!res.ok) throw new Error('Feedback request failed');
+
+      const newStatus = feedbackType === 'false_positive' ? 'suppressed' : 'confirmed';
+      setAlertData(prev => prev.map(a => a.id === alertId ? { ...a, status: newStatus } : a));
+      setSelectedAlert(prev => prev?.id === alertId ? { ...prev, status: newStatus } : prev);
+
+      if (feedbackType === 'false_positive') {
+        toast.success('Alert marked as False Positive & suppression rule activated!');
+      } else {
+        toast.success('Incident verified as confirmed security threat!');
+      }
+    } catch (err) {
+      console.error('Feedback error:', err);
+      toast.error('Failed to submit feedback');
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  // Remote SOAR: Quarantine Host
+  const handleQuarantineDevice = async (deviceId) => {
+    if (!deviceId) {
+      toast.error('This alert is not mapped to an active enrolled endpoint agent.');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`${API_V1}/devices/${deviceId}/quarantine`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ quarantined: true })
+      });
+      if (!res.ok) throw new Error('Quarantine failed');
+      toast.success('Network isolation instruction sent to endpoint agent!');
+    } catch (err) {
+      toast.error(`Quarantine failed: ${err.message}`);
+    }
+  };
+
+  // Remote SOAR: Kill Process
+  const handleKillProcess = async (deviceId, pid, procName) => {
+    if (!deviceId || (!pid && !procName)) {
+      toast.error('No process PID or endpoint mapping found for this alert.');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`${API_V1}/devices/${deviceId}/command`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          command_type: 'kill_process',
+          payload: { pid: pid ? Number(pid) : null, process_name: procName || '' }
+        })
+      });
+      if (!res.ok) throw new Error('Kill command failed');
+      toast.success(`Process kill instruction dispatched for ${procName || `PID ${pid}`}!`);
+    } catch (err) {
+      toast.error(`Kill process failed: ${err.message}`);
+    }
+  };
+
   const availableTypes = useMemo(() => {
     const standardTypes = ['normal', 'probe', 'dos', 'u2r', 'r2l', 'exfiltration', 'bruteforce', 'unknown'];
     const seenTypes = alertData.map(a => a.threatType.toLowerCase());
@@ -144,7 +289,6 @@ const Alerts = () => {
     });
   }, [alertData, selectedSeverity, selectedType, searchTerm]);
 
-  // Display top 9 initially unless user toggles Show All
   const displayedAlerts = useMemo(() => {
     return showAllCards ? filteredAlerts : filteredAlerts.slice(0, 9);
   }, [filteredAlerts, showAllCards]);
@@ -166,6 +310,8 @@ const Alerts = () => {
       case 'blocked': return '#ffaa00';
       case 'monitoring': return '#3b82f6';
       case 'quarantined': return '#a855f7';
+      case 'suppressed': return '#94a3b8';
+      case 'confirmed': return '#ef4444';
       default: return '#6b7280';
     }
   };
@@ -314,7 +460,7 @@ const Alerts = () => {
         )}
       </div>
 
-      {/* Show All / Pagination Bar (Top 9 visible initially) */}
+      {/* Show All / Pagination Bar */}
       {filteredAlerts.length > 9 && (
         <div className="alerts-pagination-bar">
           <button 
@@ -415,6 +561,22 @@ const Alerts = () => {
                     <span className="kv-label">Detected Time</span>
                     <span className="kv-value">{selectedAlert.time}</span>
                   </div>
+
+                  {selectedAlert.hostname && (
+                    <div className="alerts-side-kv">
+                      <span className="kv-label">Endpoint Hostname</span>
+                      <span className="kv-value highlight-cyan">💻 {selectedAlert.hostname}</span>
+                    </div>
+                  )}
+
+                  {selectedAlert.processName && (
+                    <div className="alerts-side-kv">
+                      <span className="kv-label">Associated Process</span>
+                      <span className="kv-value" style={{ color: '#f43f5e' }}>
+                        ⚙️ {selectedAlert.processName} {selectedAlert.processPid ? `(PID: ${selectedAlert.processPid})` : ''}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -451,7 +613,7 @@ const Alerts = () => {
                 </div>
               </div>
 
-              {/* Section 3: Attack Description & Impact Context */}
+              {/* Section 3: Attack Description & Threat Intelligence */}
               <div className="alerts-side-section">
                 <h3 className="alerts-side-section-title">
                   <span>🛡️</span> Incident Description & Threat Intelligence
@@ -461,7 +623,161 @@ const Alerts = () => {
                 </div>
                 
                 <div style={{ fontSize: '0.78rem', color: '#94a3b8', lineHeight: 1.5, marginTop: '4px' }}>
-                  Threat feeds (AbuseIPDB & VirusTotal) correlate this pattern with anomalous volumetric or protocol deviations. Recommended action is immediate boundary firewall quarantine.
+                  Threat feeds correlate this pattern with anomalous volumetric or protocol deviations. Recommended action is immediate boundary firewall quarantine.
+                </div>
+              </div>
+
+              {/* Section 4: AI SOC Copilot & MITRE ATT&CK Triage */}
+              <div className="alerts-copilot-section">
+                <div className="copilot-header-bar">
+                  <h4 className="copilot-title">
+                    <Sparkles size={16} className="text-cyan animate-pulse" />
+                    <span>AI SOC Analyst Copilot</span>
+                  </h4>
+                  <button 
+                    className="copilot-btn-triage"
+                    onClick={() => handleRunTriage(selectedAlert.id)}
+                    disabled={triageLoading}
+                  >
+                    <Sparkles size={13} />
+                    <span>{triageLoading ? 'Triaging...' : (triageData ? 'Re-Triage' : 'Run Copilot Triage')}</span>
+                  </button>
+                </div>
+
+                {triageLoading ? (
+                  <div style={{ textAlign: 'center', padding: '1.5rem', color: '#38bdf8', fontSize: '0.82rem' }}>
+                    <div style={{ marginBottom: '0.5rem' }}>🤖 Analyzing telemetry against MITRE ATT&CK frameworks...</div>
+                    <div className="alerts-meter-bar">
+                      <div className="alerts-meter-fill" style={{ width: '80%', animation: 'pulse 1.5s infinite' }}></div>
+                    </div>
+                  </div>
+                ) : triageData ? (
+                  <div>
+                    {/* MITRE ATT&CK Badges & Playbook */}
+                    {(() => {
+                      const mitre = triageData.mitre_attack || triageData;
+                      const tactic = mitre.tactic || triageData.tactic;
+                      const techId = mitre.technique_id || triageData.technique_id;
+                      const techName = mitre.technique_name || triageData.technique_name;
+                      const narrative = triageData.executive_summary || triageData.root_cause_analysis || triageData.narrative || triageData.summary;
+                      const playbook = triageData.remediation_playbook || triageData.playbook || triageData.recommended_actions || [];
+                      const confScore = triageData.confidence_score !== undefined ? triageData.confidence_score : 0.95;
+
+                      return (
+                        <>
+                          <div className="mitre-badge-container">
+                            {tactic && (
+                              <span className="mitre-badge">
+                                🛡️ Tactic: {tactic}
+                              </span>
+                            )}
+                            {(techId || techName) && (
+                              <span className="mitre-badge technique">
+                                🎯 Technique: {techId} {techName ? `(${techName})` : ''}
+                              </span>
+                            )}
+                            <span className="mitre-badge" style={{ borderColor: '#10b981', color: '#6ee7b7', background: 'rgba(16, 185, 129, 0.15)' }}>
+                              ✨ Confidence: {(confScore * 100).toFixed(0)}%
+                            </span>
+                          </div>
+
+                          <div className="copilot-narrative-box">
+                            {narrative || 'Copilot triaged this incident and identified anomalous command, network flow, or process activity.'}
+                          </div>
+
+                          {Array.isArray(playbook) && playbook.length > 0 && (
+                            <div style={{ marginBottom: '0.75rem' }}>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                                Prioritized Response Playbook:
+                              </div>
+                              <div className="copilot-playbook-steps">
+                                {playbook.map((step, idx) => (
+                                  <div key={idx} className="playbook-step-item">
+                                    <span style={{ color: '#38bdf8', fontWeight: 700 }}>{idx + 1}.</span>
+                                    <span>{typeof step === 'string' ? step : step.action || JSON.stringify(step)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+
+                    {/* 1-Click SOAR Actions Bar */}
+                    <div style={{ borderTop: '1px solid rgba(56, 189, 248, 0.2)', paddingTop: '0.65rem' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginBottom: '0.35rem', fontWeight: 600 }}>
+                        1-Click SOAR Remediation Dispatch:
+                      </div>
+                      <div className="soar-action-bar">
+                        {selectedAlert.deviceId ? (
+                          <>
+                            <button 
+                              className="soar-btn danger"
+                              onClick={() => handleQuarantineDevice(selectedAlert.deviceId)}
+                              title="Isolate host from enterprise network"
+                            >
+                              <ShieldAlert size={13} />
+                              <span>Isolate Device Host</span>
+                            </button>
+
+                            {(selectedAlert.processPid || selectedAlert.processName) && (
+                              <button 
+                                className="soar-btn danger"
+                                onClick={() => handleKillProcess(selectedAlert.deviceId, selectedAlert.processPid, selectedAlert.processName)}
+                                title="Terminate malicious process on endpoint"
+                              >
+                                <Ban size={13} />
+                                <span>Terminate Process ({selectedAlert.processName || `PID ${selectedAlert.processPid}`})</span>
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                            (Endpoint device actions active when telemetry originates from an enrolled agent)
+                          </span>
+                        )}
+                        <button 
+                          className="soar-btn"
+                          onClick={() => handleBlockIP(selectedAlert.sourceIP)}
+                          disabled={selectedAlert.status === 'blocked'}
+                        >
+                          <Ban size={13} />
+                          <span>Blacklist {selectedAlert.sourceIP}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.4 }}>
+                    Click <strong>Run Copilot Triage</strong> to synthesize MITRE ATT&CK techniques, generate root cause narratives, and activate 1-click remediation playbooks.
+                  </div>
+                )}
+
+                {/* Active Learning & Feedback Controls */}
+                <div style={{ borderTop: '1px solid #1e293b', marginTop: '0.85rem', paddingTop: '0.65rem' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginBottom: '0.35rem', fontWeight: 600 }}>
+                    Active Learning Calibration:
+                  </div>
+                  <div className="alerts-feedback-row">
+                    <button 
+                      className="btn-feedback confirm"
+                      onClick={() => handleFeedback(selectedAlert.id, 'confirmed_threat')}
+                      disabled={feedbackLoading || selectedAlert.status === 'confirmed'}
+                    >
+                      <ThumbsUp size={12} />
+                      <span>{selectedAlert.status === 'confirmed' ? 'Threat Confirmed' : 'Confirm Threat'}</span>
+                    </button>
+
+                    <button 
+                      className="btn-feedback suppress"
+                      onClick={() => handleFeedback(selectedAlert.id, 'false_positive')}
+                      disabled={feedbackLoading || selectedAlert.status === 'suppressed'}
+                    >
+                      <AlertOctagon size={12} />
+                      <span>{selectedAlert.status === 'suppressed' ? 'Rule Suppressed' : 'False Positive (Auto-Suppress)'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -505,4 +821,3 @@ const Alerts = () => {
 };
 
 export default Alerts;
-

@@ -14,6 +14,7 @@ import json
 import time
 import os
 import sys
+import uuid
 from pathlib import Path
 
 # Ensure backend directory is in sys.path so submodules like core, database, schemas resolve
@@ -38,6 +39,10 @@ load_dotenv()
 # Import core components
 from core.config import settings
 from core.settings import DB_TABLES
+from core.security import (
+    create_access_token, get_current_user, get_current_device,
+    verify_password, hash_password
+)
 from database import db_manager
 from schemas import (
     Alert, LogEntry, Stats, MonitoringStatus, APIResponse,
@@ -45,6 +50,8 @@ from schemas import (
 )
 from capture import AsyncPacketCapture
 from ml import FeatureEngineering, ml_predictor
+from ml.soc_copilot import soc_copilot
+from ml.encrypted_traffic import encrypted_traffic_analyzer
 from threat_intelligence import threat_intel_manager
 from utils import (
     setup_logging, validate_ip_address,
@@ -366,10 +373,17 @@ async def get_logs(request: Request, limit: int = 100, offset: int = 0, level: O
 @app.get("/api/v1/alerts")
 @app.get("/api/v1/alerts/")
 @limiter.limit("100/minute")
-async def get_alerts(request: Request, limit: int = 100, offset: int = 0, risk_level: Optional[str] = None) -> JSONResponse:
+async def get_alerts(
+    request: Request,
+    limit: int = 100,
+    offset: int = 0,
+    risk_level: Optional[str] = None,
+    org_id: Optional[str] = None,
+    device_id: Optional[str] = None
+) -> JSONResponse:
     """Get security alerts with filtering"""
     try:
-        alerts = await db_manager.get_alerts(limit=limit, offset=offset, risk_level=risk_level)
+        alerts = await db_manager.get_alerts(limit=limit, offset=offset, risk_level=risk_level, org_id=org_id, device_id=device_id)
         return create_json_response(
             message="Alerts retrieved successfully",
             data={"alerts": alerts, "count": len(alerts)}
@@ -380,6 +394,139 @@ async def get_alerts(request: Request, limit: int = 100, offset: int = 0, risk_l
             message="Alerts retrieved (fallback)",
             data={"alerts": [], "count": 0}
         )
+
+
+# ============================================================
+# API ENDPOINTS - AI SOC COPILOT & ACTIVE LEARNING FEEDBACK
+# ============================================================
+
+@app.get("/api/v1/alerts/feedback")
+@app.get("/api/v1/alerts/feedback/")
+@limiter.limit("60/minute")
+async def get_feedback_list(
+    request: Request,
+    alert_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+) -> JSONResponse:
+    """Retrieve history of SOC analyst feedback for active learning auditing"""
+    feedback = await db_manager.get_alert_feedback(alert_id=alert_id, org_id=current_user.get("org_id"))
+    return create_json_response(data={"feedback": feedback, "count": len(feedback)}, message="Feedback history retrieved")
+
+
+@app.get("/api/v1/alerts/{alert_id}")
+@app.get("/api/v1/alerts/{alert_id}/")
+@limiter.limit("60/minute")
+async def get_alert_detail(request: Request, alert_id: str) -> JSONResponse:
+    """Get full details of a specific alert, including cached AI triage"""
+    alert = await db_manager.get_alert_by_id(alert_id)
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return create_json_response(data=alert, message="Alert retrieved successfully")
+
+
+@app.post("/api/v1/alerts/{alert_id}/triage")
+@app.post("/api/v1/alerts/{alert_id}/triage/")
+@limiter.limit("30/minute")
+async def triage_alert_with_copilot(
+    request: Request,
+    alert_id: str,
+    current_user: dict = Depends(get_current_user)
+) -> JSONResponse:
+    """
+    Run GenAI / LLM SOC Analyst Assistant triage on an alert.
+    Produces MITRE ATT&CK framework mapping, root cause narrative, and SOAR remediation steps.
+    """
+    try:
+        alert = await db_manager.get_alert_by_id(alert_id)
+        if not alert:
+            raise HTTPException(status_code=404, detail="Alert not found")
+        
+        # Run AI Copilot triage
+        triage_report = soc_copilot.triage_alert(alert)
+        
+        # Cache triage report directly on the alert record
+        await db_manager.update_alert_triage(alert_id, triage_report)
+        
+        await db_manager.insert_audit_log({
+            "action": "alert_triaged_by_ai",
+            "resource_type": "alert",
+            "resource_id": alert_id,
+            "org_id": current_user.get("org_id"),
+            "details": {"incident_title": triage_report.get("incident_title")},
+            "ip_address": get_client_ip(request)
+        })
+        
+        return create_json_response(
+            data={"alert_id": alert_id, "triage": triage_report},
+            message="AI SOC Copilot triage generated successfully"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error triaging alert: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/alerts/{alert_id}/feedback")
+@app.post("/api/v1/alerts/{alert_id}/feedback/")
+@limiter.limit("30/minute")
+async def submit_alert_feedback(
+    request: Request,
+    alert_id: str,
+    current_user: dict = Depends(get_current_user)
+) -> JSONResponse:
+    """
+    Submit active learning feedback from SOC analyst (false_positive or confirmed_threat).
+    Supports future suppression of repeat alerts for whitelisted dev tools/IPs.
+    """
+    try:
+        alert = await db_manager.get_alert_by_id(alert_id)
+        if not alert:
+            raise HTTPException(status_code=404, detail="Alert not found")
+        
+        body = await request.json()
+        feedback_type = body.get("feedback_type", "confirmed_threat")
+        reason = body.get("reason", "")
+        suppress_future = bool(body.get("suppress_future", False))
+        
+        fb_id = await db_manager.record_alert_feedback({
+            "alert_id": alert_id,
+            "org_id": current_user.get("org_id"),
+            "user_id": current_user.get("id"),
+            "feedback_type": feedback_type,
+            "reason": reason,
+            "target_ip": alert.get("destination_ip"),
+            "target_process": alert.get("process_name"),
+            "suppress_future": suppress_future
+        })
+        
+        return create_json_response(
+            data={"feedback_id": fb_id, "feedback_type": feedback_type, "suppressed": suppress_future},
+            message="Feedback recorded for active learning engine",
+            status_code=201
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error submitting alert feedback: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/analysis/tls")
+@app.post("/api/v1/analysis/tls/")
+@limiter.limit("60/minute")
+async def analyze_tls_flow(request: Request) -> JSONResponse:
+    """
+    Evaluate encrypted TLS traffic using JA3 / JA4 fingerprinting.
+    Identifies Cobalt Strike, Meterpreter, AsyncRAT, or legitimate browsers without decryption.
+    """
+    try:
+        body = await request.json()
+        result = encrypted_traffic_analyzer.inspect_flow(body)
+        return create_json_response(data=result, message="Encrypted TLS flow analysis completed")
+    except Exception as e:
+        logger.error(f"Error analyzing TLS flow: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/stats")
@@ -980,6 +1127,394 @@ async def create_audit_log(request: Request) -> JSONResponse:
         return create_json_response(data={"id": log_id}, message="Audit log created", status_code=201)
     except Exception as e:
         logger.error(f"Error creating audit log: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================
+# API ENDPOINTS - AUTH & SAAS TENANT SESSION
+# ============================================================
+
+@app.post("/api/v1/auth/login")
+@app.post("/api/v1/auth/login/")
+@limiter.limit("20/minute")
+async def auth_login(request: Request) -> JSONResponse:
+    """Issue JWT access token with tenant context"""
+    try:
+        body = await request.json()
+        email = body.get("email")
+        password = body.get("password")
+        
+        if not email:
+            raise HTTPException(status_code=400, detail="Email is required")
+        
+        # Check profiles in db
+        user = await db_manager.get_user_by_email(email) if hasattr(db_manager, "get_user_by_email") else None
+        
+        # Built-in demo accounts fallback
+        if not user:
+            if email == "admin@securenet.com" and (not password or password == "admin123"):
+                user = {
+                    "id": "demo-admin-id",
+                    "email": "admin@securenet.com",
+                    "name": "Security Administrator",
+                    "role": "super_admin",
+                    "org_id": "demo-org-id"
+                }
+            elif email == "user@securenet.com" and (not password or password == "user123"):
+                user = {
+                    "id": "demo-user-id",
+                    "email": "user@securenet.com",
+                    "name": "SOC Analyst Operator",
+                    "role": "security_analyst",
+                    "org_id": "demo-org-id"
+                }
+            else:
+                raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        token = create_access_token({
+            "sub": user.get("id"),
+            "email": user.get("email"),
+            "role": user.get("role", "user"),
+            "org_id": user.get("org_id", "demo-org-id")
+        })
+        
+        return create_json_response(
+            message="Login successful",
+            data={
+                "access_token": token,
+                "token_type": "bearer",
+                "user": user
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/auth/me")
+@app.get("/api/v1/auth/me/")
+@limiter.limit("60/minute")
+async def auth_me(request: Request, current_user: dict = Depends(get_current_user)) -> JSONResponse:
+    """Return currently authenticated user profile and organization"""
+    org = await db_manager.get_organization_by_id(current_user.get("org_id")) if (current_user.get("org_id") and hasattr(db_manager, "get_organization_by_id")) else None
+    return create_json_response(
+        message="User profile retrieved",
+        data={
+            "user": current_user,
+            "organization": org
+        }
+    )
+
+
+# ============================================================
+# API ENDPOINTS - FLEET DEVICES & ENDPOINT AGENTS (HIDS/EDR)
+# ============================================================
+
+@app.post("/api/v1/devices/enroll")
+@app.post("/api/v1/devices/enroll/")
+@limiter.limit("30/minute")
+async def enroll_device(request: Request) -> JSONResponse:
+    """
+    Enroll an employee endpoint device using an organization's 6-letter join key.
+    Generates a unique device identity and secret device_token for agent auth.
+    """
+    try:
+        body = await request.json()
+        join_key = body.get("join_key")
+        hostname = body.get("hostname")
+        
+        if not join_key:
+            raise HTTPException(status_code=400, detail="Organization join_key is required")
+        if not hostname:
+            raise HTTPException(status_code=400, detail="Device hostname is required")
+            
+        org = await db_manager.get_org_by_join_key(join_key)
+        if not org:
+            raise HTTPException(status_code=404, detail="Invalid or expired organization join key")
+            
+        device_data = {
+            "org_id": org["id"],
+            "hostname": hostname,
+            "os_platform": body.get("os_platform", "windows"),
+            "os_version": body.get("os_version", "Unknown OS"),
+            "ip_address": body.get("ip_address") or get_client_ip(request),
+            "mac_address": body.get("mac_address"),
+            "assigned_user_email": body.get("assigned_user_email"),
+            "agent_version": body.get("agent_version", "1.0.0"),
+            "metadata": body.get("metadata", {})
+        }
+        
+        device = await db_manager.enroll_device(device_data)
+        
+        await db_manager.insert_audit_log({
+            "action": "device_enrolled",
+            "resource_type": "device",
+            "resource_id": device["id"],
+            "org_id": org["id"],
+            "details": {"hostname": hostname, "os": device_data["os_platform"]},
+            "ip_address": get_client_ip(request)
+        })
+        
+        return create_json_response(
+            message="Device enrolled successfully into organization fleet",
+            data={
+                "device_id": device["id"],
+                "device_token": device["device_token"],
+                "org_id": org["id"],
+                "org_name": org.get("name"),
+                "status": "online"
+            },
+            status_code=201
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error enrolling device: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/devices/heartbeat")
+@app.post("/api/v1/devices/heartbeat/")
+@limiter.limit("120/minute")
+async def device_heartbeat(
+    request: Request,
+    current_device: dict = Depends(get_current_device)
+) -> JSONResponse:
+    """
+    Endpoint agent periodic heartbeat & live telemetry ingestion.
+    Transmits CPU/memory, active socket connections, and process info.
+    """
+    try:
+        body = await request.json()
+        device_id = current_device["id"]
+        
+        telemetry = {
+            "org_id": current_device["org_id"],
+            "cpu_usage": body.get("cpu_usage", 0.0),
+            "memory_usage": body.get("memory_usage", 0.0),
+            "active_connections": body.get("active_connections", []),
+            "open_ports": body.get("open_ports", []),
+            "event_type": body.get("event_type", "heartbeat"),
+            "details": body.get("details", {})
+        }
+        
+        success = await db_manager.update_device_heartbeat(device_id, telemetry)
+        pending_commands = await db_manager.get_pending_device_commands(device_id)
+        
+        return create_json_response(
+            message="Heartbeat processed",
+            data={
+                "device_id": device_id,
+                "is_quarantined": bool(current_device.get("is_quarantined")),
+                "pending_commands_count": len(pending_commands),
+                "recorded": success
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error processing device heartbeat: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/devices/commands")
+@app.get("/api/v1/devices/commands/")
+@limiter.limit("60/minute")
+async def get_device_commands(
+    request: Request,
+    current_device: dict = Depends(get_current_device)
+) -> JSONResponse:
+    """Agent pulls pending SOAR commands awaiting execution (isolate, kill process, etc.)"""
+    commands = await db_manager.get_pending_device_commands(current_device["id"])
+    return create_json_response(data=commands, message="Pending commands retrieved")
+
+
+@app.post("/api/v1/devices/commands/{command_id}/result")
+@app.post("/api/v1/devices/commands/{command_id}/result/")
+@limiter.limit("60/minute")
+async def report_command_result(
+    request: Request,
+    command_id: str,
+    current_device: dict = Depends(get_current_device)
+) -> JSONResponse:
+    """Agent reports command execution status and terminal output"""
+    try:
+        body = await request.json()
+        status_val = body.get("status", "executed")
+        result_text = body.get("result", "")
+        
+        success = await db_manager.update_device_command_status(command_id, status_val, result_text)
+        return create_json_response(data={"command_id": command_id, "updated": success}, message="Command status updated")
+    except Exception as e:
+        logger.error(f"Error updating command status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/devices/alerts")
+@app.post("/api/v1/devices/alerts/")
+@limiter.limit("60/minute")
+async def report_device_alert(
+    request: Request,
+    current_device: dict = Depends(get_current_device)
+) -> JSONResponse:
+    """Agent reports a local threat or suspicious socket/process detection"""
+    try:
+        body = await request.json()
+        alert_dict = {
+            "id": str(uuid.uuid4()),
+            "source_ip": body.get("source_ip", current_device.get("ip_address", "127.0.0.1")),
+            "destination_ip": body.get("destination_ip", "0.0.0.0"),
+            "protocol": body.get("protocol", "TCP"),
+            "timestamp": datetime.now().isoformat(),
+            "attack_type": body.get("attack_type", "Endpoint Suspicious Activity"),
+            "risk_level": body.get("risk_level", "HIGH"),
+            "confidence": float(body.get("confidence", 0.85)),
+            "description": body.get("description", f"Suspicious activity detected on {current_device.get('hostname')}"),
+            "threat_intel_data": body.get("threat_intel_data"),
+            "packet_data": body.get("packet_data"),
+            "prediction_result": body.get("prediction_result"),
+            "org_id": current_device.get("org_id"),
+            "device_id": current_device.get("id"),
+            "hostname": current_device.get("hostname"),
+            "process_name": body.get("process_name"),
+            "process_pid": body.get("process_pid")
+        }
+        
+        alert_id = await db_manager.insert_alert(alert_dict)
+        
+        # Broadcast via WebSocket to SOC admins
+        if websocket_service:
+            await websocket_service.broadcast_alert(alert_dict)
+            
+        return create_json_response(data={"alert_id": alert_id}, message="Endpoint alert registered", status_code=201)
+    except Exception as e:
+        logger.error(f"Error registering endpoint alert: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================
+# API ENDPOINTS - ADMIN FLEET MANAGEMENT
+# ============================================================
+
+@app.get("/api/v1/devices")
+@app.get("/api/v1/devices/")
+@limiter.limit("60/minute")
+async def get_fleet_devices(
+    request: Request,
+    org_id: Optional[str] = None,
+    status: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+) -> JSONResponse:
+    """Get fleet devices for an organization"""
+    effective_org = org_id or current_user.get("org_id")
+    devices = await db_manager.get_devices(org_id=effective_org, status=status)
+    return create_json_response(data={"devices": devices, "total": len(devices)}, message="Fleet devices retrieved")
+
+
+@app.get("/api/v1/devices/{device_id}")
+@app.get("/api/v1/devices/{device_id}/")
+@limiter.limit("60/minute")
+async def get_device_detail(
+    request: Request,
+    device_id: str,
+    current_user: dict = Depends(get_current_user)
+) -> JSONResponse:
+    """Get detailed telemetry and status for a specific device"""
+    device = await db_manager.get_device_by_id(device_id)
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    commands = await db_manager.get_pending_device_commands(device_id)
+    return create_json_response(data={"device": device, "pending_commands": commands}, message="Device details retrieved")
+
+
+@app.post("/api/v1/devices/{device_id}/quarantine")
+@app.post("/api/v1/devices/{device_id}/quarantine/")
+@limiter.limit("20/minute")
+async def quarantine_device(
+    request: Request,
+    device_id: str,
+    current_user: dict = Depends(get_current_user)
+) -> JSONResponse:
+    """Toggle remote network isolation / quarantine on an employee device"""
+    try:
+        body = await request.json()
+        quarantined = bool(body.get("quarantined", True))
+        
+        success = await db_manager.set_device_quarantine(device_id, quarantined)
+        command_type = "isolate_network" if quarantined else "unisolate_network"
+        
+        # Issue remote command for endpoint agent
+        await db_manager.create_device_command({
+            "device_id": device_id,
+            "org_id": current_user.get("org_id", "demo-org-id"),
+            "command_type": command_type,
+            "payload": {"reason": body.get("reason", "Admin SOC isolation action")},
+            "issued_by": current_user.get("email", "admin")
+        })
+        
+        await db_manager.insert_audit_log({
+            "action": f"device_{command_type}",
+            "resource_type": "device",
+            "resource_id": device_id,
+            "org_id": current_user.get("org_id"),
+            "details": {"quarantined": quarantined},
+            "ip_address": get_client_ip(request)
+        })
+        
+        return create_json_response(
+            data={"device_id": device_id, "is_quarantined": quarantined},
+            message=f"Device quarantine status set to {quarantined}"
+        )
+    except Exception as e:
+        logger.error(f"Error quarantining device: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/v1/devices/{device_id}/command")
+@app.post("/api/v1/devices/{device_id}/command/")
+@limiter.limit("20/minute")
+async def issue_device_command(
+    request: Request,
+    device_id: str,
+    current_user: dict = Depends(get_current_user)
+) -> JSONResponse:
+    """Dispatch a remote SOAR command to an endpoint (kill_process, block_ip, scan_system)"""
+    try:
+        body = await request.json()
+        command_type = body.get("command_type")
+        if not command_type:
+            raise HTTPException(status_code=400, detail="command_type is required")
+            
+        cmd = await db_manager.create_device_command({
+            "device_id": device_id,
+            "org_id": current_user.get("org_id", "demo-org-id"),
+            "command_type": command_type,
+            "payload": body.get("payload", {}),
+            "issued_by": current_user.get("email", "admin")
+        })
+        
+        return create_json_response(data=cmd, message="Device command queued successfully", status_code=201)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error issuing device command: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/v1/devices/{device_id}")
+@app.delete("/api/v1/devices/{device_id}/")
+@limiter.limit("20/minute")
+async def delete_fleet_device(
+    request: Request,
+    device_id: str,
+    current_user: dict = Depends(get_current_user)
+) -> JSONResponse:
+    """Deregister and remove a device from the fleet"""
+    try:
+        success = await db_manager.delete_device(device_id)
+        return create_json_response(data={"device_id": device_id, "deleted": success}, message="Device deregistered")
+    except Exception as e:
+        logger.error(f"Error deleting device: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

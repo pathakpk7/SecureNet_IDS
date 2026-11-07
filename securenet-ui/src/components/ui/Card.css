@@ -1,11 +1,17 @@
-/* Clean, High-Contrast Card Styles */
+/* =========================================================
+   SECURENET IDS - CARD COMPONENT
+   Clean architectural surfaces, crisp physical elevation
+   ========================================================= */
+
 .card {
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  border-radius: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
   padding: 1.25rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast), 
+              background-color var(--transition-fast), 
+              transform var(--transition-fast);
   position: relative;
   height: 100%;
   display: flex;
@@ -13,9 +19,9 @@
 }
 
 .card:hover {
-  border-color: #38bdf8;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.15);
-  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  background-color: var(--bg-tertiary);
+  transform: translateY(-1px);
 }
 
 .card:active {
@@ -27,43 +33,39 @@
   z-index: 1;
 }
 
-/* Enhanced card variants */
+/* Card variants */
 .card.cyber {
-  background: #0f172a;
-  border: 1px solid #1e293b;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
 }
 
 .card.cyber:hover {
-  border-color: #06b6d4;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 12px rgba(6, 182, 212, 0.2);
+  border-color: var(--border-strong);
 }
 
 /* Stats card specific styling */
 .stat-card {
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  transition: all 0.2s ease;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  transition: all var(--transition-fast);
 }
 
 .stat-card:hover {
-  border-color: #38bdf8;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  background-color: var(--bg-tertiary);
+  transform: translateY(-1px);
 }
 
 .stat-card.warning:hover {
-  border-color: #f59e0b;
-  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.15);
+  border-color: var(--status-warning);
 }
 
 .stat-card.success:hover {
-  border-color: #10b981;
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.15);
+  border-color: var(--status-safe);
 }
 
 .stat-card.danger:hover {
-  border-color: #ef4444;
-  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.15);
+  border-color: var(--status-critical);
 }
 
 /* Interactive variant */
@@ -72,17 +74,15 @@
 }
 
 .card.interactive:hover {
-  border-color: #38bdf8;
-  transform: translateY(-3px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .card.glowing {
-  border-color: #38bdf8;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+  border-color: var(--border-accent);
 }
 
 .card.glowing:hover {
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
-  border-color: #38bdf8;
+  border-color: var(--accent);
 }

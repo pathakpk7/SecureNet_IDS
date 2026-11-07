@@ -19,7 +19,8 @@ import {
   ChevronDown, 
   ChevronRight,
   Radio,
-  ShieldCheck
+  ShieldCheck,
+  Laptop
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import './Sidebar.css';
@@ -91,6 +92,7 @@ const Sidebar = ({ isOpen = true, setMenuOpen }) => {
       icon: User,
       children: [
         ...(currentRole === 'ADMIN' ? [
+          { name: "Fleet Devices", path: "/fleet-devices", icon: Laptop },
           { name: "Admin Panel", path: "/admin-panel", icon: Shield },
           { name: "System Audit Trail", path: "/audit-logs", icon: ShieldCheck },
           { name: "SIEM Export", path: "/siem-export", icon: Terminal }

@@ -194,6 +194,78 @@ class SQLiteDatabase:
                     )
                 """)
 
+                # Devices table (Endpoint fleet tracking)
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS devices (
+                        id TEXT PRIMARY KEY,
+                        org_id TEXT NOT NULL,
+                        assigned_user_email TEXT,
+                        hostname TEXT NOT NULL,
+                        os_platform TEXT NOT NULL,
+                        os_version TEXT,
+                        ip_address TEXT,
+                        mac_address TEXT,
+                        agent_version TEXT DEFAULT '1.0.0',
+                        device_token TEXT UNIQUE NOT NULL,
+                        status TEXT DEFAULT 'online',
+                        is_quarantined INTEGER DEFAULT 0,
+                        last_heartbeat TEXT DEFAULT CURRENT_TIMESTAMP,
+                        metadata TEXT,
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+
+                # Device Telemetry table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS device_telemetry (
+                        id TEXT PRIMARY KEY,
+                        device_id TEXT NOT NULL,
+                        org_id TEXT NOT NULL,
+                        timestamp TEXT NOT NULL,
+                        cpu_usage REAL,
+                        memory_usage REAL,
+                        active_connections TEXT,
+                        open_ports TEXT,
+                        event_type TEXT DEFAULT 'heartbeat',
+                        details TEXT
+                    )
+                """)
+
+                # Device Commands table (SOAR remote response)
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS device_commands (
+                        id TEXT PRIMARY KEY,
+                        device_id TEXT NOT NULL,
+                        org_id TEXT NOT NULL,
+                        command_type TEXT NOT NULL,
+                        payload TEXT,
+                        status TEXT DEFAULT 'pending',
+                        issued_by TEXT,
+                        result TEXT,
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        executed_at TEXT
+                    )
+                """)
+
+                # Alert Feedback table (Active Learning & False Positive Loop)
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS alert_feedback (
+                        id TEXT PRIMARY KEY,
+                        alert_id TEXT NOT NULL,
+                        org_id TEXT,
+                        user_id TEXT,
+                        feedback_type TEXT NOT NULL,
+                        reason TEXT,
+                        target_ip TEXT,
+                        target_process TEXT,
+                        suppress_future INTEGER DEFAULT 0,
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_feedback_alert ON alert_feedback(alert_id)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_feedback_type ON alert_feedback(feedback_type)")
+
                 # Safe migrations for pre-existing tables
                 def ensure_column(table: str, column: str, col_type: str):
                     try:
@@ -219,6 +291,14 @@ class SQLiteDatabase:
                 ensure_column("audit_logs", "role", "TEXT")
                 ensure_column("audit_logs", "status", "TEXT DEFAULT 'success'")
 
+                # Fleet device columns in alerts
+                ensure_column("alerts", "device_id", "TEXT")
+                ensure_column("alerts", "hostname", "TEXT")
+                ensure_column("alerts", "process_name", "TEXT")
+                ensure_column("alerts", "process_pid", "INTEGER")
+                ensure_column("alerts", "org_id", "TEXT")
+                ensure_column("alerts", "triage_data", "TEXT")
+
                 # Create indexes after column migrations
                 cursor.execute("CREATE INDEX IF NOT EXISTS idx_org_join_key ON organizations(join_key)")
                 cursor.execute("CREATE INDEX IF NOT EXISTS idx_profiles_org ON profiles(org_id)")
@@ -227,6 +307,12 @@ class SQLiteDatabase:
                 cursor.execute("CREATE INDEX IF NOT EXISTS idx_guidance_status ON guidance_requests(status)")
                 cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_act_org ON user_activities(org_id, timestamp DESC)")
                 cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_logs(timestamp DESC)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_devices_org ON devices(org_id)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_devices_token ON devices(device_token)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_devices_status ON devices(status)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_telemetry_device ON device_telemetry(device_id, timestamp DESC)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_commands_device ON device_commands(device_id, status)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_alerts_device ON alerts(device_id)")
                 
                 # Backfill join_key for organizations without one
                 cursor.execute("SELECT id, join_key FROM organizations")
@@ -254,6 +340,13 @@ class SQLiteDatabase:
                         VALUES ('demo-user-id', 'user@securenet.com', 'SOC Analyst Operator', 'user', 'Tier-1 Incident Response', 'demo-org-id', 'demo-admin-id', 1, '["read","write"]')
                     """)
 
+                cursor.execute("SELECT COUNT(*) as count FROM devices")
+                if cursor.fetchone()["count"] == 0:
+                    cursor.execute("""
+                        INSERT INTO devices (id, org_id, assigned_user_email, hostname, os_platform, os_version, ip_address, device_token, status)
+                        VALUES ('demo-device-id', 'demo-org-id', 'user@securenet.com', 'SEC-FINANCE-LAPTOP', 'windows', 'Windows 11 Pro', '192.168.1.105', 'dev-tok-demo-finance-pc', 'online')
+                    """)
+
                 conn.commit()
                 logger.info(f"SQLite database initialized at {self.db_path}")
         except Exception as e:
@@ -266,8 +359,8 @@ class SQLiteDatabase:
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT OR REPLACE INTO alerts 
-                    (id, source_ip, destination_ip, protocol, timestamp, attack_type, risk_level, confidence, description, threat_intel_data, packet_data, prediction_result, org_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (id, source_ip, destination_ip, protocol, timestamp, attack_type, risk_level, confidence, description, threat_intel_data, packet_data, prediction_result, org_id, device_id, hostname, process_name, process_pid)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     alert_dict.get("id"),
                     alert_dict.get("source_ip"),
@@ -281,7 +374,11 @@ class SQLiteDatabase:
                     json.dumps(alert_dict.get("threat_intel_data"), default=str) if alert_dict.get("threat_intel_data") is not None else None,
                     json.dumps(alert_dict.get("packet_data"), default=str) if alert_dict.get("packet_data") is not None else None,
                     json.dumps(alert_dict.get("prediction_result"), default=str) if alert_dict.get("prediction_result") is not None else None,
-                    alert_dict.get("org_id")
+                    alert_dict.get("org_id"),
+                    alert_dict.get("device_id"),
+                    alert_dict.get("hostname"),
+                    alert_dict.get("process_name"),
+                    alert_dict.get("process_pid")
                 ))
                 conn.commit()
                 return alert_dict.get("id")
@@ -289,18 +386,27 @@ class SQLiteDatabase:
             logger.error(f"SQLite insert_alert error: {e}")
             return alert_dict.get("id")
 
-    def get_alerts(self, limit: int = 100, offset: int = 0, risk_level: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_alerts(self, limit: int = 100, offset: int = 0, risk_level: Optional[str] = None, org_id: Optional[str] = None, device_id: Optional[str] = None) -> List[Dict[str, Any]]:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
+                conditions = []
+                params = []
                 if risk_level:
-                    cursor.execute("""
-                        SELECT * FROM alerts WHERE risk_level = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?
-                    """, (risk_level, limit, offset))
-                else:
-                    cursor.execute("""
-                        SELECT * FROM alerts ORDER BY timestamp DESC LIMIT ? OFFSET ?
-                    """, (limit, offset))
+                    conditions.append("risk_level = ?")
+                    params.append(risk_level)
+                if org_id:
+                    conditions.append("org_id = ?")
+                    params.append(org_id)
+                if device_id:
+                    conditions.append("device_id = ?")
+                    params.append(device_id)
+                
+                where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+                query = f"SELECT * FROM alerts {where_clause} ORDER BY timestamp DESC LIMIT ? OFFSET ?"
+                params.extend([limit, offset])
+                
+                cursor.execute(query, params)
                 rows = cursor.fetchall()
                 results = []
                 for row in rows:
@@ -961,6 +1067,355 @@ class SQLiteDatabase:
         except Exception as e:
             logger.error(f"SQLite get_audit_logs error: {e}")
             return []
+
+    # ================= FLEET DEVICES & TELEMETRY =================
+    def enroll_device(self, device_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Enroll a new organization employee device and generate or store its device token"""
+        try:
+            device_id = device_data.get("id") or str(uuid.uuid4())
+            device_token = device_data.get("device_token") or f"dev-tok-{uuid.uuid4().hex}"
+            now = datetime.now().isoformat()
+            
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO devices (
+                        id, org_id, assigned_user_email, hostname, os_platform, os_version,
+                        ip_address, mac_address, agent_version, device_token, status,
+                        is_quarantined, last_heartbeat, metadata, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    device_id,
+                    device_data.get("org_id"),
+                    device_data.get("assigned_user_email"),
+                    device_data.get("hostname", "UNKNOWN-HOST"),
+                    device_data.get("os_platform", "windows"),
+                    device_data.get("os_version"),
+                    device_data.get("ip_address"),
+                    device_data.get("mac_address"),
+                    device_data.get("agent_version", "1.0.0"),
+                    device_token,
+                    device_data.get("status", "online"),
+                    1 if device_data.get("is_quarantined") else 0,
+                    now,
+                    json.dumps(device_data.get("metadata", {}), default=str),
+                    now,
+                    now
+                ))
+                conn.commit()
+            
+            return {
+                "id": device_id,
+                "org_id": device_data.get("org_id"),
+                "device_token": device_token,
+                "hostname": device_data.get("hostname"),
+                "status": "online"
+            }
+        except Exception as e:
+            logger.error(f"SQLite enroll_device error: {e}")
+            raise e
+
+    def get_device_by_token(self, token: str) -> Optional[Dict[str, Any]]:
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM devices WHERE device_token = ?", (token,))
+                row = cursor.fetchone()
+                if not row:
+                    return None
+                item = dict(row)
+                if item.get("metadata") and isinstance(item["metadata"], str):
+                    try:
+                        item["metadata"] = json.loads(item["metadata"])
+                    except Exception:
+                        pass
+                return item
+        except Exception as e:
+            logger.error(f"SQLite get_device_by_token error: {e}")
+            return None
+
+    def get_device_by_id(self, device_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM devices WHERE id = ?", (device_id,))
+                row = cursor.fetchone()
+                if not row:
+                    return None
+                item = dict(row)
+                if item.get("metadata") and isinstance(item["metadata"], str):
+                    try:
+                        item["metadata"] = json.loads(item["metadata"])
+                    except Exception:
+                        pass
+                return item
+        except Exception as e:
+            logger.error(f"SQLite get_device_by_id error: {e}")
+            return None
+
+    def get_devices(self, org_id: Optional[str] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                conditions = []
+                params = []
+                if org_id:
+                    conditions.append("org_id = ?")
+                    params.append(org_id)
+                if status:
+                    conditions.append("status = ?")
+                    params.append(status)
+                
+                where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+                query = f"SELECT * FROM devices {where_clause} ORDER BY last_heartbeat DESC"
+                cursor.execute(query, params)
+                rows = cursor.fetchall()
+                results = []
+                for row in rows:
+                    item = dict(row)
+                    if item.get("metadata") and isinstance(item["metadata"], str):
+                        try:
+                            item["metadata"] = json.loads(item["metadata"])
+                        except Exception:
+                            pass
+                    results.append(item)
+                return results
+        except Exception as e:
+            logger.error(f"SQLite get_devices error: {e}")
+            return []
+
+    def update_device_heartbeat(self, device_id: str, telemetry: Dict[str, Any]) -> bool:
+        try:
+            now = datetime.now().isoformat()
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE devices 
+                    SET last_heartbeat = ?, status = 'online', updated_at = ?
+                    WHERE id = ?
+                """, (now, now, device_id))
+
+                telemetry_id = str(uuid.uuid4())
+                cursor.execute("""
+                    INSERT INTO device_telemetry (
+                        id, device_id, org_id, timestamp, cpu_usage, memory_usage,
+                        active_connections, open_ports, event_type, details
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    telemetry_id,
+                    device_id,
+                    telemetry.get("org_id", "demo-org-id"),
+                    now,
+                    telemetry.get("cpu_usage", 0.0),
+                    telemetry.get("memory_usage", 0.0),
+                    json.dumps(telemetry.get("active_connections", []), default=str),
+                    json.dumps(telemetry.get("open_ports", []), default=str),
+                    telemetry.get("event_type", "heartbeat"),
+                    json.dumps(telemetry.get("details", {}), default=str)
+                ))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"SQLite update_device_heartbeat error: {e}")
+            return False
+
+    def set_device_quarantine(self, device_id: str, quarantined: bool) -> bool:
+        try:
+            now = datetime.now().isoformat()
+            new_status = "quarantined" if quarantined else "online"
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE devices 
+                    SET is_quarantined = ?, status = ?, updated_at = ?
+                    WHERE id = ?
+                """, (1 if quarantined else 0, new_status, now, device_id))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"SQLite set_device_quarantine error: {e}")
+            return False
+
+    def create_device_command(self, command_data: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            cmd_id = command_data.get("id") or str(uuid.uuid4())
+            now = datetime.now().isoformat()
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO device_commands (
+                        id, device_id, org_id, command_type, payload, status, issued_by, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    cmd_id,
+                    command_data.get("device_id"),
+                    command_data.get("org_id"),
+                    command_data.get("command_type"),
+                    json.dumps(command_data.get("payload", {}), default=str),
+                    "pending",
+                    command_data.get("issued_by"),
+                    now
+                ))
+                conn.commit()
+            return {"id": cmd_id, "status": "pending", "command_type": command_data.get("command_type")}
+        except Exception as e:
+            logger.error(f"SQLite create_device_command error: {e}")
+            raise e
+
+    def get_pending_device_commands(self, device_id: str) -> List[Dict[str, Any]]:
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT * FROM device_commands 
+                    WHERE device_id = ? AND status = 'pending' 
+                    ORDER BY created_at ASC
+                """, (device_id,))
+                rows = cursor.fetchall()
+                results = []
+                for row in rows:
+                    item = dict(row)
+                    if item.get("payload") and isinstance(item["payload"], str):
+                        try:
+                            item["payload"] = json.loads(item["payload"])
+                        except Exception:
+                            pass
+                    results.append(item)
+                return results
+        except Exception as e:
+            logger.error(f"SQLite get_pending_device_commands error: {e}")
+            return []
+
+    def update_device_command_status(self, command_id: str, status: str, result: Optional[Any] = None) -> bool:
+        try:
+            now = datetime.now().isoformat()
+            result_val = json.dumps(result) if isinstance(result, (dict, list)) else result
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE device_commands 
+                    SET status = ?, result = ?, executed_at = ?
+                    WHERE id = ?
+                """, (status, result_val, now, command_id))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"SQLite update_device_command_status error: {e}")
+            return False
+
+    def delete_device(self, device_id: str) -> bool:
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM devices WHERE id = ?", (device_id,))
+                cursor.execute("DELETE FROM device_telemetry WHERE device_id = ?", (device_id,))
+                cursor.execute("DELETE FROM device_commands WHERE device_id = ?", (device_id,))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"SQLite delete_device error: {e}")
+            return False
+
+    # ================= ALERT FEEDBACK & ACTIVE LEARNING =================
+    def record_alert_feedback(self, feedback_data: Dict[str, Any]) -> str:
+        try:
+            fb_id = feedback_data.get("id") or str(uuid.uuid4())
+            now = datetime.now().isoformat()
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO alert_feedback (
+                        id, alert_id, org_id, user_id, feedback_type, reason,
+                        target_ip, target_process, suppress_future, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    fb_id,
+                    feedback_data.get("alert_id"),
+                    feedback_data.get("org_id"),
+                    feedback_data.get("user_id"),
+                    feedback_data.get("feedback_type", "confirmed_threat"),
+                    feedback_data.get("reason"),
+                    feedback_data.get("target_ip"),
+                    feedback_data.get("target_process"),
+                    1 if feedback_data.get("suppress_future") else 0,
+                    now
+                ))
+                conn.commit()
+            return fb_id
+        except Exception as e:
+            logger.error(f"SQLite record_alert_feedback error: {e}")
+            raise e
+
+    def get_alert_feedback(self, alert_id: Optional[str] = None, org_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                conditions = []
+                params = []
+                if alert_id:
+                    conditions.append("alert_id = ?")
+                    params.append(alert_id)
+                if org_id:
+                    conditions.append("org_id = ?")
+                    params.append(org_id)
+                where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+                cursor.execute(f"SELECT * FROM alert_feedback {where_clause} ORDER BY created_at DESC", params)
+                return [dict(r) for r in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"SQLite get_alert_feedback error: {e}")
+            return []
+
+    def is_alert_suppressed(self, destination_ip: str, process_name: Optional[str] = None) -> bool:
+        """Check if an alert is suppressed by false-positive feedback rule."""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT COUNT(*) as count FROM alert_feedback 
+                    WHERE feedback_type = 'false_positive' 
+                      AND suppress_future = 1 
+                      AND (target_ip = ? OR target_process = ?)
+                """, (destination_ip, process_name or ""))
+                row = cursor.fetchone()
+                return bool(row and row["count"] > 0)
+        except Exception as e:
+            logger.error(f"SQLite is_alert_suppressed error: {e}")
+            return False
+
+    def update_alert_triage(self, alert_id: str, triage_data: Dict[str, Any]) -> bool:
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE alerts 
+                    SET triage_data = ?
+                    WHERE id = ?
+                """, (json.dumps(triage_data, default=str), alert_id))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"SQLite update_alert_triage error: {e}")
+            return False
+
+    def get_alert_by_id(self, alert_id: str) -> Optional[Dict[str, Any]]:
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM alerts WHERE id = ?", (alert_id,))
+                row = cursor.fetchone()
+                if not row:
+                    return None
+                item = dict(row)
+                for key in ["threat_intel_data", "packet_data", "prediction_result", "triage_data"]:
+                    if item.get(key) and isinstance(item[key], str):
+                        try:
+                            item[key] = json.loads(item[key])
+                        except Exception:
+                            pass
+                return item
+        except Exception as e:
+            logger.error(f"SQLite get_alert_by_id error: {e}")
+            return None
 
 
 # Singleton instance

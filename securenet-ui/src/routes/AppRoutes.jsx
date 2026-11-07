@@ -20,6 +20,7 @@ import Reports from '../pages/Reports';
 import SIEMExport from '../pages/SIEMExport';
 import AdminPanel from '../pages/AdminPanel';
 import EnhancedAdminPanel from '../pages/EnhancedAdminPanel';
+import FleetDevices from '../pages/FleetDevices';
 import Profile from '../pages/Profile';
 import Notifications from '../pages/Notifications';
 import Settings from '../pages/Settings';
@@ -144,6 +145,16 @@ const AppRoutes = () => {
         />
 
         {/* Admin Center */}
+        <Route
+          path="/fleet-devices"
+          element={
+            <ProtectedRoute role="admin">
+              <DashboardLayout>
+                <FleetDevices />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/admin-panel"
           element={

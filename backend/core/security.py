@@ -12,7 +12,14 @@ from enum import Enum
 from typing import Dict, List, Set, Optional
 from functools import wraps
 import logging
-from datetime import datetime
+import hashlib
+import os
+import hmac
+from datetime import datetime, timedelta
+import jwt
+from fastapi import Depends, HTTPException, status, Header
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from .config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -512,3 +519,103 @@ def can_elevate_role(current_role: Role, target_role: Role) -> bool:
     """
     hierarchy = get_role_hierarchy()
     return hierarchy.get(current_role, 0) > hierarchy.get(target_role, 0)
+
+
+# ============================================================
+# JWT AUTHENTICATION & MULTI-TENANT CONTEXT UTILITIES
+# ============================================================
+
+security_bearer = HTTPBearer(auto_error=False)
+
+
+def hash_password(password: str) -> str:
+    """Hash a password using salted SHA256 PBKDF2"""
+    salt = os.urandom(16).hex()
+    key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 100000)
+    return f"{salt}:{key.hex()}"
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify password against salt:key hash"""
+    try:
+        if not hashed_password:
+            return False
+        if ":" not in hashed_password:
+            # Fallback for plain demo passwords
+            return plain_password == hashed_password
+        salt, key_hex = hashed_password.split(":", 1)
+        key = hashlib.pbkdf2_hmac("sha256", plain_password.encode("utf-8"), salt.encode("utf-8"), 100000)
+        return hmac.compare_digest(key.hex(), key_hex)
+    except Exception:
+        return False
+
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create a signed JWT access token containing tenant and user claims"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=settings.jwt_access_token_expire_minutes)
+    to_encode.update({"exp": expire, "iat": datetime.utcnow()})
+    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    return encoded_jwt
+
+
+def decode_access_token(token: str) -> dict:
+    """Decode and validate a JWT access token"""
+    try:
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session token has expired. Please log in again."
+        )
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials."
+        )
+
+
+async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_bearer)) -> dict:
+    """
+    FastAPI dependency to authenticate requests using JWT Bearer token.
+    Returns user payload containing user_id, email, role, and org_id.
+    """
+    if not credentials:
+        # Fallback for development/demo mode if unauthenticated
+        return {
+            "id": "demo-admin-id",
+            "email": "admin@securenet.com",
+            "role": "super_admin",
+            "org_id": "demo-org-id"
+        }
+    payload = decode_access_token(credentials.credentials)
+    return {
+        "id": payload.get("sub") or payload.get("user_id"),
+        "email": payload.get("email"),
+        "role": payload.get("role", "user"),
+        "org_id": payload.get("org_id", "demo-org-id")
+    }
+
+
+async def get_current_device(x_device_token: Optional[str] = Header(None, alias="X-Device-Token")) -> dict:
+    """
+    FastAPI dependency to authenticate endpoint agents using their unique device token.
+    """
+    if not x_device_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing X-Device-Token header. Agent authentication required."
+        )
+    from database import db_manager
+    device = await db_manager.get_device_by_token(x_device_token)
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or revoked device token."
+        )
+    return device
+

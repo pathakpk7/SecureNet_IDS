@@ -41,6 +41,7 @@ function Navbar({ toggleMenu, menuOpen }) {
       name: currentRole,
       children: [
         ...(currentRole === 'ADMIN' ? [
+          { name: "Fleet Devices", path: "/fleet-devices" },
           { name: "Admin Panel", path: "/admin-panel" },
           { name: "System Audit Trail", path: "/audit-logs" },
           { name: "SIEM Export", path: "/siem-export" }

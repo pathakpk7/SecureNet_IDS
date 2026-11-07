@@ -1,217 +1,160 @@
-/* Fade In Animation */
-@keyframes fadeIn {
-  from {
+/* =========================================================
+   SECURENET IDS - KINETIC MOTION & REVEAL SYSTEM
+   Hardware-accelerated, natural spring physics, reduced-motion compliant
+   ========================================================= */
+
+/* Hero Kinetic Title Reveal */
+@keyframes textReveal {
+  0% {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(24px);
+    filter: blur(4px);
   }
-  to {
+  100% {
     opacity: 1;
     transform: translateY(0);
+    filter: blur(0);
   }
 }
 
+/* Staggered Element Entrance */
 @keyframes fadeInUp {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(18px);
   }
-  to {
+  100% {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-@keyframes fadeInDown {
-  from {
+@keyframes fadeIn {
+  0% {
     opacity: 0;
-    transform: translateY(-30px);
   }
-  to {
+  100% {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-@keyframes fadeInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes fadeInRight {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* Neon Glow Animation */
-@keyframes neonGlow {
-  0%, 100% {
-    box-shadow: 0 0 5px var(--accent), 0 0 10px var(--accent);
-  }
-  50% {
-    box-shadow: 0 0 20px var(--accent), 0 0 30px var(--accent);
-  }
-}
-
-/* Pulse Animation */
-@keyframes pulse {
+/* Micro Status Pulse: Refined, non-distracting telemetry indicator */
+@keyframes statusBeacon {
   0%, 100% {
     opacity: 1;
+    transform: scale(1);
   }
   50% {
-    opacity: 0.5;
+    opacity: 0.45;
+    transform: scale(0.92);
   }
 }
 
-/* Slide In Animation */
-@keyframes slideIn {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-/* Bounce Animation */
-@keyframes bounce {
-  0%, 20%, 53%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40%, 43% {
-    transform: translateY(-30px);
-  }
-  70% {
-    transform: translateY(-15px);
-  }
-  90% {
-    transform: translateY(-4px);
-  }
-}
-
-/* Rotate Animation */
-@keyframes rotate {
-  from {
+/* Radar Sweep: Precision security radar without neon bloom */
+@keyframes radarSweep {
+  0% {
     transform: rotate(0deg);
   }
-  to {
+  100% {
     transform: rotate(360deg);
   }
 }
 
-/* Scale Animation */
-@keyframes scale {
-  0%, 100% {
-    transform: scale(1);
+/* Live Packet Stream Shimmer */
+@keyframes packetFlow {
+  0% {
+    transform: translateX(-100%);
   }
-  50% {
-    transform: scale(1.05);
+  100% {
+    transform: translateX(100%);
   }
 }
 
-/* Animation Classes */
-.fade-in {
-  animation: fadeIn 0.8s ease forwards;
+/* Animation utility classes with intentional delays */
+.anim-reveal {
+  animation: textReveal 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
-.fade-in-up {
-  animation: fadeInUp 0.5s ease-out;
+.anim-fade-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
-.fade-in-down {
-  animation: fadeInDown 0.5s ease-out;
+.anim-stagger-1 {
+  animation-delay: 0.08s;
+  animation-fill-mode: both;
 }
 
-.fade-in-left {
-  animation: fadeInLeft 0.5s ease-out;
+.anim-stagger-2 {
+  animation-delay: 0.16s;
+  animation-fill-mode: both;
 }
 
-.fade-in-right {
-  animation: fadeInRight 0.5s ease-out;
+.anim-stagger-3 {
+  animation-delay: 0.24s;
+  animation-fill-mode: both;
 }
 
-.neon-glow {
-  animation: neonGlow 2s ease-in-out infinite;
+.anim-stagger-4 {
+  animation-delay: 0.32s;
+  animation-fill-mode: both;
 }
 
-.pulse {
-  animation: pulse 2s ease-in-out infinite;
+.anim-stagger-5 {
+  animation-delay: 0.4s;
+  animation-fill-mode: both;
 }
 
-.slide-in {
-  animation: slideIn 0.3s ease-out;
+/* Interactive Hover Feedback: Controlled, tactile, zero bounce */
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.bounce {
-  animation: bounce 1s ease-in-out;
+.hover-lift:hover {
+  transform: translateY(-2px);
 }
 
-.rotate {
-  animation: rotate 2s linear infinite;
-}
-
-.scale {
-  animation: scale 2s ease-in-out infinite;
-}
-
-/* Advanced Fade In Animation */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(40px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Glow Hover Effect */
-.glow-hover:hover {
-  box-shadow: 0 0 20px var(--accent);
-  transition: 0.3s ease;
-}
-
-/* Scroll-triggered Animations */
-.scroll-animate {
-  opacity: 0;
-  transform: translateY(50px);
-  transition: all 0.8s ease;
-}
-
-.scroll-animate.visible {
-  opacity: 1;
+.hover-lift:active {
   transform: translateY(0);
 }
 
-/* Button Scale Animation */
-.btn-scale {
-  transition: transform 0.3s ease;
+/* Telemetry pulse */
+.status-indicator {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--status-safe);
+  animation: statusBeacon 2.5s infinite ease-in-out;
 }
 
-.btn-scale:hover {
-  transform: scale(1.05);
+.status-indicator.critical {
+  background-color: var(--status-critical);
 }
 
-/* Card Glow Animation */
-.card-glow {
-  transition: all 0.3s ease;
+.status-indicator.warning {
+  background-color: var(--status-warning);
 }
 
-.card-glow:hover {
-  border-color: var(--accent);
-  box-shadow: 0 0 20px var(--accent-soft);
-  transform: translateY(-5px);
-}
+/* Accessibility: Full reduced-motion respect */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 
-/* Staggered Animations */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
+  .anim-reveal,
+  .anim-fade-up,
+  .status-indicator {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

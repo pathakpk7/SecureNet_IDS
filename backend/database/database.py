@@ -103,23 +103,50 @@ class DatabaseManager:
     # ALERTS OPERATIONS
     # ============================================================
     
-    async def insert_alert(self, alert: Alert) -> str:
-        """Insert a new alert into the database with fallback"""
+    async def insert_alert(self, alert: Any) -> str:
+        """Insert a new alert into the database with fallback (supports Alert model or dict)"""
         alert_id = str(uuid.uuid4())
-        alert_dict = {
-            "id": alert_id,
-            "source_ip": alert.source_ip,
-            "destination_ip": alert.destination_ip,
-            "protocol": alert.protocol.value if hasattr(alert.protocol, 'value') else str(alert.protocol),
-            "timestamp": alert.timestamp.isoformat() if hasattr(alert.timestamp, 'isoformat') else str(alert.timestamp),
-            "attack_type": alert.attack_type.value if hasattr(alert.attack_type, 'value') else str(alert.attack_type),
-            "risk_level": alert.risk_level.value if hasattr(alert.risk_level, 'value') else str(alert.risk_level),
-            "confidence": alert.confidence,
-            "description": alert.description,
-            "threat_intel_data": alert.threat_intel_data,
-            "packet_data": alert.packet_data.dict() if hasattr(alert.packet_data, 'dict') else alert.packet_data,
-            "prediction_result": alert.prediction_result.dict() if hasattr(alert.prediction_result, 'dict') else alert.prediction_result
-        }
+        
+        if isinstance(alert, dict):
+            alert_dict = {
+                "id": alert.get("id") or alert_id,
+                "source_ip": alert.get("source_ip", "0.0.0.0"),
+                "destination_ip": alert.get("destination_ip", "0.0.0.0"),
+                "protocol": str(alert.get("protocol", "TCP")),
+                "timestamp": str(alert.get("timestamp") or datetime.now().isoformat()),
+                "attack_type": str(alert.get("attack_type", "Suspicious Activity")),
+                "risk_level": str(alert.get("risk_level", "MEDIUM")),
+                "confidence": float(alert.get("confidence", 0.0)),
+                "description": alert.get("description"),
+                "threat_intel_data": alert.get("threat_intel_data"),
+                "packet_data": alert.get("packet_data"),
+                "prediction_result": alert.get("prediction_result"),
+                "org_id": alert.get("org_id"),
+                "device_id": alert.get("device_id"),
+                "hostname": alert.get("hostname"),
+                "process_name": alert.get("process_name"),
+                "process_pid": alert.get("process_pid")
+            }
+        else:
+            alert_dict = {
+                "id": getattr(alert, "id", None) or alert_id,
+                "source_ip": alert.source_ip,
+                "destination_ip": alert.destination_ip,
+                "protocol": alert.protocol.value if hasattr(alert.protocol, 'value') else str(alert.protocol),
+                "timestamp": alert.timestamp.isoformat() if hasattr(alert.timestamp, 'isoformat') else str(alert.timestamp),
+                "attack_type": alert.attack_type.value if hasattr(alert.attack_type, 'value') else str(alert.attack_type),
+                "risk_level": alert.risk_level.value if hasattr(alert.risk_level, 'value') else str(alert.risk_level),
+                "confidence": alert.confidence,
+                "description": alert.description,
+                "threat_intel_data": getattr(alert, "threat_intel_data", None),
+                "packet_data": alert.packet_data.dict() if hasattr(alert.packet_data, 'dict') else getattr(alert, "packet_data", None),
+                "prediction_result": alert.prediction_result.dict() if hasattr(alert.prediction_result, 'dict') else getattr(alert, "prediction_result", None),
+                "org_id": getattr(alert, "org_id", None),
+                "device_id": getattr(alert, "device_id", None),
+                "hostname": getattr(alert, "hostname", None),
+                "process_name": getattr(alert, "process_name", None),
+                "process_pid": getattr(alert, "process_pid", None)
+            }
         
         # Always maintain in-memory buffer and SQLite persistent store
         self._in_memory_alerts.insert(0, alert_dict)
@@ -143,25 +170,32 @@ class DatabaseManager:
                     "description": alert_dict["description"],
                     "threat_intel_data": json.dumps(alert_dict["threat_intel_data"], default=str) if alert_dict["threat_intel_data"] is not None else None,
                     "packet_data": json.dumps(alert_dict["packet_data"], default=str) if alert_dict["packet_data"] is not None else None,
-                    "prediction_result": json.dumps(alert_dict["prediction_result"], default=str) if alert_dict["prediction_result"] is not None else None
+                    "prediction_result": json.dumps(alert_dict["prediction_result"], default=str) if alert_dict["prediction_result"] is not None else None,
+                    "org_id": alert_dict.get("org_id"),
+                    "device_id": alert_dict.get("device_id"),
+                    "hostname": alert_dict.get("hostname"),
+                    "process_name": alert_dict.get("process_name"),
+                    "process_pid": alert_dict.get("process_pid")
                 }
                 res = await asyncio.to_thread(
                     lambda: self.supabase.table(table_name).insert(db_data).execute()
                 )
                 if res and res.data:
-                    return res.data[0].get("id", alert_id)
+                    return res.data[0].get("id", alert_dict["id"])
                 else:
                     self._supabase_enabled = False
             except Exception as e:
                 logger.debug(f"Supabase alert insert fallback: {e}")
                 self._supabase_enabled = False
         
-        return alert_id
+        return alert_dict["id"]
     
     async def get_alerts(self, limit: int = 100, offset: int = 0, 
                          risk_level: Optional[str] = None,
                          start_time: Optional[datetime] = None,
-                         end_time: Optional[datetime] = None) -> List[Dict[str, Any]]:
+                         end_time: Optional[datetime] = None,
+                         org_id: Optional[str] = None,
+                         device_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """Retrieve alerts from database with in-memory and SQLite fallback"""
         if self.supabase and self._supabase_enabled:
             try:
@@ -170,6 +204,10 @@ class DatabaseManager:
                     query = self.supabase.table(table_name).select("*")
                     if risk_level:
                         query = query.eq("risk_level", risk_level)
+                    if org_id:
+                        query = query.eq("org_id", org_id)
+                    if device_id:
+                        query = query.eq("device_id", device_id)
                     if start_time:
                         query = query.gte("detected_at", start_time.isoformat())
                     if end_time:
@@ -188,9 +226,13 @@ class DatabaseManager:
             filtered = self._in_memory_alerts
             if risk_level:
                 filtered = [a for a in filtered if a.get("risk_level") == risk_level]
+            if org_id:
+                filtered = [a for a in filtered if a.get("org_id") == org_id]
+            if device_id:
+                filtered = [a for a in filtered if a.get("device_id") == device_id]
             return filtered[offset:offset + limit]
         
-        return self.sqlite.get_alerts(limit=limit, offset=offset, risk_level=risk_level)
+        return self.sqlite.get_alerts(limit=limit, offset=offset, risk_level=risk_level, org_id=org_id, device_id=device_id)
     
     # ============================================================
     # LOGS OPERATIONS
@@ -832,6 +874,277 @@ class DatabaseManager:
         return self.sqlite.get_audit_logs(
             limit=limit, offset=offset, action=action, user_id=user_id, start_time=start_time, end_time=end_time
         )
+
+    # ============================================================
+    # FLEET DEVICES & TELEMETRY OPERATIONS
+    # ============================================================
+
+    async def enroll_device(self, device_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Enroll an endpoint device"""
+        device = self.sqlite.enroll_device(device_data)
+        if self.supabase and self._supabase_enabled:
+            try:
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("devices").insert({
+                        "id": device["id"],
+                        "org_id": device_data.get("org_id"),
+                        "assigned_user_email": device_data.get("assigned_user_email"),
+                        "hostname": device_data.get("hostname", "UNKNOWN-HOST"),
+                        "os_platform": device_data.get("os_platform", "windows"),
+                        "os_version": device_data.get("os_version"),
+                        "ip_address": device_data.get("ip_address"),
+                        "mac_address": device_data.get("mac_address"),
+                        "agent_version": device_data.get("agent_version", "1.0.0"),
+                        "device_token": device["device_token"],
+                        "status": "online"
+                    }).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase enroll_device fallback: {e}")
+                self._supabase_enabled = False
+        return device
+
+    async def get_device_by_token(self, token: str) -> Optional[Dict[str, Any]]:
+        """Retrieve device by secret agent token"""
+        if self.supabase and self._supabase_enabled:
+            try:
+                res = await asyncio.to_thread(
+                    lambda: self.supabase.table("devices").select("*").eq("device_token", token).limit(1).execute()
+                )
+                if res.data:
+                    return res.data[0]
+            except Exception as e:
+                logger.debug(f"Supabase get_device_by_token fallback: {e}")
+                self._supabase_enabled = False
+        return self.sqlite.get_device_by_token(token)
+
+    async def get_device_by_id(self, device_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve device by id"""
+        if self.supabase and self._supabase_enabled:
+            try:
+                res = await asyncio.to_thread(
+                    lambda: self.supabase.table("devices").select("*").eq("id", device_id).limit(1).execute()
+                )
+                if res.data:
+                    return res.data[0]
+            except Exception as e:
+                logger.debug(f"Supabase get_device_by_id fallback: {e}")
+                self._supabase_enabled = False
+        return self.sqlite.get_device_by_id(device_id)
+
+    async def get_devices(self, org_id: Optional[str] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get list of fleet devices"""
+        if self.supabase and self._supabase_enabled:
+            try:
+                query = self.supabase.table("devices").select("*")
+                if org_id:
+                    query = query.eq("org_id", org_id)
+                if status:
+                    query = query.eq("status", status)
+                res = await asyncio.to_thread(
+                    lambda: query.order("last_heartbeat", desc=True).execute()
+                )
+                if res.data:
+                    return res.data
+            except Exception as e:
+                logger.debug(f"Supabase get_devices fallback: {e}")
+                self._supabase_enabled = False
+        return self.sqlite.get_devices(org_id=org_id, status=status)
+
+    async def update_device_heartbeat(self, device_id: str, telemetry: Dict[str, Any]) -> bool:
+        """Process heartbeat and telemetry log"""
+        success = self.sqlite.update_device_heartbeat(device_id, telemetry)
+        if self.supabase and self._supabase_enabled:
+            try:
+                now = datetime.now().isoformat()
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("devices").update({
+                        "last_heartbeat": now,
+                        "status": "online"
+                    }).eq("id", device_id).execute()
+                )
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("device_telemetry").insert({
+                        "device_id": device_id,
+                        "org_id": telemetry.get("org_id", "00000000-0000-0000-0000-000000000001"),
+                        "cpu_usage": telemetry.get("cpu_usage", 0.0),
+                        "memory_usage": telemetry.get("memory_usage", 0.0),
+                        "active_connections": telemetry.get("active_connections", []),
+                        "open_ports": telemetry.get("open_ports", []),
+                        "event_type": telemetry.get("event_type", "heartbeat"),
+                        "details": telemetry.get("details", {})
+                    }).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase update_device_heartbeat fallback: {e}")
+                self._supabase_enabled = False
+        return success
+
+    async def set_device_quarantine(self, device_id: str, quarantined: bool) -> bool:
+        """Toggle quarantine status for host isolation"""
+        success = self.sqlite.set_device_quarantine(device_id, quarantined)
+        if self.supabase and self._supabase_enabled:
+            try:
+                new_status = "quarantined" if quarantined else "online"
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("devices").update({
+                        "is_quarantined": quarantined,
+                        "status": new_status
+                    }).eq("id", device_id).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase set_device_quarantine fallback: {e}")
+                self._supabase_enabled = False
+        return success
+
+    async def create_device_command(self, command_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create remote SOAR command for endpoint agent"""
+        res = self.sqlite.create_device_command(command_data)
+        if self.supabase and self._supabase_enabled:
+            try:
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("device_commands").insert({
+                        "id": res["id"],
+                        "device_id": command_data.get("device_id"),
+                        "org_id": command_data.get("org_id"),
+                        "command_type": command_data.get("command_type"),
+                        "payload": command_data.get("payload", {}),
+                        "status": "pending",
+                        "issued_by": command_data.get("issued_by")
+                    }).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase create_device_command fallback: {e}")
+                self._supabase_enabled = False
+        return res
+
+    async def get_pending_device_commands(self, device_id: str) -> List[Dict[str, Any]]:
+        """Fetch pending commands for device"""
+        if self.supabase and self._supabase_enabled:
+            try:
+                res = await asyncio.to_thread(
+                    lambda: self.supabase.table("device_commands")
+                    .select("*")
+                    .eq("device_id", device_id)
+                    .eq("status", "pending")
+                    .order("created_at")
+                    .execute()
+                )
+                if res.data:
+                    return res.data
+            except Exception as e:
+                logger.debug(f"Supabase get_pending_device_commands fallback: {e}")
+                self._supabase_enabled = False
+        return self.sqlite.get_pending_device_commands(device_id)
+
+    async def update_device_command_status(self, command_id: str, status: str, result: Optional[Any] = None) -> bool:
+        """Mark command result from agent"""
+        success = self.sqlite.update_device_command_status(command_id, status, result)
+        if self.supabase and self._supabase_enabled:
+            try:
+                now = datetime.now().isoformat()
+                result_val = json.dumps(result) if isinstance(result, (dict, list)) else result
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("device_commands").update({
+                        "status": status,
+                        "result": result_val,
+                        "executed_at": now
+                    }).eq("id", command_id).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase update_device_command_status fallback: {e}")
+                self._supabase_enabled = False
+        return success
+
+    async def delete_device(self, device_id: str) -> bool:
+        """Deregister device"""
+        success = self.sqlite.delete_device(device_id)
+        if self.supabase and self._supabase_enabled:
+            try:
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("devices").delete().eq("id", device_id).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase delete_device fallback: {e}")
+                self._supabase_enabled = False
+        return success
+
+    # ============================================================
+    # ALERT FEEDBACK & ACTIVE LEARNING OPERATIONS
+    # ============================================================
+
+    async def get_alert_by_id(self, alert_id: str) -> Optional[Dict[str, Any]]:
+        """Fetch full details of a specific alert"""
+        if self.supabase and self._supabase_enabled:
+            try:
+                res = await asyncio.to_thread(
+                    lambda: self.supabase.table("alerts").select("*").eq("id", alert_id).limit(1).execute()
+                )
+                if res.data:
+                    return res.data[0]
+            except Exception as e:
+                logger.debug(f"Supabase get_alert_by_id fallback: {e}")
+                self._supabase_enabled = False
+        return self.sqlite.get_alert_by_id(alert_id)
+
+    async def update_alert_triage(self, alert_id: str, triage_data: Dict[str, Any]) -> bool:
+        """Cache AI SOC Copilot triage on the alert record"""
+        success = self.sqlite.update_alert_triage(alert_id, triage_data)
+        if self.supabase and self._supabase_enabled:
+            try:
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("alerts").update({
+                        "prediction_result": json.dumps(triage_data, default=str)
+                    }).eq("id", alert_id).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase update_alert_triage fallback: {e}")
+                self._supabase_enabled = False
+        return success
+
+    async def record_alert_feedback(self, feedback_data: Dict[str, Any]) -> str:
+        """Save human SOC feedback (false_positive or confirmed_threat)"""
+        fb_id = self.sqlite.record_alert_feedback(feedback_data)
+        if self.supabase and self._supabase_enabled:
+            try:
+                await asyncio.to_thread(
+                    lambda: self.supabase.table("alert_feedback").insert({
+                        "id": fb_id,
+                        "alert_id": feedback_data.get("alert_id"),
+                        "org_id": feedback_data.get("org_id"),
+                        "user_id": feedback_data.get("user_id"),
+                        "feedback_type": feedback_data.get("feedback_type"),
+                        "reason": feedback_data.get("reason"),
+                        "suppress_future": bool(feedback_data.get("suppress_future"))
+                    }).execute()
+                )
+            except Exception as e:
+                logger.debug(f"Supabase record_alert_feedback fallback: {e}")
+                self._supabase_enabled = False
+        return fb_id
+
+    async def get_alert_feedback(self, alert_id: Optional[str] = None, org_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Retrieve feedback history for active learning"""
+        if self.supabase and self._supabase_enabled:
+            try:
+                query = self.supabase.table("alert_feedback").select("*")
+                if alert_id:
+                    query = query.eq("alert_id", alert_id)
+                if org_id:
+                    query = query.eq("org_id", org_id)
+                res = await asyncio.to_thread(
+                    lambda: query.order("created_at", desc=True).execute()
+                )
+                if res.data:
+                    return res.data
+            except Exception as e:
+                logger.debug(f"Supabase get_alert_feedback fallback: {e}")
+                self._supabase_enabled = False
+        return self.sqlite.get_alert_feedback(alert_id=alert_id, org_id=org_id)
+
+    async def is_alert_suppressed(self, destination_ip: str, process_name: Optional[str] = None) -> bool:
+        """Check if an alert should be suppressed due to previous false-positive feedback"""
+        return self.sqlite.is_alert_suppressed(destination_ip, process_name)
 
 
 # Global database manager instance

@@ -1,6 +1,7 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Shield, Activity, Cpu, Lock, ArrowRight } from 'lucide-react';
 import MainLayout from '../layouts/MainLayout';
 import '../styles/pages/landing.css';
 
@@ -14,47 +15,47 @@ const Landing = () => {
 
   return (
     <MainLayout>
-      <div className="landing">
+      <div className="landing-clean">
         {/* Hero Section */}
-        <section className="hero-section">
-          <div className="hero-container">
-            {/* Left Side */}
-            <div className="hero-left fade-in">
-              <h1 className="hero-title">
-                AI-Powered Intrusion Detection System
+        <section className="clean-hero-section">
+          <div className="clean-hero-container">
+            <div className="clean-hero-left anim-reveal">
+              <h1 className="clean-hero-title">
+                Machine learning intrusion detection for enterprise networks
               </h1>
-              <p className="hero-subtitle">
-                Real-time threat detection, AI-driven insights, and network security monitoring.
+              <p className="clean-hero-subtitle">
+                Continuous packet analysis, real-time anomaly classification, and automated perimeter threat neutralization.
               </p>
-              <div className="hero-buttons">
-                <button onClick={handleGetStarted} className="btn btn-primary glow-hover">Get Started</button>
-                <button className="btn btn-outline">Learn More</button>
+              <div className="clean-hero-buttons">
+                <button onClick={handleGetStarted} className="btn-clean-primary">
+                  <span>Open Console</span>
+                  <ArrowRight size={15} />
+                </button>
+                <Link to="/login" className="btn-clean-ghost">
+                  Review Documentation
+                </Link>
               </div>
             </div>
             
-            {/* Right Side */}
-            <div className="hero-right fade-in stagger-1">
-              <div className="dashboard-preview glass neon-border">
-                <div className="preview-header">
-                  <div className="preview-indicator active"></div>
-                  <span>Live Monitor</span>
+            <div className="clean-hero-right anim-fade-up anim-stagger-2">
+              <div className="clean-preview-panel">
+                <div className="preview-panel-header">
+                  <div className="status-indicator"></div>
+                  <span className="preview-panel-title">Live Wire Stream</span>
                 </div>
-                <div className="preview-content">
-                  <div className="preview-metrics">
-                    <div className="metric">
-                      <span className="metric-value">2,847</span>
-                      <span className="metric-label">Threats Blocked</span>
+                <div className="preview-panel-content">
+                  <div className="preview-metrics-row">
+                    <div className="preview-stat">
+                      <span className="preview-value mono-data">2,847</span>
+                      <span className="preview-label">Neutralized Incursions</span>
                     </div>
-                    <div className="metric">
-                      <span className="metric-value">99.9%</span>
-                      <span className="metric-label">Uptime</span>
+                    <div className="preview-stat">
+                      <span className="preview-value mono-data">99.9%</span>
+                      <span className="preview-label">Inspection Availability</span>
                     </div>
                   </div>
-                  <div className="preview-chart">
-                    <div className="chart-bar"></div>
-                    <div className="chart-bar"></div>
-                    <div className="chart-bar"></div>
-                    <div className="chart-bar"></div>
+                  <div className="preview-stream-summary">
+                    <span className="mono-data caption">Socket Ingestion: AF_PACKET Zero-Copy Ring</span>
                   </div>
                 </div>
               </div>
@@ -63,59 +64,49 @@ const Landing = () => {
         </section>
 
         {/* Features Section */}
-        <section className="features-section">
-          <div className="features-container">
-            <h2 className="section-title fade-in">Advanced Features</h2>
-            <div className="features-grid">
-              <div className="feature-card glass fade-in stagger-1">
-                <div className="feature-icon">[INSPECT]</div>
-                <h3>Real-Time Monitoring</h3>
-                <p>Monitor network traffic and detect threats in real-time with advanced pattern recognition.</p>
-              </div>
-              <div className="feature-card glass fade-in stagger-2">
-                <div className="feature-icon">[AI]</div>
-                <h3>AI Threat Detection</h3>
-                <p>Machine learning algorithms identify sophisticated attack patterns before they cause damage.</p>
-              </div>
-              <div className="feature-card glass fade-in stagger-3">
-                <div className="feature-icon">[ANALYTICS]</div>
-                <h3>Network Traffic Analysis</h3>
-                <p>Comprehensive analysis of all network traffic with detailed reporting and insights.</p>
-              </div>
-              <div className="feature-card glass fade-in stagger-4">
-                <div className="feature-icon">[SOC]</div>
-                <h3>Multi-User Admin System</h3>
-                <p>Secure role-based access control for teams and organizations of any size.</p>
-              </div>
+        <section className="clean-features-section">
+          <div className="clean-features-container">
+            <div className="features-editorial-header">
+              <span className="section-category">Core Capabilities</span>
+              <h2 className="clean-section-title">High-throughput threat intelligence and automated mitigation</h2>
             </div>
-          </div>
-        </section>
-
-        {/* About Section */}
-        <section className="about-section">
-          <div className="about-container">
-            <div className="about-content glass fade-in">
-              <h2 className="about-title">About SecureNet IDS</h2>
-              <p className="about-text">
-                SecureNet IDS is a cutting-edge intrusion detection system that leverages artificial intelligence 
-                to provide real-time threat detection and comprehensive network security monitoring. Our platform 
-                analyzes millions of network events per second, identifying potential security breaches before they 
-                can impact your organization. With scalable architecture designed for enterprises of all sizes, 
-                SecureNet IDS delivers enterprise-grade security with actionable insights and automated response capabilities.
-              </p>
+            <div className="clean-features-grid">
+              <div className="clean-feature-item hover-lift">
+                <Activity size={22} className="feature-symbol" />
+                <h3>Real-Time Packet Stream</h3>
+                <p>Zero-copy frame extraction capturing IPv4, IPv6, TCP, and UDP sessions continuously without packet drops.</p>
+              </div>
+              <div className="clean-feature-item hover-lift">
+                <Cpu size={22} className="feature-symbol" />
+                <h3>RandomForest Classification</h3>
+                <p>Pre-trained multi-class inference separating benign workflows from DoS floods, port probes, and brute-force events.</p>
+              </div>
+              <div className="clean-feature-item hover-lift">
+                <Shield size={22} className="feature-symbol" />
+                <h3>Dynamic Null-Routing</h3>
+                <p>Automated boundary firewall rule insertion cross-referenced against global reputation intelligence feeds.</p>
+              </div>
+              <div className="clean-feature-item hover-lift">
+                <Lock size={22} className="feature-symbol" />
+                <h3>Granular RBAC Governance</h3>
+                <p>Isolated tenant spaces with cryptographically verifiable audit trails for SOC teams and compliance engineers.</p>
+              </div>
             </div>
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="cta-section">
-          <div className="cta-container">
-            <div className="cta-content glass fade-in">
-              <h2 className="cta-title">Secure Your Network Today</h2>
-              <p className="cta-subtitle">
-                Join thousands of organizations protecting their digital assets with SecureNet IDS
+        <section className="clean-cta-section">
+          <div className="clean-cta-container">
+            <div className="clean-cta-content">
+              <h2>Deploy defense intelligence across your organization</h2>
+              <p>
+                Get real-time visibility into traffic anomalies and safeguard critical infrastructure.
               </p>
-              <button className="btn btn-primary glow-hover cta-button">Start Now</button>
+              <button onClick={handleGetStarted} className="btn-clean-primary">
+                <span>Start SOC Session</span>
+                <ArrowRight size={15} />
+              </button>
             </div>
           </div>
         </section>

@@ -47,8 +47,12 @@ python-dateutil==2.8.2
 # IP Address Handling
 ipaddress==1.0.23
 
-# Cryptography (for secure API calls)
+# Cryptography & Auth
 cryptography>=41.0.0
+PyJWT>=2.8.0
+
+# Endpoint Agent Telemetry
+psutil>=5.9.0
 
 # Development & Testing
 pytest==7.4.3
