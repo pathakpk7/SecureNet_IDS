@@ -1,4 +1,4 @@
-/* =========================================================
+﻿/* =========================================================
    SECURENET IDS - KINETIC MOTION & REVEAL SYSTEM
    Hardware-accelerated, natural spring physics, reduced-motion compliant
    ========================================================= */
@@ -8,12 +8,10 @@
   0% {
     opacity: 0;
     transform: translateY(24px);
-    filter: blur(4px);
   }
   100% {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 }
 
@@ -50,18 +48,8 @@
   }
 }
 
-/* Radar Sweep: Precision security radar without neon bloom */
-@keyframes radarSweep {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Live Packet Stream Shimmer */
-@keyframes packetFlow {
+/* Signal Horizon Line */
+@keyframes signalScan {
   0% {
     transform: translateX(-100%);
   }
@@ -70,76 +58,37 @@
   }
 }
 
-/* Animation utility classes with intentional delays */
+/* Animation Utility Classes */
 .anim-reveal {
   animation: textReveal 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform, opacity;
 }
 
 .anim-fade-up {
-  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform, opacity;
+  opacity: 0;
+  animation: fadeInUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.anim-stagger-1 {
-  animation-delay: 0.08s;
-  animation-fill-mode: both;
+.anim-fade-in {
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out forwards;
 }
 
-.anim-stagger-2 {
-  animation-delay: 0.16s;
-  animation-fill-mode: both;
-}
+.anim-stagger-1 { animation-delay: 0.08s; }
+.anim-stagger-2 { animation-delay: 0.16s; }
+.anim-stagger-3 { animation-delay: 0.24s; }
+.anim-stagger-4 { animation-delay: 0.32s; }
+.anim-stagger-5 { animation-delay: 0.40s; }
 
-.anim-stagger-3 {
-  animation-delay: 0.24s;
-  animation-fill-mode: both;
-}
-
-.anim-stagger-4 {
-  animation-delay: 0.32s;
-  animation-fill-mode: both;
-}
-
-.anim-stagger-5 {
-  animation-delay: 0.4s;
-  animation-fill-mode: both;
-}
-
-/* Interactive Hover Feedback: Controlled, tactile, zero bounce */
+/* Interactive Hover States */
 .hover-lift {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
 }
 
 .hover-lift:hover {
   transform: translateY(-2px);
 }
 
-.hover-lift:active {
-  transform: translateY(0);
-}
-
-/* Telemetry pulse */
-.status-indicator {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: var(--status-safe);
-  animation: statusBeacon 2.5s infinite ease-in-out;
-}
-
-.status-indicator.critical {
-  background-color: var(--status-critical);
-}
-
-.status-indicator.warning {
-  background-color: var(--status-warning);
-}
-
-/* Accessibility: Full reduced-motion respect */
+/* Reduced Motion Compliance */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -148,13 +97,5 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-
-  .anim-reveal,
-  .anim-fade-up,
-  .status-indicator {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
   }
 }
